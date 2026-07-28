@@ -1,0 +1,32 @@
+[
+  {
+    "edge_id": "PK1",
+    "from_node": 2078,
+    "to_node": 2160,
+    "distance": 0.6,
+    "travel_seconds": 1,
+    "direction": "BOTH",
+    "active": true,
+    "width": null
+  },
+  {
+    "edge_id": "PK2",
+    "from_node": 2079,
+    "to_node": 2161,
+    "distance": 0.6,
+    "travel_seconds": 1,
+    "direction": "BOTH",
+    "active": true,
+    "width": null
+  },
+  {
+    "edge_id": "PK3",
+    "from_node": 2080,
+    "to_node": 2162,
+    "distance": 0.6,
+    "travel_seconds": 1,
+    "direction": "BOTH",
+    "active": true,
+    "width": null
+  }
+]

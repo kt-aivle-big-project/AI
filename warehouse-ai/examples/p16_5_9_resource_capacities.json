@@ -1,0 +1,100 @@
+[
+  {
+    "node_id": 2088,
+    "service_capacity": 1,
+    "service_duration_seconds": 5
+  },
+  {
+    "node_id": 2139,
+    "service_capacity": 1,
+    "service_duration_seconds": 5
+  },
+  {
+    "node_id": 2146,
+    "service_capacity": 1,
+    "service_duration_seconds": 5
+  },
+  {
+    "node_id": 2150,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2151,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2152,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2153,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2154,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2155,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2156,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2157,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2158,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2159,
+    "charger_capacity": 1,
+    "charging_rate_percent_per_minute": 5.0
+  },
+  {
+    "node_id": 2160,
+    "waiting_capacity": 1,
+    "idle_capacity": 1,
+    "maximum_idle_duration": 14400,
+    "nearby_service_nodes": [
+      2088,
+      2139,
+      2146
+    ]
+  },
+  {
+    "node_id": 2161,
+    "waiting_capacity": 1,
+    "idle_capacity": 1,
+    "maximum_idle_duration": 14400,
+    "nearby_service_nodes": [
+      2088,
+      2139,
+      2146
+    ]
+  },
+  {
+    "node_id": 2162,
+    "waiting_capacity": 1,
+    "idle_capacity": 1,
+    "maximum_idle_duration": 14400,
+    "nearby_service_nodes": [
+      2088,
+      2139,
+      2146
+    ]
+  }
+]

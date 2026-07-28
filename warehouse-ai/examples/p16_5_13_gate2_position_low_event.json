@@ -1,0 +1,22 @@
+{
+  "event_id": "p16-5-13-gate2-low-position-001",
+  "warehouse_id": 2,
+  "robot_id": "REPLACE_WITH_PLAN_ROBOT_ID",
+  "work_id": null,
+  "task_id": null,
+  "event_type": "POSITION_UPDATED",
+  "node_id": 2088,
+  "battery": 21,
+  "occurred_at": "REPLACE_WITH_PLAN_REFERENCE_PLUS_ELAPSED_TIME",
+  "inventory_deltas": [],
+  "payload": {
+    "active_plan": {
+      "plan_version": "P-CLIENT-MUST-BE-IGNORED"
+    },
+    "active_plan_version": "P-CLIENT-MUST-BE-IGNORED",
+    "current_time_step": 999999,
+    "reference_time": "2099-01-01T00:00:00Z"
+  },
+  "execution_context": "SIMULATION",
+  "simulation_id": "REPLACE_WITH_SIMULATION_ID"
+}

@@ -1,0 +1,8 @@
+{
+  "warehouse_id": 2,
+  "text": "2026년 7월 24일 오전 7시 15분을 기준으로 오전 11시부터 오후 1시 사이에 C상품 50 BOX를 입고 구역에서 수령하여 저장 노드 2088에 보관하는 계획을 시뮬레이션해줘. 배정 로봇과 MOVE, WAIT, PICKUP, DROPOFF 명령을 보여줘.",
+  "requested_execution_mode": "SIMULATE_ONLY",
+  "source": "USER",
+  "report_detail_level": "DEBUG",
+  "response_view": "FULL"
+}

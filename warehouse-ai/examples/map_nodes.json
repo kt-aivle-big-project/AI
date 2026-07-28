@@ -1,0 +1,1310 @@
+[
+  {
+    "node_id": 2001,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2002,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2003,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2004,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2005,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2006,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2007,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2008,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2009,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2010,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2011,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 1.44,
+    "active": true
+  },
+  {
+    "node_id": 2012,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2013,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2014,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2015,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2016,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2017,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2018,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2019,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2020,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2021,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2022,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 2.98,
+    "active": true
+  },
+  {
+    "node_id": 2023,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2024,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2025,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2026,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2027,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2028,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2029,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2030,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2031,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2032,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2033,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 4.52,
+    "active": true
+  },
+  {
+    "node_id": 2034,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2035,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2036,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2037,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2038,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2039,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2040,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2041,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2042,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2043,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2044,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2045,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2046,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2047,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2048,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2049,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2050,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2051,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2052,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2053,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2054,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2055,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 7.6,
+    "active": true
+  },
+  {
+    "node_id": 2056,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2057,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2058,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2059,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2060,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2061,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2062,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2063,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2064,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2065,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2066,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 9.14,
+    "active": true
+  },
+  {
+    "node_id": 2067,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 8.2,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2068,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 10.0,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2069,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 11.24,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2070,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 12.48,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2071,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 13.72,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2072,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 15.06,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2073,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 16.4,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2074,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 17.66,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2075,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 18.9,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2076,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 20.14,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2077,
+    "zone_id": "ROUTE",
+    "node_type": "ROUTE",
+    "x": 21.7,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2078,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 9.1,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2079,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 10.62,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2080,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 11.86,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2081,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 13.1,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2082,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 14.39,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2083,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 15.73,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2084,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 17.03,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2085,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 18.28,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2086,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 19.52,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2087,
+    "zone_id": "ROUTE",
+    "node_type": "INTERSECTION",
+    "x": 20.92,
+    "y": 10.68,
+    "active": true
+  },
+  {
+    "node_id": 2088,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 10.0,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2089,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 11.24,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2090,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 12.48,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2091,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 13.72,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2092,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 16.4,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2093,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 17.66,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2094,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 18.9,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2095,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 20.14,
+    "y": 2.21,
+    "active": true
+  },
+  {
+    "node_id": 2096,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 10.0,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2097,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 11.24,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2098,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 12.48,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2099,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 13.72,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2100,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 16.4,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2101,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 17.66,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2102,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 18.9,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2103,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 20.14,
+    "y": 3.75,
+    "active": true
+  },
+  {
+    "node_id": 2104,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 10.0,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2105,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 11.24,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2106,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 12.48,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2107,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 13.72,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2108,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 16.4,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2109,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 17.66,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2110,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 18.9,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2111,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 20.14,
+    "y": 5.29,
+    "active": true
+  },
+  {
+    "node_id": 2112,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 10.0,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2113,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 11.24,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2114,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 12.48,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2115,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 13.72,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2116,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 16.4,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2117,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 17.66,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2118,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 18.9,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2119,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 20.14,
+    "y": 6.83,
+    "active": true
+  },
+  {
+    "node_id": 2120,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 10.0,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2121,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 11.24,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2122,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 12.48,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2123,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 13.72,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2124,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 16.4,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2125,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 17.66,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2126,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 18.9,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2127,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 20.14,
+    "y": 8.37,
+    "active": true
+  },
+  {
+    "node_id": 2128,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 10.0,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2129,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 11.24,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2130,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 12.48,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2131,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 13.72,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2132,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 16.4,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2133,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 17.66,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2134,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 18.9,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2135,
+    "zone_id": "STORAGE",
+    "node_type": "STORAGE",
+    "x": 20.14,
+    "y": 9.91,
+    "active": true
+  },
+  {
+    "node_id": 2136,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 3.26,
+    "active": true
+  },
+  {
+    "node_id": 2137,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 4.08,
+    "active": true
+  },
+  {
+    "node_id": 2138,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 4.9,
+    "active": true
+  },
+  {
+    "node_id": 2139,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2140,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 6.9,
+    "active": true
+  },
+  {
+    "node_id": 2141,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 7.72,
+    "active": true
+  },
+  {
+    "node_id": 2142,
+    "zone_id": "INBOUND",
+    "node_type": "INBOUND",
+    "x": 6.22,
+    "y": 8.54,
+    "active": true
+  },
+  {
+    "node_id": 2143,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 3.2,
+    "active": true
+  },
+  {
+    "node_id": 2144,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 4.06,
+    "active": true
+  },
+  {
+    "node_id": 2145,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 4.92,
+    "active": true
+  },
+  {
+    "node_id": 2146,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 6.06,
+    "active": true
+  },
+  {
+    "node_id": 2147,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 6.94,
+    "active": true
+  },
+  {
+    "node_id": 2148,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 7.8,
+    "active": true
+  },
+  {
+    "node_id": 2149,
+    "zone_id": "OUTBOUND",
+    "node_type": "OUTBOUND",
+    "x": 24.86,
+    "y": 8.68,
+    "active": true
+  },
+  {
+    "node_id": 2150,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 9.1,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2151,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 10.62,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2152,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 11.86,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2153,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 13.1,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2154,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 14.39,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2155,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 15.73,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2156,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 17.03,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2157,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 18.28,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2158,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 19.52,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2159,
+    "zone_id": "CHARGING",
+    "node_type": "CHARGER",
+    "x": 20.92,
+    "y": 11.28,
+    "active": true
+  },
+  {
+    "node_id": 2160,
+    "zone_id": "CHARGING_WAIT",
+    "node_type": "CHARGER_WAITING_AREA",
+    "x": 8.2,
+    "y": 10.68,
+    "active": true,
+    "idle_allowed": true,
+    "idle_capacity": 1,
+    "parking_priority": 1,
+    "linked_charger_node_id": 2150
+  },
+  {
+    "node_id": 2161,
+    "zone_id": "CHARGING_WAIT",
+    "node_type": "CHARGER_WAITING_AREA",
+    "x": 10.0,
+    "y": 10.68,
+    "active": true,
+    "idle_allowed": true,
+    "idle_capacity": 1,
+    "parking_priority": 2,
+    "linked_charger_node_id": 2151
+  },
+  {
+    "node_id": 2162,
+    "zone_id": "CHARGING_WAIT",
+    "node_type": "CHARGER_WAITING_AREA",
+    "x": 11.24,
+    "y": 10.68,
+    "active": true,
+    "idle_allowed": true,
+    "idle_capacity": 1,
+    "parking_priority": 3,
+    "linked_charger_node_id": 2152
+  }
+]

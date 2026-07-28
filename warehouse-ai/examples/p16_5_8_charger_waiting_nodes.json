@@ -1,0 +1,38 @@
+[
+  {
+    "node_id": 2160,
+    "zone_id": "CHARGING_WAIT",
+    "node_type": "CHARGER_WAITING_AREA",
+    "x": 8.2,
+    "y": 10.68,
+    "active": true,
+    "idle_allowed": true,
+    "idle_capacity": 1,
+    "parking_priority": 1,
+    "linked_charger_node_id": 2150
+  },
+  {
+    "node_id": 2161,
+    "zone_id": "CHARGING_WAIT",
+    "node_type": "CHARGER_WAITING_AREA",
+    "x": 10.0,
+    "y": 10.68,
+    "active": true,
+    "idle_allowed": true,
+    "idle_capacity": 1,
+    "parking_priority": 2,
+    "linked_charger_node_id": 2151
+  },
+  {
+    "node_id": 2162,
+    "zone_id": "CHARGING_WAIT",
+    "node_type": "CHARGER_WAITING_AREA",
+    "x": 11.24,
+    "y": 10.68,
+    "active": true,
+    "idle_allowed": true,
+    "idle_capacity": 1,
+    "parking_priority": 3,
+    "linked_charger_node_id": 2152
+  }
+]

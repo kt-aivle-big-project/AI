@@ -1,0 +1,7 @@
+{
+  "warehouse_id": 2,
+  "text": "R2-03의 배터리가 현재 21%라고 가정하고 E상품 30 BOX를 R2-03에 고정 배정해. 최소 배터리를 유지하지 못하면 active CHARGER 노드 중 비용이 가장 낮은 충전소에서 필요한 만큼 충전한 뒤 출고 노드 2146으로 이동해. 실제 Redis 배터리는 변경하지 말고 시뮬레이션만 해.",
+  "requested_execution_mode": "SIMULATE_ONLY",
+  "report_detail_level": "STANDARD",
+  "response_view": "COMPACT"
+}

@@ -1,0 +1,8 @@
+{
+  "warehouse_id": 2,
+  "text": "2026년 7월 24일 오전 7시 15분을 기준으로 오전 9시부터 오전 11시 사이에 A상품 50 BOX와 B상품 20 BOX를 출고 노드 2146으로 출고하고, A상품 재고가 부족하면 A 작업만 제외하고 B 작업은 계속 진행해줘. 오전 작업이 끝난 뒤 필요한 경우에만 최소 운용 배터리 20%를 유지하도록 충전하고, 오전 11시부터 오후 1시 사이에 C상품 50 BOX를 활성 입고 구역에서 수령하여 저장 노드 2088에 보관하는 하루 계획을 시뮬레이션해줘. 작업 시간, 배정 로봇과 MOVE, WAIT, CHARGE, PICKUP, DROPOFF 명령을 보여줘.",
+  "requested_execution_mode": "SIMULATE_ONLY",
+  "source": "USER",
+  "report_detail_level": "DEBUG",
+  "response_view": "FULL"
+}

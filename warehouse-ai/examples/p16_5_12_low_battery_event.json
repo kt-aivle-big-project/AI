@@ -1,0 +1,110 @@
+{
+  "event_id": "p16-5-12-low-battery-001",
+  "warehouse_id": 2,
+  "robot_id": "R2-02",
+  "task_id": "runtime:R2-02:move:current",
+  "event_type": "LOW_BATTERY",
+  "battery": 25,
+  "payload": {
+    "reason": "P16.5.12 runtime partial replan test",
+    "current_time_step": 10,
+    "active_plan": {
+      "plan_version": "P16-5-12-RUNTIME-BASE-001",
+      "current_time_step": 10,
+      "required_tasks": [
+        {
+          "task_id": "runtime:R2-02:move:current",
+          "work_id": "runtime-work-current",
+          "action": "MOVE",
+          "source_candidates": [2146],
+          "target_candidates": [2088],
+          "priority": 5,
+          "assigned_robot_id": "R2-02"
+        },
+        {
+          "task_id": "runtime:R2-02:move:future",
+          "work_id": "runtime-work-future",
+          "action": "MOVE",
+          "source_candidates": [2088],
+          "target_candidates": [2139],
+          "priority": 5,
+          "assigned_robot_id": "R2-02"
+        },
+        {
+          "task_id": "runtime:R2-01:move:protected",
+          "work_id": "runtime-work-protected",
+          "action": "MOVE",
+          "source_candidates": [2088],
+          "target_candidates": [2146],
+          "priority": 5,
+          "assigned_robot_id": "R2-01"
+        }
+      ],
+      "cuopt_plan": {
+        "scheduled_tasks": [
+          {
+            "task_id": "runtime:R2-02:move:current",
+            "work_id": "runtime-work-current",
+            "action": "MOVE",
+            "robot_id": "R2-02",
+            "source_node": 2146,
+            "target_node": 2088,
+            "start_time_step": 10,
+            "end_time_step": 30,
+            "priority": 5
+          },
+          {
+            "task_id": "runtime:R2-01:move:protected",
+            "work_id": "runtime-work-protected",
+            "action": "MOVE",
+            "robot_id": "R2-01",
+            "source_node": 2088,
+            "target_node": 2146,
+            "start_time_step": 20,
+            "end_time_step": 40,
+            "priority": 5
+          },
+          {
+            "task_id": "runtime:R2-02:move:future",
+            "work_id": "runtime-work-future",
+            "action": "MOVE",
+            "robot_id": "R2-02",
+            "source_node": 2088,
+            "target_node": 2139,
+            "start_time_step": 50,
+            "end_time_step": 70,
+            "priority": 5
+          }
+        ],
+        "objective_value": 0,
+        "metadata": {}
+      },
+      "collision_plan": {
+        "routes": [
+          {
+            "robot_id": "R2-02",
+            "task_ids": [
+              "runtime:R2-02:move:current",
+              "runtime:R2-02:move:future"
+            ],
+            "waypoints": [
+              {"node_id": 2146, "time_step": 10},
+              {"node_id": 2088, "time_step": 30},
+              {"node_id": 2139, "time_step": 70}
+            ]
+          },
+          {
+            "robot_id": "R2-01",
+            "task_ids": ["runtime:R2-01:move:protected"],
+            "waypoints": [
+              {"node_id": 2088, "time_step": 20},
+              {"node_id": 2146, "time_step": 40}
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "execution_context": "SIMULATION",
+  "simulation_id": "REPLACE_WITH_ACTIVE_SIMULATION_ID"
+}

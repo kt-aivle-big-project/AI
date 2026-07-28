@@ -1,0 +1,14 @@
+[project]
+name = "warehouse-langgraph-agent"
+version = "2.5.13"
+description = "Planning Supervisor for a multi-robot warehouse"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

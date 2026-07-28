@@ -1,0 +1,1060 @@
+{
+  "release": "P16.5.15.3_TERMINAL_STATE_RESERVATION_CLEANUP_HOTFIX",
+  "api_version": "2.5.15.3",
+  "response_schema_version": "p16.5.12.1",
+  "python": "3.11+",
+  "features": [
+    "natural_language_supervisor",
+    "postgres_neo4j_redis_snapshot",
+    "deterministic_local_optimizer",
+    "prioritized_time_astar",
+    "minimum_required_charging",
+    "configured_charger_cost_selection",
+    "route_distance_energy_reconciliation",
+    "execution_dependency_validation",
+    "multi_robot_collision_resolution",
+    "compact_and_full_response_views",
+    "simulation_verification_and_gateway_dispatch",
+    "operation_bound_hard_time_windows",
+    "same_node_multi_lot_trip_consolidation",
+    "empty_execution_plan_guard",
+    "hard_window_inventory_availability_search",
+    "future_dated_current_lot_projection",
+    "mixed_item_partial_success",
+    "required_time_alias_normalization",
+    "inbound_storage_destination_extraction",
+    "active_inbound_source_selection",
+    "inbound_pick_drop_task_generation",
+    "inbound_pickup_move_dropoff_commands",
+    "inbound_capacity_trip_splitting",
+    "registered_zero_stock_inventory_reporting",
+    "unregistered_item_reporting",
+    "explicit_inventory_availability_evidence",
+    "robot_minimum_battery_policy_reporting",
+    "all_items_inventory_snapshot_scope",
+    "unknown_item_rejection_without_clarification",
+    "similar_item_candidate_clarification",
+    "final_warning_deduplication",
+    "mixed_outbound_inbound_daily_plan",
+    "conditional_shortage_as_real_inventory_policy",
+    "independent_operation_continuation",
+    "operation_specific_mixed_destinations",
+    "minimum_operating_battery_phrase_support",
+    "final_partial_success_reporting",
+    "planned_operation_scoped_target_verification",
+    "blocked_outbound_target_check_skip",
+    "planning_reference_inventory_time_consistency",
+    "consecutive_wait_range_compression",
+    "bounded_verification_llm_payload",
+    "bounded_final_report_llm_payload",
+    "compressed_full_response_wait_views",
+    "lossless_internal_time_expanded_routing",
+    "path_wide_minimum_battery_reserve",
+    "battery_safety_margin",
+    "safe_before_cost_charger_selection",
+    "operation_ready_80_percent_charge_target",
+    "battery_failure_local_replan",
+    "consecutive_charge_range_compression",
+    "exact_post_charge_operation_target",
+    "fixed_robot_reschedulable_local_replan",
+    "stale_replan_state_reset",
+    "candidate_route_task_id_deduplication",
+    "battery_policy_hard_constraint_recording",
+    "cuopt_cpu_automatic_fallback",
+    "optimizer_execution_provenance",
+    "friendly_cuopt_api_key_alias",
+    "legacy_local_env_key_only_auto_enable",
+    "explicit_cpu_force_override",
+    "nvidia_managed_cuopt_rest_primary",
+    "api_key_only_https_integration",
+    "cuopt_202_status_polling",
+    "no_cuopt_python_package_dependency",
+    "windows_native_cuopt_api_client",
+    "cuopt_assignment_local_warehouse_normalization",
+    "cuopt_live_api_minimal_task_schema",
+    "numeric_task_index_internal_id_mapping",
+    "extended_cuopt_error_excerpt",
+    "cuopt_solver_config_minimal_schema",
+    "cuopt_extra_forbidden_auto_retry",
+    "cuopt_schema_retry_observability",
+    "strict_monotonic_route_waypoints",
+    "minimum_pick_drop_service_step",
+    "routing_schedule_duration_preservation",
+    "cuopt_pick_drop_service_times",
+    "clause_scoped_inventory_operation_direction",
+    "morning_noon_window_meridiem_inheritance",
+    "inbound_pick_inventory_exemption",
+    "future_inbound_allocation_simulation_acceptance",
+    "projected_shortage_verification_evidence",
+    "cuopt_global_order_local_multi_robot_rebalance",
+    "work_pair_same_robot_parallel_distribution",
+    "self_reservation_continuity_filter",
+    "command_congestion_node_soft_avoidance",
+    "parallel_group_load_observability",
+    "shared_service_node_idle_relocation",
+    "articulation_node_holding_exclusion",
+    "shared_initial_node_sparse_activation_serialization",
+    "idle_relocation_observability",
+    "idle_node_whitelist_hard_constraint",
+    "explicit_idle_action_tasks",
+    "initial_idle_relocation",
+    "dedicated_parking_node_seed",
+    "long_idle_charger_area_first_policy",
+    "opportunity_charge_task_insertion",
+    "original_business_schedule_preservation",
+    "charger_slot_time_reservation",
+    "charger_waiting_area_linkage",
+    "post_charge_slot_release",
+    "charger_travel_time_and_energy_accounting",
+    "opportunity_charge_target_battery",
+    "non_charging_charger_area_return",
+    "idle_energy_planning_observability",
+    "swagger_syntax_highlight_disabled_for_large_debug_responses",
+    "shared_opportunity_charger_selection_policy",
+    "uniform_distance_fallback_for_incomplete_charger_costs",
+    "opportunity_charge_replan_regeneration",
+    "candidate_prefix_empty_segment_guard",
+    "previous_successful_candidate_preservation",
+    "structured_internal_routing_state_error",
+    "immutable_opportunity_charger_selection_evidence",
+    "post_route_charge_reconciliation_fields",
+    "replan_simulation_session_reset_before_full_replay",
+    "charger_waiting_area_id_deduplication",
+    "shared_service_node_capacity_scheduler",
+    "charger_slot_capacity_reservations",
+    "idle_space_capacity_validation",
+    "capacity_n_parallel_resource_lanes",
+    "resource_delay_robot_chain_propagation",
+    "resource_delay_dependency_propagation",
+    "hard_window_resource_delay_guard",
+    "frozen_task_resource_conflict_guard",
+    "resource_schedule_mapf_energy_fixed_point",
+    "resource_reservation_compact_response",
+    "neo4j_shared_resource_capacity_properties",
+    "cuopt_two_pass_explicit_charge_visit_optimization",
+    "mandatory_and_opportunity_charge_atomic_tasks",
+    "post_charge_move_to_next_task_prepositioning",
+    "cuopt_charge_service_times",
+    "distance_energy_congestion_charger_composite_cost_matrix",
+    "post_routing_operational_objective_ledger",
+    "hard_constraint_candidate_elimination_policy",
+    "cuopt_local_mapf_role_contract",
+    "second_pass_first_pass_robot_binding",
+    "robot_bound_charge_visit_order_refinement",
+    "mixed_charge_move_pdp_payload_guard",
+    "second_pass_robot_chain_validation",
+    "dependency_aware_per_robot_task_order",
+    "start_time_primary_routing_order",
+    "priority_tie_break_only",
+    "resource_scheduler_dependency_cycle_guard",
+    "route_resource_fixed_point_convergence_guard",
+    "mapf_failure_classification",
+    "mapf_local_automatic_replan",
+    "mapf_repeated_signature_global_escalation",
+    "mapf_affected_robot_priority_rotation",
+    "mapf_bounded_activation_stagger",
+    "retryable_route_failure_state_isolation",
+    "mapf_replan_compact_observability",
+    "event_replan_local_to_global_single_escalation",
+    "event_replan_third_repeat_terminal_guard",
+    "simulation_active_plan_version_propagation",
+    "event_response_final_status_consistency",
+    "inactive_mapf_replan_version_consistency",
+    "runtime_robot_state_partial_replan",
+    "low_battery_execution_event",
+    "position_update_deviation_detection",
+    "completed_and_freeze_horizon_protection",
+    "source_plan_snapshot_replay",
+    "event_robot_state_override_contract",
+    "partial_replan_response_evidence",
+    "zero_known_regression_failures",
+    "future_plan_activation_horizon_consistency",
+    "cross_robot_emergency_priority_reservation",
+    "standalone_drop_continuation_commands",
+    "verification_stage_presence_awareness",
+    "absolute_korean_schedule_date_windows",
+    "sequential_window_date_inheritance",
+    "explicit_robot_charge_workflow_assignment",
+    "swagger_sentence_e2e_regressions",
+    "optimizer_target_vs_user_hard_window_separation",
+    "shared_resource_delay_chain_propagation",
+    "route_failure_battery_override_evidence_guard",
+    "far_future_sparse_activation_with_strict_idle_compatibility",
+    "server_authoritative_active_plan_resolution",
+    "simulation_id_plan_lookup",
+    "client_runtime_field_rejection",
+    "server_calculated_current_time_step",
+    "position_updated_telemetry_only",
+    "server_derived_low_battery_anomaly",
+    "remaining_plan_energy_battery_threshold",
+    "simulation_plan_redis_persistence",
+    "simulation_plan_postgres_recovery",
+    "time_relative_simulation_task_status",
+    "server_derived_low_battery_freeze_exception",
+    "recoverable_low_battery_same_robot_binding",
+    "charge_before_current_pick_resume",
+    "actual_warehouse_r2_03_2080_21_percent_regression",
+    "opened_window_charge_deadline_guard",
+    "low_battery_charge_retention_recovery",
+    "bounded_event_replan_failure_debug",
+    "immutable_event_id_payload_contract",
+    "deterministic_external_event_ordering",
+    "stale_event_state_mutation_guard",
+    "postgres_before_redis_lifecycle_commit",
+    "idempotent_sql_redis_reconciliation",
+    "simulation_checkpoint_state_rollback",
+    "failed_replan_last_verified_plan_retention",
+    "recoverable_duplicate_event_resume",
+    "robot_failure_load_state_inference",
+    "failed_robot_candidate_exclusion",
+    "secured_carried_load_handover_tasks",
+    "manual_recovery_guard_for_unsecured_load",
+    "same_replacement_robot_handover_validation",
+    "robot_handover_inventory_source_evidence",
+    "robot_failure_changed_set_union",
+    "failed_robot_active_route_eviction",
+    "stale_route_eviction_evidence",
+    "approved_plan_execution_fingerprint",
+    "durable_robot_dispatch",
+    "deterministic_dispatch_idempotency",
+    "strict_robot_command_ack_sequence",
+    "bounded_gateway_retry",
+    "partial_failure_cancel_and_safe_rollback",
+    "approved_sql_work_target_verification",
+    "legacy_move_outbound_binding_guard",
+    "work_namespace_operation_id_normalization",
+    "gateway_cancel_confirmation_before_plan_rollback",
+    "cancel_unconfirmed_manual_recovery_guard",
+    "cancel_confirmation_replay",
+    "cancel_pending_ack_state_preservation",
+    "ack_dispatch_lifecycle_guard",
+    "ack_send_time_monotonicity_guard",
+    "retry_exhausted_terminal_command_states",
+    "durable_retry_exhausted_rollback_evidence",
+    "safe_rollback_inventory_reservation_release"
+  ],
+  "release_checks": {
+    "compileall": "PASS (app, scripts, tests, mock_robot_gateway.py)",
+    "p16_3_3_final_checks": "PASS (20 deterministic checks: 13 inherited + 7 new)",
+    "full_pytest": "PASS (731 passed, 0 failed; 4 independent batches)",
+    "zip_integrity": "PASS (project files stored at archive root; app/api.py and mock_robot_gateway.py verified)",
+    "p16_3_4_final_checks": "PASS (25 deterministic checks: 20 inherited + 5 new)",
+    "release_gate": "PASS (P15 collision scenarios, response views, P16.5.6 live-failure reproduction, documentation, compileall)",
+    "p16_5_final_checks": "PASS (8 deterministic checks)",
+    "p16_5_1_final_checks": "PASS (8 deterministic checks)",
+    "p16_5_2_final_checks": "PASS",
+    "p16_5_3_final_checks": "PASS",
+    "p16_5_4_final_checks": "PASS",
+    "focused_regression": "PASS (18 routing, time monotonicity, and multi-robot conflict tests)",
+    "p16_5_5_final_checks": "PASS (6 deterministic checks including routed multi-robot simulation)",
+    "p16_5_6_final_checks": "PASS (4 deterministic checks including live Swagger failure reproduction)",
+    "p16_5_7_final_checks": "PASS (5 deterministic checks)",
+    "focused_pytest": "PASS (141 routing/language/response tests + 65 reporting/evidence tests + 10 optimizer/rebalance tests)",
+    "p16_5_8_final_checks": "PASS (33 focused opportunity charging, idle whitelist, routing, and battery checks)",
+    "p16_5_8_1_final_checks": "PASS (51 focused opportunity charging, replanning, routing, battery, and response checks)",
+    "expanded_hotfix_regression": "PASS (223 charger, routing, replan, simulation, verification, and response tests)",
+    "p16_5_8_2_targeted_checks": "PASS (3 live-failure regression tests)",
+    "p16_5_9_new_tests": "PASS (8 shared-resource capacity tests including routed daily-plan integration)",
+    "p16_5_9_focused_regression": "PASS (67 charging, idle, routing, verification, battery, response, and multi-robot tests)",
+    "p16_5_10_new_tests": "PASS (8 explicit charge visit, relocation, routing, objective, response, and two-pass tests)",
+    "p16_5_10_focused_regression": "PASS (55 charging, capacity, routing, optimizer, response, and verification tests)",
+    "p16_5_10_compatibility_regression": "PASS (138 model, language, cuOpt, response, charging, and replay tests)",
+    "p16_5_10_1_targeted_tests": "PASS (9 tests)",
+    "p16_5_10_1_focused_regression": "PASS (56 tests)",
+    "p16_5_10_2_regression_tests": "PASS (2 tests)",
+    "p16_5_10_2_focused_regression": "PASS (66 tests)",
+    "gate2_focused_regression": "PASS (39 passed, 0 failed)",
+    "p16_5_15_focused_regression": "PASS (79 passed, 0 failed)",
+    "p16_5_15_full_regression": "PASS (772 passed, 0 failed)",
+    "p16_5_15_1_focused_regression": "PASS (87 passed, 0 failed)",
+    "p16_5_15_1_full_regression": "PASS (777 passed, 0 failed)",
+    "focused_suite": "100 passed, 0 failed",
+    "full_suite": "790 passed, 0 failed"
+  },
+  "entrypoints": {
+    "api": "python -m uvicorn app.api:app --host 127.0.0.1 --port 8000 --reload",
+    "release_checks": "python -m scripts.run_p16_release_checks",
+    "multi_robot_checks": "python -m scripts.run_p15_multi_robot_checks",
+    "hotfix_checks": "python -m scripts.run_p16_1_hotfix_checks",
+    "inventory_window_checks": "python -m scripts.run_p16_1_1_inventory_window_checks",
+    "inbound_checks": "python -m scripts.run_p16_2_inbound_checks",
+    "missing_data_policy_checks": "python -m scripts.run_p16_2_2_policy_checks",
+    "unknown_item_policy_checks": "python -m scripts.run_p16_2_3_unknown_item_checks",
+    "final_daily_plan_checks": "python -m scripts.run_p16_3_final_integration_checks",
+    "p16_3_1_final_checks": "python -m scripts.run_p16_3_1_final_checks",
+    "p16_3_2_final_checks": "python -m scripts.run_p16_3_2_final_checks",
+    "p16_3_3_final_checks": "python -m scripts.run_p16_3_3_final_checks",
+    "p16_3_4_final_checks": "python -m scripts.run_p16_3_4_final_checks",
+    "p16_4_final_checks": "python -m scripts.run_p16_4_final_checks",
+    "p16_5_final_checks": "python -m scripts.run_p16_5_final_checks",
+    "p16_5_1_final_checks": "python -m scripts.run_p16_5_1_final_checks",
+    "p16_5_2_final_checks": "python -m scripts.run_p16_5_2_final_checks",
+    "p16_5_3_final_checks": "python -m scripts.run_p16_5_3_final_checks",
+    "p16_5_4_final_checks": "python -m scripts.run_p16_5_4_final_checks",
+    "p16_5_5_final_checks": "python -m scripts.run_p16_5_5_final_checks",
+    "p16_5_6_final_checks": "python -m scripts.run_p16_5_6_final_checks",
+    "p16_5_7_checks": "python -m scripts.run_p16_5_7_final_checks",
+    "seed_idle_nodes": "python -m scripts.seed_p16_5_7_idle_nodes --warehouse-id 2",
+    "swagger_example": "examples/p16_5_8_opportunity_charging_request.json",
+    "p16_5_8_checks": "python -m scripts.run_p16_5_8_final_checks",
+    "seed_charger_waiting_nodes": "python -m scripts.seed_p16_5_8_charger_waiting_nodes --warehouse-id 2",
+    "p16_5_8_1_checks": "python -m scripts.run_p16_5_8_1_final_checks",
+    "p16_5_8_2_checks": "python -m scripts.run_p16_5_8_2_final_checks",
+    "p16_5_9_checks": "python -m scripts.run_p16_5_9_final_checks",
+    "seed_p16_5_9_resources": "python -m scripts.seed_p16_5_9_resource_capacities --warehouse-id 2",
+    "p16_5_9_notes": "P16_5_9_SHARED_RESOURCE_CAPACITY_NOTES.md",
+    "p16_5_10_checks": "python -m scripts.run_p16_5_10_final_checks",
+    "p16_5_10_notes": "P16_5_10_CUOPT_CHARGE_VISIT_OBJECTIVE_NOTES.md",
+    "p16_5_10_1_checks": "python -m scripts.run_p16_5_10_1_final_checks",
+    "p16_5_10_1_notes": "P16_5_10_1_SECOND_PASS_BINDING_HOTFIX_NOTES.md",
+    "p16_5_10_2_checks": "python -m scripts.run_p16_5_10_2_final_checks",
+    "p16_5_10_2_notes": "P16_5_10_2_ROUTE_ORDER_CONVERGENCE_HOTFIX_NOTES.md",
+    "p16_5_15_checks": "python -m scripts.run_p16_5_15_checks",
+    "p16_5_15_full_checks": "python -m scripts.run_p16_5_15_checks --full",
+    "p16_5_15_notes": "P16_5_15_EXECUTION_DELIVERY_SAFETY_NOTES.md",
+    "mock_robot_gateway": "python -m uvicorn mock_robot_gateway:app --host 127.0.0.1 --port 9000 --reload",
+    "p16_5_15_1_checks": "python -m scripts.run_p16_5_15_1_checks",
+    "p16_5_15_1_full_checks": "python -m scripts.run_p16_5_15_1_checks --full",
+    "p16_5_15_1_notes": "P16_5_15_1_APPROVED_SQL_WORK_TARGET_VERIFICATION_HOTFIX_NOTES.md",
+    "p16_5_15_2_checks": "python -m scripts.run_p16_5_15_2_checks",
+    "p16_5_15_2_full_checks": "python -m scripts.run_p16_5_15_2_checks --full",
+    "p16_5_15_2_notes": "P16_5_15_2_GATEWAY_CANCEL_CONFIRMATION_ROLLBACK_SAFETY_HOTFIX_NOTES.md"
+  },
+  "notable_safety_fix": {
+    "energy_source": "ROUTING_FINAL_DISTANCE",
+    "charger_candidate_order": "SAFE_REACHABILITY_THEN_COST",
+    "minimum_battery_percent": 20,
+    "battery_safety_margin_percent": 0.5,
+    "charge_target_battery_percent": 80,
+    "description": "Unsafe chargers are filtered before cost comparison; final-route energy reconciliation preserves an exact 80% post-charge target and LOCAL_REPLAN regenerates mandatory charging without stale route state."
+  },
+  "hotfix_scope": {
+    "included": [
+      "first-pass business robot bindings copied to second pass",
+      "mixed standalone CHARGE/MOVE second-pass PDP omission",
+      "all second-pass tasks bound through order_vehicle_match",
+      "pre-routing second-pass robot-chain invariant validation"
+    ],
+    "excluded": [
+      "P16.5.11 MAPF automatic replan ladder",
+      "storage rack volume and weight capacity"
+    ]
+  },
+  "state_consistency_hotfix": {
+    "terminal_work_statuses": [
+      "COMPLETED",
+      "CANCELLED",
+      "FAILED"
+    ],
+    "warning_code": "STALE_ACTIVE_PLAN_TASKS_DROPPED",
+    "reset_script": "python -m scripts.reset_demo_data --warehouse-id 2 --confirm"
+  },
+  "missing_data_policy_hotfix": {
+    "unknown_values": "NO_GUESSING",
+    "unregistered_item_result": "EXPLICIT_UNREGISTERED",
+    "minimum_battery_policy_sources": [
+      "ENV_OR_DOTENV",
+      "SYSTEM_DEFAULT"
+    ],
+    "earliest_fulfillment_requires": "IDENTIFIABLE_POSITIVE_EVENT"
+  },
+  "unknown_item_execution_policy_hotfix": {
+    "no_candidate": "EMERGENCY_REVIEW_REQUIRED_WITHOUT_CLARIFICATION",
+    "similar_candidate": "CLARIFICATION_REQUIRED_WITH_OPTIONS",
+    "earliest_full_fulfillment_at": "NULL_WHEN_NO_IDENTIFIABLE_EVENT",
+    "task_generation": "BLOCKED",
+    "warning_output": "DEDUPLICATED"
+  },
+  "p16_3_final_acceptance": {
+    "shortage_operation": "A blocked only",
+    "continued_operations": [
+      "B OUTBOUND",
+      "C INBOUND"
+    ],
+    "outbound_destination": "operation OUTBOUND target",
+    "inbound_destination": "operation storage_node_id",
+    "charging": "MINIMUM_REQUIRED_CHARGE; no unnecessary charge when battery is sufficient",
+    "report_outcome": "PARTIAL_SUCCESS_WITH_EMERGENCY",
+    "gateway_dispatch": "false in SIMULATE_ONLY"
+  },
+  "p16_3_1_final_acceptance": {
+    "inventory_time_semantics": "available_at must be <= planning_reference for opening stock",
+    "all_outbound_blocked": "skip TARGET_NODE_NOT_APPLIED and retain inventory partial result",
+    "planned_outbound_wrong_target": "verification blocking remains enabled",
+    "recommended_real_test_reference": "2026-07-24T16:00:00+09:00",
+    "recommended_outbound_window": "2026-07-24 17:00-19:00 Asia/Seoul",
+    "recommended_inbound_window": "2026-07-24 19:00-21:00 Asia/Seoul"
+  },
+  "p16_3_2_final_acceptance": {
+    "internal_routing_state": "TIME_EXPANDED_AND_UNCHANGED",
+    "robot_wait_commands": "DURATION_COMPRESSED",
+    "route_evidence_waits": "CONSECUTIVE_RANGE_COMPRESSED",
+    "verification_llm": "RAW_WAIT_ARRAYS_OMITTED",
+    "report_llm": "BOUNDED_DEBUG_EVIDENCE",
+    "full_response": "WAIT_WAYPOINTS_AND_TIMELINE_COMPRESSED",
+    "real_sample_waypoints": "2178 -> 45",
+    "real_sample_wait_evidence": "2135 -> 2",
+    "real_sample_timeline": "2178 -> 45"
+  },
+  "p16_3_3_final_acceptance": {
+    "safe_arrival_threshold": "MIN_ROBOT_BATTERY + BATTERY_SAFETY_MARGIN_PERCENT",
+    "candidate_filter": "active and safely reachable chargers only",
+    "selection": "lowest configured cost among safe candidates",
+    "fallback": "closest safe candidate when safe candidates have no cost data",
+    "charge_target": "CHARGE_TARGET_BATTERY (default 80%)",
+    "no_safe_candidate": "UNASSIGNED_TASKS -> LOCAL_REPLAN",
+    "full_response": "WAIT and CHARGE ranges compressed"
+  },
+  "p16_3_4_final_acceptance": {
+    "post_charge_target": ">= 80.0% after final-route reconciliation",
+    "fixed_robot_replan": "robot assignment preserved; schedule remains changeable",
+    "mandatory_charge": "regenerated during LOCAL_REPLAN",
+    "derived_state_reset": [
+      "collision_plan",
+      "robot_command_batches",
+      "routing_evidence",
+      "reservation_evidence",
+      "distance_comparison",
+      "route_energy_reconciliation",
+      "daily_schedule"
+    ],
+    "candidate_route_prefix": "position only for changed robots; old task_ids removed",
+    "hard_constraints": [
+      "MINIMUM_REQUIRED_CHARGE",
+      "MINIMUM_BATTERY_AT_ALL_TIMES",
+      "CHARGE_TARGET_80_PERCENT",
+      "SAFE_CHARGER_REACHABILITY"
+    ]
+  },
+  "p16_4_final_acceptance": {
+    "default_backend": "AUTO",
+    "single_required_secret": "CUOPT_API_KEY or CUOPT_CLIENT_SAK",
+    "optional_function_selector": "HISTORICAL_ONLY; NOT USED IN P16.5",
+    "primary": "NVIDIA_MANAGED_CUOPT",
+    "fallback": "DETERMINISTIC_CPU_OPTIMIZER",
+    "postprocessor": "LOCAL_WAREHOUSE_NORMALIZER",
+    "observable_field": "optimizer_execution",
+    "legacy_env_compatibility": "OPTIMIZER_BACKEND=local auto-enables cuOpt when key exists and CUOPT_AUTO_ENABLE=true",
+    "force_cpu_override": "CUOPT_AUTO_ENABLE=false with OPTIMIZER_BACKEND=local",
+    "superseded_by": "P16.5_REST_API"
+  },
+  "p16_5_final_acceptance": {
+    "default_backend": "AUTO",
+    "single_required_secret": "CUOPT_API_KEY",
+    "submit_endpoint": "https://optimize.api.nvidia.com/v1/nvidia/cuopt",
+    "status_endpoint": "https://optimize.api.nvidia.com/v1/status/{request_id}",
+    "authentication": "Authorization Bearer API key",
+    "transport": "HTTPS REST via httpx",
+    "extra_cuopt_packages": "NONE",
+    "function_id": "NOT_REQUIRED",
+    "local_gpu": "NOT_REQUIRED",
+    "fallback": "DETERMINISTIC_CPU_OPTIMIZER",
+    "postprocessor": "LOCAL_WAREHOUSE_NORMALIZER",
+    "observable_field": "optimizer_execution"
+  },
+  "p16_5_1_final_acceptance": {
+    "live_error_fixed": "CUOPT_SUBMIT_HTTP_422 extra_forbidden",
+    "removed_task_data_fields": [
+      "task_ids",
+      "priorities",
+      "mandatory_task_ids"
+    ],
+    "required_task_policy": "drop_infeasible_tasks=false",
+    "response_mapping": "numeric task index -> internal AtomicTask.task_id",
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_2_final_acceptance": {
+    "live_error_fixed": "solver_config.drop_infeasible_tasks extra_forbidden",
+    "solver_config_fields": [
+      "time_limit"
+    ],
+    "automatic_schema_retry": "remove extra_forbidden optional fields and resubmit up to 2 times",
+    "required_task_policy": "reject dropped tasks or missing task assignments during response postprocessing",
+    "observability_fields": [
+      "cuopt_schema_retry_count",
+      "cuopt_schema_removed_fields"
+    ],
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_3_final_acceptance": {
+    "fixed_error": "NON_MONOTONIC_TIME caused by duplicate WAIT/MOVE boundary and zero-duration same-node tasks",
+    "waypoint_boundary_dedup": "node_id + time_step",
+    "minimum_operation_duration_steps": 1,
+    "covered_actions": [
+      "PICK",
+      "DROP",
+      "CHARGE"
+    ],
+    "cuopt_service_time_policy": "PICK/DROP use one local time step",
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_4_final_acceptance": {
+    "complex_clause_direction": "A/B OUTBOUND, C/D INBOUND, E/F OUTBOUND, final C INBOUND",
+    "morning_12_interpretation": "오전 10:30-12:00 -> same-day noon",
+    "inbound_pick_inventory_policy": "DO_NOT_CONSUME_EXISTING_STORAGE_STOCK",
+    "future_inbound_allocation_policy": "CURRENT_LOT + FUTURE_INBOUND allocations satisfy outbound simulation",
+    "blocked_shortage_visibility": "INVENTORY_PROJECTION evidence retained even when task omitted before optimization",
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_5_final_acceptance": {
+    "cuopt_assignment_policy": "GLOBAL_ORDER_LOCAL_MULTI_ROBOT_REBALANCE_FOR_DAILY_INITIAL_PLANS",
+    "explicit_assignment_policy": "NEVER_RELAX_USER_FIXED_OR_FROZEN_ASSIGNMENTS",
+    "pair_affinity": "PICK_DROP_SAME_ROBOT_GROUP",
+    "parallel_distribution": "NEW_WORK_GROUP_LOAD_PENALTY_ACROSS_AVAILABLE_ROBOTS",
+    "self_reservation_policy": "SAME_ROBOT_ROUTE_CONTINUITY_IS_NOT_A_CONFLICT",
+    "congestion_policy": "COMMAND_NAMED_NODE_SOFT_PENALTY_WITH_ALTERNATIVE_ROUTE",
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_6_final_acceptance": {
+    "fixed_error": "ROUTE_FAILED on second simultaneous inbound DROP to shared STORAGE 2088",
+    "idle_service_node_policy": "Relocate between-task long idle from STORAGE/INBOUND/OUTBOUND/CHARGER/DESTINATION to non-service holding node",
+    "holding_node_safety": "Exclude congestion nodes and articulation/cut vertices such as gateway 2044",
+    "shared_initial_node_policy": "Sparse first routes from the same snapshot node activate on successive free time steps",
+    "observability_fields": [
+      "idle_relocation_count",
+      "idle_relocations",
+      "IDLE_HOLDING_WAIT"
+    ],
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_7_final_acceptance": {
+    "fixed_behavior": "Long idle on ROUTE/INTERSECTION/SERVICE/CHARGER nodes is no longer accepted for daily plans",
+    "idle_whitelist_types": [
+      "PARKING",
+      "STAGING",
+      "HOLDING",
+      "CHARGER_WAITING_AREA",
+      "ROBOT_PARKING"
+    ],
+    "hard_constraints": [
+      "NO_IDLE_ON_TRANSIT_NODE",
+      "NO_IDLE_ON_INTERSECTION",
+      "NO_IDLE_ON_SERVICE_NODE",
+      "NO_IDLE_ON_ARTICULATION_NODE",
+      "NO_IDLE_ON_CONGESTION_NODE",
+      "NO_IDLE_ON_CHARGER_SLOT_AFTER_CHARGE",
+      "IDLE_ONLY_ON_WHITELISTED_NODE"
+    ],
+    "initial_idle_policy": "Robots with far-future first tasks relocate from snapshot service/charger nodes to designated idle bays",
+    "missing_idle_node_policy": "FAIL_CLOSED_WITH_IDLE_NODE_NOT_CONFIGURED",
+    "explicit_idle_actions": [
+      "MOVE_TO_IDLE_NODE",
+      "WAIT_AT_IDLE_NODE"
+    ],
+    "demo_idle_nodes": [
+      2160,
+      2161,
+      2162
+    ],
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_8_final_acceptance": {
+    "policy": "LONG_IDLE_CHARGER_AREA_FIRST",
+    "business_schedule_policy": "Opportunity CHARGE tasks fit inside existing idle gaps and do not delay original work tasks",
+    "charger_selection_inputs": [
+      "reachability",
+      "travel_distance",
+      "travel_time",
+      "travel_energy",
+      "linked_waiting_area",
+      "charger_cost",
+      "slot_availability",
+      "next_task_return_feasibility"
+    ],
+    "default_target_battery_percent": 95,
+    "minimum_gain_percent": 2,
+    "charger_slot_policy": "CHARGER slot is occupied only during CHARGE; robot leaves to linked CHARGER_WAITING_AREA after completion",
+    "demo_waiting_area_links": {
+      "2160": 2150,
+      "2161": 2151,
+      "2162": 2152
+    },
+    "hard_safety_inheritance": [
+      "NO_IDLE_ON_TRANSIT_NODE",
+      "NO_IDLE_ON_INTERSECTION",
+      "NO_IDLE_ON_SERVICE_NODE",
+      "NO_IDLE_ON_CHARGER_SLOT_AFTER_CHARGE",
+      "IDLE_ONLY_ON_WHITELISTED_NODE"
+    ],
+    "observability_fields": [
+      "idle_energy_planning",
+      "opportunity_charging",
+      "idle_return_policy",
+      "idle_energy_policy",
+      "charge_tasks",
+      "charger_selections",
+      "idle_relocations",
+      "idle_action_tasks"
+    ],
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_8_1_final_acceptance": {
+    "planner_verifier_policy": "SHARED_CANDIDATE_SELECTION_EVIDENCE",
+    "complete_cost_policy": "MIN_OPPORTUNITY_TOTAL_COST",
+    "incomplete_cost_policy": "MIN_OPPORTUNITY_TRAVEL_DISTANCE_FALLBACK",
+    "missing_cost_treatment": "Never treated as zero",
+    "replan_charge_policy": "Remove stale opportunity:* tasks and regenerate from current business schedule",
+    "route_prefix_policy": "Duplicate endpoint removal may leave zero appended waypoints without indexing an empty list",
+    "failure_evidence_policy": "Preserve previous_successful_candidate when a later verification or replan fails",
+    "response_schema_version": "p16.5.10"
+  },
+  "release_scope": {
+    "included": [
+      "bounded two-pass optimization: business tasks first, then business + CHARGE + MOVE",
+      "robot-bound explicit mandatory and opportunity CHARGE tasks in optimizer input",
+      "post-charge MOVE preposition tasks before downstream hard time windows",
+      "cuOpt composite distance, energy, congestion, and charger-visit cost matrix",
+      "shared PICK/DROP service-node, charger-slot, and idle-space capacity scheduling",
+      "post-routing operational objective with charge time, charger wait, congestion, shared occupancy, and unnecessary charger round trips",
+      "auditable optimizer role contract, resource reservations, and COMPACT response objective fields",
+      "P16.5.9 Neo4j resource-capacity properties reused without a new seed",
+      "deterministic MAPF failure classification into local, global-topology, backend, configuration, and unclassified categories",
+      "automatic LOCAL_REPLAN for concrete affected robots and tasks",
+      "single controlled escalation from repeated LOCAL_REPLAN signature to GLOBAL_REPLAN",
+      "affected-robot-first routing and bounded global robot-order rotation/stagger",
+      "route_failure and result.mapf_replan observability without stale additive ROUTE_FAILED errors"
+    ],
+    "excluded": [
+      "physical storage volume and weight capacity; CAPACITY_DATA_NOT_CONFIGURED may remain for inventory-space checks"
+    ]
+  },
+  "p16_5_9_final_acceptance": {
+    "scheduler_position": "AFTER_CUOPT_BEFORE_PRIORITIZED_TIME_ASTAR",
+    "service_resources": [
+      "PICK",
+      "DROP"
+    ],
+    "charger_resource": "CHARGE_ONLY",
+    "idle_resources": [
+      "CHARGER_WAITING_AREA",
+      "PARKING",
+      "STAGING",
+      "HOLDING",
+      "ROBOT_PARKING"
+    ],
+    "interval_semantics": "HALF_OPEN_START_INCLUSIVE_END_EXCLUSIVE",
+    "capacity_policy": "Capacity 1 serializes; capacity N allows at most N overlapping reservations",
+    "delay_policy": "Propagate to downstream tasks on the same robot and execution dependency graph",
+    "frozen_policy": "Do not shift; block the candidate when capacity conflicts",
+    "hard_window_policy": "Block candidates whose resource delay exceeds latest_finish",
+    "response_fields": [
+      "result.resources",
+      "result.schedule_validation.resource_capacity_valid",
+      "result.schedule_validation.resource_reservation_count"
+    ],
+    "seed": "python -m scripts.seed_p16_5_9_resource_capacities --warehouse-id 2",
+    "response_schema_version": "p16.5.10"
+  },
+  "p16_5_10_charge_visit_optimization": {
+    "mode": "TWO_PASS_EXPLICIT_CHARGE_VISITS",
+    "first_pass": "business task assignment and order",
+    "second_pass": "business + CHARGE + post-charge MOVE task optimization",
+    "cuopt_cost_matrix": "DISTANCE_ENERGY_CONGESTION_CHARGER_VISIT_COMPOSITE",
+    "hard_constraint_policy": "INFEASIBLE_CANDIDATES_REMOVED_NOT_PENALIZED",
+    "new_response_fields": [
+      "result.optimizer_roles",
+      "result.objective"
+    ]
+  },
+  "validation": {
+    "compileall": "PASS",
+    "focused_regression": "42 passed",
+    "full_pytest_batch_1": "391 passed",
+    "full_pytest_batch_2": "331 passed",
+    "full_pytest": "722 passed, 0 failed",
+    "collected_tests": "722"
+  },
+  "p16_5_10_2_route_order_convergence": {
+    "fixed_error": "RESOURCE_SCHEDULER_DID_NOT_CONVERGE with repeated same-robot dependency delay",
+    "routing_order": "START_TIME_DEPENDENCY_AWARE_PRIORITY_TIEBREAK",
+    "shared_resource_order": "same dependency-aware per-robot order as routing",
+    "cycle_guard": [
+      "ROBOT_TASK_DEPENDENCY_CYCLE",
+      "RESOURCE_DEPENDENCY_ORDER_CONFLICT"
+    ],
+    "live_regression": "later CHARGE priority must not precede earlier PICK/DROP dependency chain",
+    "response_schema_version": "p16.5.10.3"
+  },
+  "p16_5_11_mapf_auto_replan": {
+    "failure_codes": [
+      "MAPF_LOCAL_CONFLICT",
+      "MAPF_GLOBAL_CONFLICT",
+      "MAPF_TOPOLOGY_FAILURE",
+      "MAPF_CONFIGURATION_FAILURE",
+      "MAPF_BACKEND_UNAVAILABLE",
+      "MAPF_UNCLASSIFIED_FAILURE"
+    ],
+    "first_retry_strategy": "AFFECTED_ROBOTS_FIRST",
+    "repeated_local_failure_strategy": "ROTATE_ALL_ROBOTS_WITH_BOUNDED_STAGGER",
+    "local_scope_policy": "Change affected robot tasks only; freeze unaffected tasks and protected freeze-horizon work",
+    "escalation_policy": "One controlled LOCAL to GLOBAL escalation for identical retryable MAPF signature",
+    "terminal_guard": "Normal repeated-signature and max-replan-attempt guards remain after escalation",
+    "response_fields": [
+      "result.mapf_replan",
+      "replan_history",
+      "collision_plan.metadata.mapf_replan_policy",
+      "collision_plan.metadata.robot_processing_order"
+    ],
+    "response_schema_version": "p16.5.12"
+  },
+  "p16_5_11_1_event_escalation_hotfix": {
+    "observed_failure": "Second identical PATH_BLOCKED event was stopped by REPEATED_FAILURE_DETECTED before global escalation.",
+    "root_cause": "EventReplanService repeat-signature guard executed before the P16.5.11 planning-level MAPF escalation policy.",
+    "policy": {
+      "first_identical_route_failure": "LOCAL_REPLAN",
+      "second_identical_route_failure": "GLOBAL_REPLAN once",
+      "third_identical_route_failure": "FAILED with REPEATED_FAILURE_DETECTED",
+      "other_repeated_operational_failures": "Existing stop guard retained"
+    },
+    "escalation_events": [
+      "PATH_BLOCKED",
+      "PATH_DEVIATED"
+    ],
+    "response_fields": [
+      "original_scope",
+      "scope",
+      "escalated_from_local",
+      "repeat_count",
+      "final_status"
+    ],
+    "active_plan_version_policy": "Use live active_plan_version, otherwise payload.active_plan.plan_version.",
+    "inactive_mapf_replan_version": "p16.5.12",
+    "response_schema_version": "p16.5.12"
+  },
+  "p16_5_12_runtime_robot_state_partial_replan": {
+    "event_types": [
+      "LOW_BATTERY",
+      "POSITION_UPDATED",
+      "ROBOT_DELAYED",
+      "ROBOT_FAILED",
+      "TASK_FAILED",
+      "PATH_BLOCKED",
+      "PATH_DEVIATED"
+    ],
+    "policy": "FREEZE_COMPLETED_EXECUTING_AND_NEAR_TERM",
+    "response_fields": [
+      "impact_analysis.completed_task_ids",
+      "impact_analysis.frozen_task_ids",
+      "impact_analysis.changeable_task_ids",
+      "impact_analysis.robot_state_overrides",
+      "partial_replan"
+    ],
+    "base_plan_source": "EVENT_SOURCE_PLAN",
+    "state_override_fields": [
+      "node_id",
+      "battery",
+      "status",
+      "delay_seconds",
+      "safe_stop_confirmed"
+    ],
+    "low_battery_policy": "Moderate battery preserves current execution; critical battery or safe-stop confirmation releases affected unfinished work.",
+    "response_schema_version": "p16.5.12"
+  },
+  "p16_5_12_1_runtime_source_plan_hotfix": {
+    "observed_failure": "LOW_BATTERY impact analysis succeeded, but generated planning command ended FAILED with no plan version, simulation id, verification decision, or diagnostic error.",
+    "root_causes": [
+      "Snapshot validation treated event source-plan robot/task identifiers as missing because they were not persisted SQL entities.",
+      "Inventory precheck compared runtime task ids directly with SQL work ids and classified them as unknown.",
+      "Task selection reconstructed only SQL works and did not materialize source_plan_snapshot.required_tasks."
+    ],
+    "policy": "EVENT_SOURCE_PLAN is an authoritative planning contract for runtime temporary tasks while SQL remains authoritative for persisted works.",
+    "changes": [
+      "Resolve runtime task ids to their source-plan work ids during Snapshot and inventory validation.",
+      "Include source-plan robot assignments and node references in Snapshot validation.",
+      "Materialize source required_tasks and derive missing candidates/robot bindings from scheduled_tasks.",
+      "Expose planner status/final status and a deterministic AUTO_REPLAN_PLANNING_FAILED error when verification is missing."
+    ],
+    "response_schema_version": "p16.5.12.1"
+  },
+  "p16_5_13_gate1_scenario_consistency": {
+    "status": "PASS",
+    "focused_regression": "PASS",
+    "full_suite": "713 passed, 0 failed",
+    "compileall": "PASS",
+    "response_schema_changed": false
+  },
+  "p16_5_13_gate1_1_swagger_e2e_hotfix": {
+    "status": "PASS",
+    "root_causes": [
+      "Absolute schedule date prefixes were outside the time-window grammar.",
+      "Undated follow-up windows did not inherit the preceding explicit date.",
+      "Explicit send-charge-perform robot workflow was not recognized as a fixed assignment."
+    ],
+    "response_schema_version": "p16.5.12.1"
+  },
+  "p16_5_13_gate1_2_activation_second_pass_hotfix": {
+    "status": "PASS",
+    "scope": [
+      "future plan activation boundary",
+      "bounded CPU fallback for invalid charge second pass"
+    ],
+    "response_schema_version": "p16.5.12.1"
+  },
+  "p16_5_13_gate1_3_relocation_window_fallback_hotfix": {
+    "status": "PASS",
+    "scope": "historical inventory availability is not a MOVE_TO_NEXT hard latest-finish",
+    "response_schema_version": "p16.5.12.1"
+  },
+  "p16_5_13_gate1_4_resource_delay_chain_hotfix": {
+    "status": "PASS",
+    "root_causes": [
+      "first-pass charge target end was promoted to a synthetic HARD_WINDOW",
+      "routing failure hid simulation battery metrics and caused a false override failure",
+      "far-future routes without explicit activation metadata materialized dense pre-start waits"
+    ],
+    "policies": {
+      "optimizer_target": "auditable target, not a hard deadline",
+      "hard_window_source": "only explicit successor HARD_WINDOW constraints",
+      "resource_delay": "shift the assigned robot downstream chain",
+      "battery_override_verification": "optimization input authoritative; simulation metric checked when present",
+      "future_activation": "sparse by default unless strict idle-whitelist or explicit override requires holding"
+    },
+    "api_version": "2.5.13.4",
+    "response_schema_version": "p16.5.12.1",
+    "full_suite": "722 passed, 0 failed"
+  },
+  "p16_5_13_gate2_server_authority": {
+    "status": "PASS",
+    "api_version": "2.5.13.5",
+    "response_schema_version": "p16.5.12.1",
+    "runtime_sources": {
+      "REAL": "REAL_REDIS_ACTIVE_PLAN",
+      "SIMULATION": [
+        "SIMULATION_REDIS_SESSION",
+        "SIMULATION_POSTGRES_SESSION",
+        "SIMULATION_RUN_FALLBACK"
+      ]
+    },
+    "ignored_client_runtime_fields": [
+      "active_plan",
+      "active_plan_version",
+      "current_time_step",
+      "reference_time",
+      "activated_at",
+      "time_step_seconds",
+      "server_runtime",
+      "_server_runtime"
+    ],
+    "position_updated_policy": "TELEMETRY_ONLY_WITH_SERVER_DERIVED_LOW_BATTERY",
+    "low_battery_policy": "MINIMUM_PLUS_MARGIN_AND_REMAINING_PLAN_ENERGY",
+    "full_suite": "731 passed, 0 failed",
+    "redis_missing_recovery": "PostgreSQL simulation session, then latest simulation run"
+  },
+  "p16_5_13_gate2_1_low_battery_safety_charge": {
+    "status": "PASS",
+    "api_version": "2.5.13.6",
+    "response_schema_version": "p16.5.12.1",
+    "root_cause": "server-derived LOW_BATTERY correctly detected remaining mission risk, but the currently executing affected task remained frozen, preventing CHARGE insertion before that task",
+    "policies": {
+      "freeze_exception": "release only affected tasks when server-derived remaining-plan threshold is crossed",
+      "robot_binding": "keep the affected pickup/drop chain on the reporting robot while battery remains above the hard minimum",
+      "emergency_threshold": "battery at or below the hard minimum remains eligible for stop/reassignment policy",
+      "recovery_order": "current position -> safe charger -> CHARGE -> PICK -> DROP"
+    },
+    "focused_suite": "40 passed, 0 failed",
+    "full_suite": "732 passed, 0 failed"
+  },
+  "p16_5_13_gate2_2_changeable_cuopt_freeze_hotfix": {
+    "status": "PASS",
+    "api_version": "2.5.13.7",
+    "response_schema_version": "p16.5.12.1",
+    "root_cause": "managed cuOpt assignment postprocessing treated assigned_robot_id as a timing freeze even when the affected LOCAL_REPLAN tasks were explicitly changeable",
+    "policies": {
+      "changeable_robot_binding": "LOCAL_REPLAN changeable tasks retain assigned_robot_id but remain frozen=false",
+      "fixed_scope_precedence": "fixed_task_ids continue to win over malformed fixed/changeable overlap",
+      "protected_tasks": "unaffected preserved tasks remain frozen",
+      "recovery_order": "current position -> safe charger -> CHARGE -> PICK -> DROP"
+    },
+    "focused_suite": "47 passed, 0 failed",
+    "full_suite": "734 passed, 0 failed"
+  },
+  "p16_5_13_gate2_3_low_battery_e2e_charge_retention_hotfix": {
+    "status": "PASS",
+    "api_version": "2.5.13.8",
+    "response_schema_version": "p16.5.12.1",
+    "root_causes": [
+      "an already-opened successor earliest_start became an impossible CHARGE latest_finish during the explicit second pass",
+      "failed automatic replans did not expose enough optimizer and route-energy evidence to distinguish charge creation from charge loss"
+    ],
+    "policies": {
+      "opened_window": "historical/opened earliest_start is never promoted to a new CHARGE deadline",
+      "future_window": "only a successor start later than the first-pass charge target end may constrain CHARGE completion",
+      "charge_retention": "one deterministic local safety recovery when low-battery business work remains but CHARGE is absent",
+      "failure_debug": "bounded charge/two-pass/assignment/energy evidence is returned on failed event replans",
+      "recovery_order": "current position -> safe charger -> CHARGE -> MOVE_TO_NEXT -> PICK -> DROP"
+    },
+    "focused_suite": "30 passed, 0 failed",
+    "full_suite": "738 passed, 0 failed"
+  },
+  "p16_5_13_gate3_event_safety_recovery": {
+    "status": "PASS",
+    "api_version": "2.5.13.9",
+    "response_schema_version": "p16.5.12.1",
+    "policies": {
+      "event_identity": "same event_id requires the same operational payload",
+      "event_order": "occurred_at -> event precedence -> event_id tie-break",
+      "lifecycle_commit": "PostgreSQL commit before Redis mutation",
+      "simulation_rollback": "restore pre-event Redis snapshot on durable checkpoint failure",
+      "plan_retention": "failed automatic replan restores the last verified simulation plan",
+      "recovery_replay": "retryable stored failures resume through idempotent reconciliation"
+    },
+    "focused_suite": "48 passed, 0 failed",
+    "full_suite": "749 passed, 0 failed",
+    "database_migration_required": false,
+    "mock_robot_gateway_changed": false
+  },
+  "p16_5_14_robot_failure_load_recovery": {
+    "status": "PASS",
+    "api_version": "2.5.14.0",
+    "response_schema_version": "p16.5.12.1",
+    "policies": {
+      "pre_pick_failure": "exclude failed robot and reassign original unfinished chain",
+      "secured_load_failure": "replace original PICK/DROP with server-generated handover PICK/DROP at failed stop node",
+      "handover_binding": "both recovery tasks must use the same non-failed replacement robot",
+      "manual_guard": "unknown load, missing stop node, unsafe stop, or unsecured load returns MANUAL_RECOVERY_REQUIRED",
+      "candidate_filter": "exclude failed/offline/maintenance robots and enforce residual load capacity when known",
+      "inventory_semantics": "handover PICK uses source_type ROBOT_HANDOVER and does not replay storage inventory pickup"
+    },
+    "response_fields": [
+      "impact_analysis.robot_failure_recovery",
+      "robot_failure_recovery",
+      "robot_failure_recovery_result",
+      "schedule_validation.robot_failure_recovery"
+    ],
+    "focused_suite": "75 passed, 0 failed",
+    "full_suite": "756 passed, 0 failed",
+    "database_migration_required": false,
+    "neo4j_seed_required": false,
+    "mock_robot_gateway_changed": false
+  },
+  "p16_5_14_1_robot_failure_stale_route_eviction_hotfix": {
+    "status": "PASS",
+    "api_version": "2.5.14.1",
+    "response_schema_version": "p16.5.12.1",
+    "policies": {
+      "changed_set": "cuOpt changed ∪ event affected ∪ failed/excluded robots",
+      "route_eviction": "failed/excluded robots contribute no preserved active route or reservation",
+      "failure_statuses": [
+        "FAILED",
+        "ROBOT_FAILED",
+        "OFFLINE",
+        "MAINTENANCE"
+      ],
+      "handover_state": "failed stop remains represented by runtime override and synthetic handover tasks",
+      "observability": "collision metadata and event response expose stale_route_eviction evidence"
+    },
+    "response_fields": [
+      "stale_route_eviction",
+      "collision_plan.metadata.stale_route_eviction",
+      "planning_debug.stale_route_eviction"
+    ],
+    "focused_suite": "78 passed, 0 failed",
+    "full_suite": "759 passed, 0 failed",
+    "database_migration_required": false,
+    "neo4j_seed_required": false,
+    "mock_robot_gateway_changed": false
+  },
+  "p16_5_15_execution_delivery_safety": {
+    "status": "PASS",
+    "api_version": "2.5.15.0",
+    "response_schema_version": "p16.5.12.1",
+    "policies": {
+      "plan_approval": "only PASS/PASS_WITH_WARNING plans are approved with immutable operational fingerprints",
+      "active_plan_authority": "dispatch requires exact Redis active plan version and fingerprint match",
+      "dispatch_idempotency": "deterministic dispatch_id and idempotency_key prevent duplicate robot execution",
+      "ack_sequence": "per-robot ACKs must follow strict next-command sequence; duplicate identical ACKs are idempotent",
+      "retry": "transport attempts are durably counted and retries reuse the same dispatch identity",
+      "failure_cancel": "unfinished commands are canceled after command failure or operator cancel",
+      "rollback": "logical active-plan rollback occurs only before physical progress; otherwise manual recovery is required"
+    },
+    "api_endpoints": [
+      "POST /v1/execution/plans/{plan_version}/approve",
+      "GET /v1/execution/plans/{plan_version}/approval",
+      "POST /v1/execution/plans/{plan_version}/dispatch",
+      "GET /v1/execution/dispatches/{dispatch_id}",
+      "POST /v1/execution/dispatches/{dispatch_id}/acks",
+      "POST /v1/execution/dispatches/{dispatch_id}/retry",
+      "POST /v1/execution/dispatches/{dispatch_id}/cancel"
+    ],
+    "database_tables": [
+      "execution_plan_approval",
+      "robot_execution_dispatch"
+    ],
+    "migration": "migrations/013_p16_5_15_execution_delivery.sql",
+    "focused_suite": "79 passed, 0 failed",
+    "full_suite": "772 passed, 0 failed",
+    "database_migration_required": true,
+    "neo4j_seed_required": false,
+    "redis_reset_required": false,
+    "mock_robot_gateway_changed": true
+  },
+  "p16_5_15_1_approved_sql_work_target_verification_hotfix": {
+    "status": "PASS",
+    "api_version": "2.5.15.1",
+    "response_schema_version": "p16.5.12.1",
+    "policies": {
+      "legacy_sql_work": "<work_id>:move is valid outbound target evidence only for an explicitly linked outbound operation",
+      "target_match": "MOVE target_node must equal a user-requested destination",
+      "positive_feasibility": "linked outbound work must have planned_quantity_boxes > 0 when feasibility evidence is present",
+      "identity_guard": "task_id must be exactly the canonical <work_id>:move identity",
+      "relocation_guard": "unrelated relocation/parking MOVE rows do not satisfy outbound destination constraints",
+      "operation_namespace": "operation_id work:<work_id> is normalized only for explicit SQL-work binding"
+    },
+    "focused_suite": "87 passed, 0 failed",
+    "full_suite": "777 passed, 0 failed",
+    "database_migration_required": false,
+    "inherits_migration": "migrations/013_p16_5_15_execution_delivery.sql",
+    "neo4j_seed_required": false,
+    "redis_reset_required": false,
+    "mock_robot_gateway_changed": false
+  },
+  "p16_5_15_2_gateway_cancel_confirmation_rollback_safety_hotfix": {
+    "status": "PASS",
+    "api_version": "2.5.15.2",
+    "response_schema_version": "p16.5.12.1",
+    "policies": {
+      "confirmation_gate": "logical active-plan rollback requires explicit gateway accepted=true and canceled status",
+      "unconfirmed_cancel": "404, timeout, transport error, unsupported, or rejected response keeps the new plan active",
+      "conservative_state": "unconfirmed cancellation uses CANCELED_PARTIAL_EXECUTION, CANCEL_PENDING commands, manual recovery, and retryable=true",
+      "recovery_replay": "repeating cancel after gateway recovery confirms cancellation and only then restores the previous active plan",
+      "physical_progress": "ACKed MOVE/PICKUP/DROPOFF/CHARGE prevents logical rollback even after gateway cancellation",
+      "ack_after_cancel": "ACKs received while cancellation is unconfirmed preserve the recovery-required dispatch state and update physical progress evidence",
+      "command_failure": "automatic cancellation after command failure follows the same gateway-confirmation gate before rollback",
+      "gateway_identity": "cancel uses the remote gateway dispatch_id stored or deterministically precomputed at durable dispatch creation, not the service database dispatch_id",
+      "timeout_identity": "precomputed gateway identity remains available when dispatch response times out after possible gateway acceptance"
+    },
+    "focused_suite": "97 passed, 0 failed",
+    "full_suite": "787 passed, 0 failed",
+    "database_migration_required": false,
+    "inherits_migration": "migrations/013_p16_5_15_execution_delivery.sql",
+    "neo4j_seed_required": false,
+    "redis_reset_required": false,
+    "mock_robot_gateway_changed": false
+  },
+  "p16_5_15_3_terminal_state_reservation_cleanup_hotfix": {
+    "status": "PASS",
+    "api_version": "2.5.15.3",
+    "response_schema_version": "p16.5.12.1",
+    "live_findings": [
+      "ACK occurred_at could predate durable command sent_at",
+      "RETRY_EXHAUSTED dispatch retained PENDING command states",
+      "safe rollback required manual ACTIVE_PLAN reservation release",
+      "retry exhaustion rollback evidence was visible only in exception text"
+    ],
+    "policies": {
+      "ack_lifecycle": "ACK accepted only for AWAITING_ACK/PARTIAL_ACK or gateway-cancel-unconfirmed recovery window",
+      "ack_time": "occurred_at older than sent_at minus 5 seconds is rejected",
+      "terminal_commands": "retry-exhausted unfinished commands become DISPATCH_FAILED with DISPATCH_RETRY_EXHAUSTED",
+      "rollback_persistence": "retry-exhaustion rollback is stored in result_summary.rollback",
+      "reservation_cleanup": "successful pre-physical rollback releases RESERVED ACTIVE_PLAN reservations",
+      "physical_progress_guard": "manual-recovery and unconfirmed-cancel paths do not release reservations automatically"
+    },
+    "focused_suite": "100 passed, 0 failed",
+    "full_suite": "790 passed, 0 failed",
+    "database_migration_required": false,
+    "inherits_migration": "migrations/013_p16_5_15_execution_delivery.sql",
+    "neo4j_seed_required": false,
+    "redis_reset_required": false,
+    "mock_robot_gateway_changed": false
+  }
+}
