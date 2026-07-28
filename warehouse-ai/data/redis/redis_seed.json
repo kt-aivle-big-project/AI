@@ -1,0 +1,25 @@
+{
+  "format_version": 1,
+  "warehouse_id": 2,
+  "description": "LARO AI 팀 공유용 Redis 초기 상태. 과거 계획, 이벤트, 예약, 시뮬레이션 이력은 포함하지 않습니다.",
+  "keys": [
+    {
+      "key": "wh:2:robot:R2-01",
+      "type": "hash",
+      "value": {
+        "robot_id": "R2-01",
+        "last_event": "TASK_COMPLETED",
+        "updated_at": "2026-07-27T07:07:56.354233+00:00",
+        "node_id": "2146",
+        "status": "IDLE"
+      }
+    },
+    {
+      "key": "wh:2:robots",
+      "type": "set",
+      "value": [
+        "R2-01"
+      ]
+    }
+  ]
+}
