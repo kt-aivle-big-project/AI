@@ -1,0 +1,13 @@
+{
+  "active_plan_id": "PLAN-WH-001-SIM001-1-REPLACE_ME",
+  "replan_at_sim_time_ms": 18000,
+  "reason": "NEW_ORDER",
+  "mission": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM001",
+    "optimization_backend": "ortools",
+    "events": [
+      {"type": "new_order", "order_id": "ORD-006"}
+    ]
+  }
+}

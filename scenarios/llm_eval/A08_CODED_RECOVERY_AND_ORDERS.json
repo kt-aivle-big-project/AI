@@ -1,0 +1,50 @@
+{
+  "scenario_id": "A08_CODED_RECOVERY_AND_ORDERS",
+  "title": "복구·입고·출고 조합",
+  "category": "ROUTER_AGENT",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 5,
+  "argument": "복수 코드 업무의 우선순위와 자원 보존을 종합해야 한다.",
+  "why_rule_is_or_is_not_enough": "R004 복구, IN-001·IN-002, ORD-001·ORD-002를 함께 정식화한다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "R004 복구와 IN-001, IN-002, ORD-001, ORD-002를 함께 계획하되 비상용 Robot 한 대를 남겨.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "ROUTE_AGENT",
+    "final_route": "AGENT_FORMULATION",
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": null,
+    "final_status": [
+      "ready_for_cuopt",
+      "plan_validated",
+      "awaiting_human_approval"
+    ],
+    "preserve_operation_ids": [
+      "R004",
+      "IN-001",
+      "IN-002",
+      "ORD-001",
+      "ORD-002"
+    ],
+    "must_call_nodes": [
+      "llm_retrieval_agent"
+    ],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

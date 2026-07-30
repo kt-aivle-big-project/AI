@@ -1,0 +1,42 @@
+{
+  "scenario_id": "E06_NATURAL_ROBOT_ALIAS",
+  "title": "자연어 Robot 별칭 거부",
+  "category": "INPUT_REJECTION",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 3,
+  "argument": "왼쪽 Robot은 권위 식별자가 아니다.",
+  "why_rule_is_or_is_not_enough": "R### 코드를 요구한다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ORD-001은 왼쪽 Robot을 제외하고 처리해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REJECT_INPUT",
+    "final_route": null,
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": "CANONICAL_RESOURCE_ID_REQUIRED",
+    "final_status": [
+      "input_rejected"
+    ],
+    "preserve_operation_ids": [
+      "ORD-001"
+    ],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

@@ -1,0 +1,76 @@
+{
+  "scenario_id": "S11_multitask_mapf_comparison",
+  "title": "1:1 기준선 대 Multi-task + Prioritized SIPP MAPF 비교",
+  "argument": "Robot 5대와 주문 10건에서 one-task-per-robot 기준선이 5건을 유예하고 병목 대기를 누적하는 반면, 로봇별 다중 Task 순서와 MAPF가 전체 Task Coverage를 유지하면서 총 WAIT와 Makespan을 줄일 수 있는지 검증한다.",
+  "data_dir": "scenarios/fixtures/V9_ten_orders_multitask",
+  "repetitions": 1,
+  "request": {
+    "simulation_id": "VAL-S11",
+    "request_mode": "human_command",
+    "planning_mode": "llm_router",
+    "optimization_backend": "ortools",
+    "user_command": "ORD-001부터 ORD-010까지 현재 Fleet로 처리해. Robot별 다중 Task 순서는 Solver가 계산하고 최종 충돌은 MAPF가 해결해.",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-002"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-003"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-004"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-005"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-006"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-007"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-008"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-009"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-010"
+      }
+    ],
+    "max_agent_steps": 8
+  },
+  "expectations": {
+    "expected_intent_types": [
+      "MISSION"
+    ],
+    "expected_statuses": [
+      "plan_validated"
+    ],
+    "require_full_coverage": true,
+    "require_global_solver_route": true,
+    "require_assigned_count": 10,
+    "require_unassigned_count": 0,
+    "require_multi_task_robot": true,
+    "require_mapf_valid": true,
+    "compare_against_one_to_one": true,
+    "require_total_wait_reduction": true,
+    "require_makespan_reduction": true,
+    "forbid_unknown_identifiers": true,
+    "require_valid_evidence": true
+  }
+}

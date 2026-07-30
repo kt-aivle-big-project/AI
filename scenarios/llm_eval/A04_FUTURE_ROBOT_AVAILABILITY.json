@@ -1,0 +1,46 @@
+{
+  "scenario_id": "A04_FUTURE_ROBOT_AVAILABILITY",
+  "title": "작업 중 Robot의 미래 가용 시점",
+  "category": "ROUTER_AGENT",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 5,
+  "argument": "현재 위치가 아니라 완료 예정 위치·시간을 종합해야 한다.",
+  "why_rule_is_or_is_not_enough": "R002가 TASK-010 완료 후 O_D에서 가용해지는 조건을 다음 배치에 반영한다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "R002는 TASK-010 완료 후 O_D에서 가용해져. 그 시점부터 ORD-002 후보로 포함해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "ROUTE_AGENT",
+    "final_route": "AGENT_FORMULATION",
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": null,
+    "final_status": [
+      "ready_for_cuopt",
+      "plan_validated",
+      "awaiting_human_approval"
+    ],
+    "preserve_operation_ids": [
+      "ORD-002"
+    ],
+    "must_call_nodes": [
+      "llm_retrieval_agent"
+    ],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

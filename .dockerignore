@@ -1,0 +1,16 @@
+.git
+.github
+.venv
+venv
+__pycache__
+*.py[cod]
+.pytest_cache
+.mypy_cache
+.ruff_cache
+runtime_outputs
+.laro_local
+*.log
+.env
+.env.*
+!*.example
+tests

@@ -1,0 +1,5815 @@
+{
+  "title": "자동창고 노드-엣지 구조",
+  "coordinate_unit": "PowerPoint inches",
+  "summary": {
+    "node_count": 220,
+    "edge_count": 356,
+    "route_grid_nodes": 77,
+    "route_charge_junction_nodes": 10,
+    "inbound_nodes": 7,
+    "outbound_nodes": 7,
+    "charging_slot_nodes": 10,
+    "rack_access_nodes": 96,
+    "rack_entities_external": 48,
+    "rack_storage_nodes": 0,
+    "rack_entity_count": 48,
+    "routing_projection_excludes_racks": true,
+    "inbound_handoff_access_nodes": 8,
+    "outbound_station_access_nodes": 4,
+    "outbound_station_count": 2,
+    "station_robot_count": 2,
+    "return_perimeter_edges": 16,
+    "empty_tote_buffer_access_nodes": 1,
+    "logical_outbound_destinations": 7
+  },
+  "nodes": [
+    {
+      "id": "R0_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 0.72,
+      "row": 0,
+      "col": 0
+    },
+    {
+      "id": "R0_1",
+      "type": "route",
+      "x": 5,
+      "y": 0.72,
+      "row": 0,
+      "col": 1
+    },
+    {
+      "id": "R0_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 0.72,
+      "row": 0,
+      "col": 2
+    },
+    {
+      "id": "R0_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 0.72,
+      "row": 0,
+      "col": 3
+    },
+    {
+      "id": "R0_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 0.72,
+      "row": 0,
+      "col": 4
+    },
+    {
+      "id": "R0_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 0.72,
+      "row": 0,
+      "col": 5
+    },
+    {
+      "id": "R0_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 0.72,
+      "row": 0,
+      "col": 6
+    },
+    {
+      "id": "R0_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 0.72,
+      "row": 0,
+      "col": 7
+    },
+    {
+      "id": "R0_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 0.72,
+      "row": 0,
+      "col": 8
+    },
+    {
+      "id": "R0_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 0.72,
+      "row": 0,
+      "col": 9
+    },
+    {
+      "id": "R0_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 0.72,
+      "row": 0,
+      "col": 10
+    },
+    {
+      "id": "R1_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 1.49,
+      "row": 1,
+      "col": 0
+    },
+    {
+      "id": "R1_1",
+      "type": "route",
+      "x": 5,
+      "y": 1.49,
+      "row": 1,
+      "col": 1
+    },
+    {
+      "id": "R1_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 1.49,
+      "row": 1,
+      "col": 2
+    },
+    {
+      "id": "R1_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 1.49,
+      "row": 1,
+      "col": 3
+    },
+    {
+      "id": "R1_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 1.49,
+      "row": 1,
+      "col": 4
+    },
+    {
+      "id": "R1_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 1.49,
+      "row": 1,
+      "col": 5
+    },
+    {
+      "id": "R1_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 1.49,
+      "row": 1,
+      "col": 6
+    },
+    {
+      "id": "R1_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 1.49,
+      "row": 1,
+      "col": 7
+    },
+    {
+      "id": "R1_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 1.49,
+      "row": 1,
+      "col": 8
+    },
+    {
+      "id": "R1_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 1.49,
+      "row": 1,
+      "col": 9
+    },
+    {
+      "id": "R1_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 1.49,
+      "row": 1,
+      "col": 10
+    },
+    {
+      "id": "R2_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 2.26,
+      "row": 2,
+      "col": 0
+    },
+    {
+      "id": "R2_1",
+      "type": "route",
+      "x": 5,
+      "y": 2.26,
+      "row": 2,
+      "col": 1
+    },
+    {
+      "id": "R2_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 2.26,
+      "row": 2,
+      "col": 2
+    },
+    {
+      "id": "R2_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 2.26,
+      "row": 2,
+      "col": 3
+    },
+    {
+      "id": "R2_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 2.26,
+      "row": 2,
+      "col": 4
+    },
+    {
+      "id": "R2_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 2.26,
+      "row": 2,
+      "col": 5
+    },
+    {
+      "id": "R2_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 2.26,
+      "row": 2,
+      "col": 6
+    },
+    {
+      "id": "R2_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 2.26,
+      "row": 2,
+      "col": 7
+    },
+    {
+      "id": "R2_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 2.26,
+      "row": 2,
+      "col": 8
+    },
+    {
+      "id": "R2_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 2.26,
+      "row": 2,
+      "col": 9
+    },
+    {
+      "id": "R2_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 2.26,
+      "row": 2,
+      "col": 10
+    },
+    {
+      "id": "R3_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 3.03,
+      "row": 3,
+      "col": 0
+    },
+    {
+      "id": "R3_1",
+      "type": "route",
+      "x": 5,
+      "y": 3.03,
+      "row": 3,
+      "col": 1
+    },
+    {
+      "id": "R3_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 3.03,
+      "row": 3,
+      "col": 2
+    },
+    {
+      "id": "R3_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 3.03,
+      "row": 3,
+      "col": 3
+    },
+    {
+      "id": "R3_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 3.03,
+      "row": 3,
+      "col": 4
+    },
+    {
+      "id": "R3_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 3.03,
+      "row": 3,
+      "col": 5
+    },
+    {
+      "id": "R3_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 3.03,
+      "row": 3,
+      "col": 6
+    },
+    {
+      "id": "R3_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 3.03,
+      "row": 3,
+      "col": 7
+    },
+    {
+      "id": "R3_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 3.03,
+      "row": 3,
+      "col": 8
+    },
+    {
+      "id": "R3_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 3.03,
+      "row": 3,
+      "col": 9
+    },
+    {
+      "id": "R3_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 3.03,
+      "row": 3,
+      "col": 10
+    },
+    {
+      "id": "R4_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 3.8,
+      "row": 4,
+      "col": 0
+    },
+    {
+      "id": "R4_1",
+      "type": "route",
+      "x": 5,
+      "y": 3.8,
+      "row": 4,
+      "col": 1
+    },
+    {
+      "id": "R4_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 3.8,
+      "row": 4,
+      "col": 2
+    },
+    {
+      "id": "R4_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 3.8,
+      "row": 4,
+      "col": 3
+    },
+    {
+      "id": "R4_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 3.8,
+      "row": 4,
+      "col": 4
+    },
+    {
+      "id": "R4_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 3.8,
+      "row": 4,
+      "col": 5
+    },
+    {
+      "id": "R4_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 3.8,
+      "row": 4,
+      "col": 6
+    },
+    {
+      "id": "R4_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 3.8,
+      "row": 4,
+      "col": 7
+    },
+    {
+      "id": "R4_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 3.8,
+      "row": 4,
+      "col": 8
+    },
+    {
+      "id": "R4_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 3.8,
+      "row": 4,
+      "col": 9
+    },
+    {
+      "id": "R4_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 3.8,
+      "row": 4,
+      "col": 10
+    },
+    {
+      "id": "R5_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 4.57,
+      "row": 5,
+      "col": 0
+    },
+    {
+      "id": "R5_1",
+      "type": "route",
+      "x": 5,
+      "y": 4.57,
+      "row": 5,
+      "col": 1
+    },
+    {
+      "id": "R5_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 4.57,
+      "row": 5,
+      "col": 2
+    },
+    {
+      "id": "R5_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 4.57,
+      "row": 5,
+      "col": 3
+    },
+    {
+      "id": "R5_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 4.57,
+      "row": 5,
+      "col": 4
+    },
+    {
+      "id": "R5_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 4.57,
+      "row": 5,
+      "col": 5
+    },
+    {
+      "id": "R5_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 4.57,
+      "row": 5,
+      "col": 6
+    },
+    {
+      "id": "R5_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 4.57,
+      "row": 5,
+      "col": 7
+    },
+    {
+      "id": "R5_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 4.57,
+      "row": 5,
+      "col": 8
+    },
+    {
+      "id": "R5_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 4.57,
+      "row": 5,
+      "col": 9
+    },
+    {
+      "id": "R5_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 4.57,
+      "row": 5,
+      "col": 10
+    },
+    {
+      "id": "R6_0",
+      "type": "route",
+      "x": 4.1,
+      "y": 5.34,
+      "row": 6,
+      "col": 0
+    },
+    {
+      "id": "R6_1",
+      "type": "route",
+      "x": 5,
+      "y": 5.34,
+      "row": 6,
+      "col": 1
+    },
+    {
+      "id": "R6_2",
+      "type": "route",
+      "x": 5.62,
+      "y": 5.34,
+      "row": 6,
+      "col": 2
+    },
+    {
+      "id": "R6_3",
+      "type": "route",
+      "x": 6.24,
+      "y": 5.34,
+      "row": 6,
+      "col": 3
+    },
+    {
+      "id": "R6_4",
+      "type": "route",
+      "x": 6.86,
+      "y": 5.34,
+      "row": 6,
+      "col": 4
+    },
+    {
+      "id": "R6_5",
+      "type": "route",
+      "x": 7.53,
+      "y": 5.34,
+      "row": 6,
+      "col": 5
+    },
+    {
+      "id": "R6_6",
+      "type": "route",
+      "x": 8.2,
+      "y": 5.34,
+      "row": 6,
+      "col": 6
+    },
+    {
+      "id": "R6_7",
+      "type": "route",
+      "x": 8.83,
+      "y": 5.34,
+      "row": 6,
+      "col": 7
+    },
+    {
+      "id": "R6_8",
+      "type": "route",
+      "x": 9.45,
+      "y": 5.34,
+      "row": 6,
+      "col": 8
+    },
+    {
+      "id": "R6_9",
+      "type": "route",
+      "x": 10.07,
+      "y": 5.34,
+      "row": 6,
+      "col": 9
+    },
+    {
+      "id": "R6_10",
+      "type": "route",
+      "x": 10.85,
+      "y": 5.34,
+      "row": 6,
+      "col": 10
+    },
+    {
+      "id": "RJ01",
+      "type": "route_charge_junction",
+      "x": 4.55,
+      "y": 5.34,
+      "index": 1
+    },
+    {
+      "id": "RJ02",
+      "type": "route_charge_junction",
+      "x": 5.31,
+      "y": 5.34,
+      "index": 2
+    },
+    {
+      "id": "RJ03",
+      "type": "route_charge_junction",
+      "x": 5.93,
+      "y": 5.34,
+      "index": 3
+    },
+    {
+      "id": "RJ04",
+      "type": "route_charge_junction",
+      "x": 6.55,
+      "y": 5.34,
+      "index": 4
+    },
+    {
+      "id": "RJ05",
+      "type": "route_charge_junction",
+      "x": 7.195,
+      "y": 5.34,
+      "index": 5
+    },
+    {
+      "id": "RJ06",
+      "type": "route_charge_junction",
+      "x": 7.865,
+      "y": 5.34,
+      "index": 6
+    },
+    {
+      "id": "RJ07",
+      "type": "route_charge_junction",
+      "x": 8.515,
+      "y": 5.34,
+      "index": 7
+    },
+    {
+      "id": "RJ08",
+      "type": "route_charge_junction",
+      "x": 9.14,
+      "y": 5.34,
+      "index": 8
+    },
+    {
+      "id": "RJ09",
+      "type": "route_charge_junction",
+      "x": 9.76,
+      "y": 5.34,
+      "index": 9
+    },
+    {
+      "id": "RJ10",
+      "type": "route_charge_junction",
+      "x": 10.46,
+      "y": 5.34,
+      "index": 10
+    },
+    {
+      "id": "I_a",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 1.63,
+      "label": "a",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "I_b",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 2.04,
+      "label": "b",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "I_c",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 2.45,
+      "label": "c",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "I_d",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 3.03,
+      "label": "d",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "I_e",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 3.45,
+      "label": "e",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "I_f",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 3.86,
+      "label": "f",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "I_g",
+      "type": "inbound",
+      "x": 3.11,
+      "y": 4.27,
+      "label": "g",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_A",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 1.6,
+      "label": "A",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_B",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 2.03,
+      "label": "B",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_C",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 2.46,
+      "label": "C",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_D",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 3.03,
+      "label": "D",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_E",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 3.47,
+      "label": "E",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_F",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 3.9,
+      "label": "F",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "O_G",
+      "type": "outbound",
+      "x": 12.43,
+      "y": 4.34,
+      "label": "G",
+      "legacy_direct_route": true,
+      "active_for_new_work": false
+    },
+    {
+      "id": "C01",
+      "type": "charging_slot",
+      "x": 4.55,
+      "y": 5.64,
+      "index": 1
+    },
+    {
+      "id": "C02",
+      "type": "charging_slot",
+      "x": 5.31,
+      "y": 5.64,
+      "index": 2
+    },
+    {
+      "id": "C03",
+      "type": "charging_slot",
+      "x": 5.93,
+      "y": 5.64,
+      "index": 3
+    },
+    {
+      "id": "C04",
+      "type": "charging_slot",
+      "x": 6.55,
+      "y": 5.64,
+      "index": 4
+    },
+    {
+      "id": "C05",
+      "type": "charging_slot",
+      "x": 7.195,
+      "y": 5.64,
+      "index": 5
+    },
+    {
+      "id": "C06",
+      "type": "charging_slot",
+      "x": 7.865,
+      "y": 5.64,
+      "index": 6
+    },
+    {
+      "id": "C07",
+      "type": "charging_slot",
+      "x": 8.515,
+      "y": 5.64,
+      "index": 7
+    },
+    {
+      "id": "C08",
+      "type": "charging_slot",
+      "x": 9.14,
+      "y": 5.64,
+      "index": 8
+    },
+    {
+      "id": "C09",
+      "type": "charging_slot",
+      "x": 9.76,
+      "y": 5.64,
+      "index": 9
+    },
+    {
+      "id": "C10",
+      "type": "charging_slot",
+      "x": 10.46,
+      "y": 5.64,
+      "index": 10
+    },
+    {
+      "id": "K0_1_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 0.9356,
+      "rack_id": "K0_1",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_1_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 1.2744,
+      "rack_id": "K0_1",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_2_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 0.9356,
+      "rack_id": "K0_2",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_2_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 1.2744,
+      "rack_id": "K0_2",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_3_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 0.9356,
+      "rack_id": "K0_3",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_3_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 1.2744,
+      "rack_id": "K0_3",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_4_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 0.9356,
+      "rack_id": "K0_4",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_4_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 1.2744,
+      "rack_id": "K0_4",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_6_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 0.9356,
+      "rack_id": "K0_6",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_6_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 1.2744,
+      "rack_id": "K0_6",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_7_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 0.9356,
+      "rack_id": "K0_7",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_7_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 1.2744,
+      "rack_id": "K0_7",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_8_ACCESS_A",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 0.9356,
+      "rack_id": "K0_8",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_8_ACCESS_B",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 1.2744,
+      "rack_id": "K0_8",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_9_ACCESS_A",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 0.9356,
+      "rack_id": "K0_9",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R0_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K0_9_ACCESS_B",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 1.2744,
+      "rack_id": "K0_9",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R1_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_1_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 1.7056,
+      "rack_id": "K1_1",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_1_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 2.0444,
+      "rack_id": "K1_1",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_2_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 1.7056,
+      "rack_id": "K1_2",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_2_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 2.0444,
+      "rack_id": "K1_2",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_3_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 1.7056,
+      "rack_id": "K1_3",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_3_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 2.0444,
+      "rack_id": "K1_3",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_4_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 1.7056,
+      "rack_id": "K1_4",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_4_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 2.0444,
+      "rack_id": "K1_4",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_6_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 1.7056,
+      "rack_id": "K1_6",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_6_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 2.0444,
+      "rack_id": "K1_6",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_7_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 1.7056,
+      "rack_id": "K1_7",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_7_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 2.0444,
+      "rack_id": "K1_7",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_8_ACCESS_A",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 1.7056,
+      "rack_id": "K1_8",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_8_ACCESS_B",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 2.0444,
+      "rack_id": "K1_8",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_9_ACCESS_A",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 1.7056,
+      "rack_id": "K1_9",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R1_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K1_9_ACCESS_B",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 2.0444,
+      "rack_id": "K1_9",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R2_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_1_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 2.4756,
+      "rack_id": "K2_1",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_1_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 2.8144,
+      "rack_id": "K2_1",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_2_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 2.4756,
+      "rack_id": "K2_2",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_2_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 2.8144,
+      "rack_id": "K2_2",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_3_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 2.4756,
+      "rack_id": "K2_3",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_3_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 2.8144,
+      "rack_id": "K2_3",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_4_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 2.4756,
+      "rack_id": "K2_4",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_4_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 2.8144,
+      "rack_id": "K2_4",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_6_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 2.4756,
+      "rack_id": "K2_6",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_6_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 2.8144,
+      "rack_id": "K2_6",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_7_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 2.4756,
+      "rack_id": "K2_7",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_7_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 2.8144,
+      "rack_id": "K2_7",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_8_ACCESS_A",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 2.4756,
+      "rack_id": "K2_8",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_8_ACCESS_B",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 2.8144,
+      "rack_id": "K2_8",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_9_ACCESS_A",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 2.4756,
+      "rack_id": "K2_9",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R2_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K2_9_ACCESS_B",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 2.8144,
+      "rack_id": "K2_9",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R3_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_1_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 3.2456,
+      "rack_id": "K3_1",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_1_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 3.5844,
+      "rack_id": "K3_1",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_2_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 3.2456,
+      "rack_id": "K3_2",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_2_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 3.5844,
+      "rack_id": "K3_2",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_3_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 3.2456,
+      "rack_id": "K3_3",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_3_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 3.5844,
+      "rack_id": "K3_3",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_4_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 3.2456,
+      "rack_id": "K3_4",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_4_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 3.5844,
+      "rack_id": "K3_4",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_6_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 3.2456,
+      "rack_id": "K3_6",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_6_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 3.5844,
+      "rack_id": "K3_6",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_7_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 3.2456,
+      "rack_id": "K3_7",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_7_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 3.5844,
+      "rack_id": "K3_7",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_8_ACCESS_A",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 3.2456,
+      "rack_id": "K3_8",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_8_ACCESS_B",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 3.5844,
+      "rack_id": "K3_8",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_9_ACCESS_A",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 3.2456,
+      "rack_id": "K3_9",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R3_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K3_9_ACCESS_B",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 3.5844,
+      "rack_id": "K3_9",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R4_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_1_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 4.0156,
+      "rack_id": "K4_1",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_1_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 4.3544,
+      "rack_id": "K4_1",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_2_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 4.0156,
+      "rack_id": "K4_2",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_2_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 4.3544,
+      "rack_id": "K4_2",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_3_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 4.0156,
+      "rack_id": "K4_3",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_3_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 4.3544,
+      "rack_id": "K4_3",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_4_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 4.0156,
+      "rack_id": "K4_4",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_4_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 4.3544,
+      "rack_id": "K4_4",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_6_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 4.0156,
+      "rack_id": "K4_6",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_6_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 4.3544,
+      "rack_id": "K4_6",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_7_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 4.0156,
+      "rack_id": "K4_7",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_7_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 4.3544,
+      "rack_id": "K4_7",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_8_ACCESS_A",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 4.0156,
+      "rack_id": "K4_8",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_8_ACCESS_B",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 4.3544,
+      "rack_id": "K4_8",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_9_ACCESS_A",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 4.0156,
+      "rack_id": "K4_9",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R4_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K4_9_ACCESS_B",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 4.3544,
+      "rack_id": "K4_9",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R5_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_1_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 4.7856,
+      "rack_id": "K5_1",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_1_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.0,
+      "y": 5.1244,
+      "rack_id": "K5_1",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_1",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_2_ACCESS_A",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 4.7856,
+      "rack_id": "K5_2",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_2_ACCESS_B",
+      "type": "rack_access",
+      "x": 5.62,
+      "y": 5.1244,
+      "rack_id": "K5_2",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_2",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_3_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 4.7856,
+      "rack_id": "K5_3",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_3_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.24,
+      "y": 5.1244,
+      "rack_id": "K5_3",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_3",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_4_ACCESS_A",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 4.7856,
+      "rack_id": "K5_4",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_4_ACCESS_B",
+      "type": "rack_access",
+      "x": 6.86,
+      "y": 5.1244,
+      "rack_id": "K5_4",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_4",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_6_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 4.7856,
+      "rack_id": "K5_6",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_6_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.2,
+      "y": 5.1244,
+      "rack_id": "K5_6",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_6",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_7_ACCESS_A",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 4.7856,
+      "rack_id": "K5_7",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_7_ACCESS_B",
+      "type": "rack_access",
+      "x": 8.83,
+      "y": 5.1244,
+      "rack_id": "K5_7",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_7",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_8_ACCESS_A",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 4.7856,
+      "rack_id": "K5_8",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_8_ACCESS_B",
+      "type": "rack_access",
+      "x": 9.45,
+      "y": 5.1244,
+      "rack_id": "K5_8",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_8",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_9_ACCESS_A",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 4.7856,
+      "rack_id": "K5_9",
+      "side": "A",
+      "service_only": true,
+      "adjacent_route_node": "R5_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "K5_9_ACCESS_B",
+      "type": "rack_access",
+      "x": 10.07,
+      "y": 5.1244,
+      "rack_id": "K5_9",
+      "side": "B",
+      "service_only": true,
+      "adjacent_route_node": "R6_9",
+      "transit_allowed": false
+    },
+    {
+      "id": "IN_HANDOFF_1_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_1",
+      "side": "A",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R1_0",
+      "x": 3.75,
+      "y": 1.49,
+      "handoff_id": "IN_HANDOFF_1"
+    },
+    {
+      "id": "IN_HANDOFF_1_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_1",
+      "side": "B",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R2_0",
+      "x": 3.75,
+      "y": 2.26,
+      "handoff_id": "IN_HANDOFF_1"
+    },
+    {
+      "id": "IN_HANDOFF_2_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_2",
+      "side": "A",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R2_0",
+      "x": 3.75,
+      "y": 2.26,
+      "handoff_id": "IN_HANDOFF_2"
+    },
+    {
+      "id": "IN_HANDOFF_2_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_2",
+      "side": "B",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R3_0",
+      "x": 3.75,
+      "y": 3.03,
+      "handoff_id": "IN_HANDOFF_2"
+    },
+    {
+      "id": "IN_HANDOFF_3_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_3",
+      "side": "A",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R3_0",
+      "x": 3.75,
+      "y": 3.03,
+      "handoff_id": "IN_HANDOFF_3"
+    },
+    {
+      "id": "IN_HANDOFF_3_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_3",
+      "side": "B",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R4_0",
+      "x": 3.75,
+      "y": 3.8,
+      "handoff_id": "IN_HANDOFF_3"
+    },
+    {
+      "id": "IN_HANDOFF_4_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_4",
+      "side": "A",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R4_0",
+      "x": 3.75,
+      "y": 3.8,
+      "handoff_id": "IN_HANDOFF_4"
+    },
+    {
+      "id": "IN_HANDOFF_4_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_4",
+      "side": "B",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R5_0",
+      "x": 3.75,
+      "y": 4.57,
+      "handoff_id": "IN_HANDOFF_4"
+    },
+    {
+      "id": "OUT_STATION_1_ACCESS_A",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_1",
+      "side": "A",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R1_10",
+      "x": 11.27,
+      "y": 1.49,
+      "station_id": "OUT_STATION_1"
+    },
+    {
+      "id": "OUT_STATION_1_ACCESS_B",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_1",
+      "side": "B",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R2_10",
+      "x": 11.27,
+      "y": 2.26,
+      "station_id": "OUT_STATION_1"
+    },
+    {
+      "id": "OUT_STATION_2_ACCESS_A",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_2",
+      "side": "A",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R4_10",
+      "x": 11.27,
+      "y": 3.8,
+      "station_id": "OUT_STATION_2"
+    },
+    {
+      "id": "OUT_STATION_2_ACCESS_B",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_2",
+      "side": "B",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R5_10",
+      "x": 11.27,
+      "y": 4.57,
+      "station_id": "OUT_STATION_2"
+    },
+    {
+      "id": "EMPTY_TOTE_BUFFER_1_ACCESS",
+      "type": "empty_tote_buffer_access",
+      "buffer_id": "EMPTY_TOTE_BUFFER_1",
+      "resource_id": "EMPTY_TOTE_BUFFER_1",
+      "service_only": true,
+      "transit_allowed": false,
+      "adjacent_route_node": "R6_10",
+      "x": 11.33,
+      "y": 5.62
+    }
+  ],
+  "edges": [
+    {
+      "id": "H0_0",
+      "source": "R0_0",
+      "target": "R0_1",
+      "type": "lane",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "H0_1",
+      "source": "R0_1",
+      "target": "R0_2",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H0_2",
+      "source": "R0_2",
+      "target": "R0_3",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H0_3",
+      "source": "R0_3",
+      "target": "R0_4",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H0_4",
+      "source": "R0_4",
+      "target": "R0_5",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H0_5",
+      "source": "R0_5",
+      "target": "R0_6",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H0_6",
+      "source": "R0_6",
+      "target": "R0_7",
+      "type": "lane",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "H0_7",
+      "source": "R0_7",
+      "target": "R0_8",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H0_8",
+      "source": "R0_8",
+      "target": "R0_9",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H0_9",
+      "source": "R0_9",
+      "target": "R0_10",
+      "type": "lane",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "H1_0",
+      "source": "R1_0",
+      "target": "R1_1",
+      "type": "lane",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "H1_1",
+      "source": "R1_1",
+      "target": "R1_2",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H1_2",
+      "source": "R1_2",
+      "target": "R1_3",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H1_3",
+      "source": "R1_3",
+      "target": "R1_4",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H1_4",
+      "source": "R1_4",
+      "target": "R1_5",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H1_5",
+      "source": "R1_5",
+      "target": "R1_6",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H1_6",
+      "source": "R1_6",
+      "target": "R1_7",
+      "type": "lane",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "H1_7",
+      "source": "R1_7",
+      "target": "R1_8",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H1_8",
+      "source": "R1_8",
+      "target": "R1_9",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H1_9",
+      "source": "R1_9",
+      "target": "R1_10",
+      "type": "lane",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "H2_0",
+      "source": "R2_0",
+      "target": "R2_1",
+      "type": "lane",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "H2_1",
+      "source": "R2_1",
+      "target": "R2_2",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H2_2",
+      "source": "R2_2",
+      "target": "R2_3",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H2_3",
+      "source": "R2_3",
+      "target": "R2_4",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H2_4",
+      "source": "R2_4",
+      "target": "R2_5",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H2_5",
+      "source": "R2_5",
+      "target": "R2_6",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H2_6",
+      "source": "R2_6",
+      "target": "R2_7",
+      "type": "lane",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "H2_7",
+      "source": "R2_7",
+      "target": "R2_8",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H2_8",
+      "source": "R2_8",
+      "target": "R2_9",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H2_9",
+      "source": "R2_9",
+      "target": "R2_10",
+      "type": "lane",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "H3_0",
+      "source": "R3_0",
+      "target": "R3_1",
+      "type": "lane",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "H3_1",
+      "source": "R3_1",
+      "target": "R3_2",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H3_2",
+      "source": "R3_2",
+      "target": "R3_3",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H3_3",
+      "source": "R3_3",
+      "target": "R3_4",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H3_4",
+      "source": "R3_4",
+      "target": "R3_5",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H3_5",
+      "source": "R3_5",
+      "target": "R3_6",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H3_6",
+      "source": "R3_6",
+      "target": "R3_7",
+      "type": "lane",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "H3_7",
+      "source": "R3_7",
+      "target": "R3_8",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H3_8",
+      "source": "R3_8",
+      "target": "R3_9",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H3_9",
+      "source": "R3_9",
+      "target": "R3_10",
+      "type": "lane",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "H4_0",
+      "source": "R4_0",
+      "target": "R4_1",
+      "type": "lane",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "H4_1",
+      "source": "R4_1",
+      "target": "R4_2",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H4_2",
+      "source": "R4_2",
+      "target": "R4_3",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H4_3",
+      "source": "R4_3",
+      "target": "R4_4",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H4_4",
+      "source": "R4_4",
+      "target": "R4_5",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H4_5",
+      "source": "R4_5",
+      "target": "R4_6",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H4_6",
+      "source": "R4_6",
+      "target": "R4_7",
+      "type": "lane",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "H4_7",
+      "source": "R4_7",
+      "target": "R4_8",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H4_8",
+      "source": "R4_8",
+      "target": "R4_9",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H4_9",
+      "source": "R4_9",
+      "target": "R4_10",
+      "type": "lane",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "H5_0",
+      "source": "R5_0",
+      "target": "R5_1",
+      "type": "lane",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "H5_1",
+      "source": "R5_1",
+      "target": "R5_2",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H5_2",
+      "source": "R5_2",
+      "target": "R5_3",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H5_3",
+      "source": "R5_3",
+      "target": "R5_4",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H5_4",
+      "source": "R5_4",
+      "target": "R5_5",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H5_5",
+      "source": "R5_5",
+      "target": "R5_6",
+      "type": "lane",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "H5_6",
+      "source": "R5_6",
+      "target": "R5_7",
+      "type": "lane",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "H5_7",
+      "source": "R5_7",
+      "target": "R5_8",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H5_8",
+      "source": "R5_8",
+      "target": "R5_9",
+      "type": "lane",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "H5_9",
+      "source": "R5_9",
+      "target": "R5_10",
+      "type": "lane",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "HB0a",
+      "source": "R6_0",
+      "target": "RJ01",
+      "type": "lane",
+      "distance_m": 1.125,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1125,
+      "cost": 1.125
+    },
+    {
+      "id": "HB0b",
+      "source": "RJ01",
+      "target": "R6_1",
+      "type": "lane",
+      "distance_m": 1.125,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1125,
+      "cost": 1.125
+    },
+    {
+      "id": "HB1a",
+      "source": "R6_1",
+      "target": "RJ02",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB1b",
+      "source": "RJ02",
+      "target": "R6_2",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB2a",
+      "source": "R6_2",
+      "target": "RJ03",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB2b",
+      "source": "RJ03",
+      "target": "R6_3",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB3a",
+      "source": "R6_3",
+      "target": "RJ04",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB3b",
+      "source": "RJ04",
+      "target": "R6_4",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB4a",
+      "source": "R6_4",
+      "target": "RJ05",
+      "type": "lane",
+      "distance_m": 0.8375,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 838,
+      "cost": 0.8375
+    },
+    {
+      "id": "HB4b",
+      "source": "RJ05",
+      "target": "R6_5",
+      "type": "lane",
+      "distance_m": 0.8375,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 838,
+      "cost": 0.8375
+    },
+    {
+      "id": "HB5a",
+      "source": "R6_5",
+      "target": "RJ06",
+      "type": "lane",
+      "distance_m": 0.8375,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 838,
+      "cost": 0.8375
+    },
+    {
+      "id": "HB5b",
+      "source": "RJ06",
+      "target": "R6_6",
+      "type": "lane",
+      "distance_m": 0.8375,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 838,
+      "cost": 0.8375
+    },
+    {
+      "id": "HB6a",
+      "source": "R6_6",
+      "target": "RJ07",
+      "type": "lane",
+      "distance_m": 0.7875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 788,
+      "cost": 0.7875
+    },
+    {
+      "id": "HB6b",
+      "source": "RJ07",
+      "target": "R6_7",
+      "type": "lane",
+      "distance_m": 0.7875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 788,
+      "cost": 0.7875
+    },
+    {
+      "id": "HB7a",
+      "source": "R6_7",
+      "target": "RJ08",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB7b",
+      "source": "RJ08",
+      "target": "R6_8",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB8a",
+      "source": "R6_8",
+      "target": "RJ09",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB8b",
+      "source": "RJ09",
+      "target": "R6_9",
+      "type": "lane",
+      "distance_m": 0.775,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 775,
+      "cost": 0.775
+    },
+    {
+      "id": "HB9a",
+      "source": "R6_9",
+      "target": "RJ10",
+      "type": "lane",
+      "distance_m": 0.975,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 975,
+      "cost": 0.975
+    },
+    {
+      "id": "HB9b",
+      "source": "RJ10",
+      "target": "R6_10",
+      "type": "lane",
+      "distance_m": 0.975,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 975,
+      "cost": 0.975
+    },
+    {
+      "id": "V0_0",
+      "source": "R0_0",
+      "target": "R1_0",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V0_1",
+      "source": "R1_0",
+      "target": "R2_0",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V0_2",
+      "source": "R2_0",
+      "target": "R3_0",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V0_3",
+      "source": "R3_0",
+      "target": "R4_0",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V0_4",
+      "source": "R4_0",
+      "target": "R5_0",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V0_5",
+      "source": "R5_0",
+      "target": "R6_0",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V5_0",
+      "source": "R0_5",
+      "target": "R1_5",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V5_1",
+      "source": "R1_5",
+      "target": "R2_5",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V5_2",
+      "source": "R2_5",
+      "target": "R3_5",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V5_3",
+      "source": "R3_5",
+      "target": "R4_5",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V5_4",
+      "source": "R4_5",
+      "target": "R5_5",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V5_5",
+      "source": "R5_5",
+      "target": "R6_5",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V10_0",
+      "source": "R0_10",
+      "target": "R1_10",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V10_1",
+      "source": "R1_10",
+      "target": "R2_10",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V10_2",
+      "source": "R2_10",
+      "target": "R3_10",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V10_3",
+      "source": "R3_10",
+      "target": "R4_10",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V10_4",
+      "source": "R4_10",
+      "target": "R5_10",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "V10_5",
+      "source": "R5_10",
+      "target": "R6_10",
+      "type": "spine",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "IN0",
+      "source": "I_a",
+      "target": "I_b",
+      "type": "inbound_elevator",
+      "distance_m": 1.025,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1025,
+      "cost": 1.025
+    },
+    {
+      "id": "IN1",
+      "source": "I_b",
+      "target": "I_c",
+      "type": "inbound_elevator",
+      "distance_m": 1.025,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1025,
+      "cost": 1.025
+    },
+    {
+      "id": "IN2",
+      "source": "I_c",
+      "target": "I_d",
+      "type": "inbound_elevator",
+      "distance_m": 1.45,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1450,
+      "cost": 1.45
+    },
+    {
+      "id": "IN3",
+      "source": "I_d",
+      "target": "I_e",
+      "type": "inbound_elevator",
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "IN4",
+      "source": "I_e",
+      "target": "I_f",
+      "type": "inbound_elevator",
+      "distance_m": 1.025,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1025,
+      "cost": 1.025
+    },
+    {
+      "id": "IN5",
+      "source": "I_f",
+      "target": "I_g",
+      "type": "inbound_elevator",
+      "distance_m": 1.025,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1025,
+      "cost": 1.025
+    },
+    {
+      "id": "IN_CONNECT",
+      "source": "I_d",
+      "target": "R3_0",
+      "type": "inbound_connector",
+      "distance_m": 2.475,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2475,
+      "cost": 2.475
+    },
+    {
+      "id": "OUT0",
+      "source": "O_A",
+      "target": "O_B",
+      "type": "outbound_stations",
+      "distance_m": 1.075,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1075,
+      "cost": 1.075
+    },
+    {
+      "id": "OUT1",
+      "source": "O_B",
+      "target": "O_C",
+      "type": "outbound_stations",
+      "distance_m": 1.075,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1075,
+      "cost": 1.075
+    },
+    {
+      "id": "OUT2",
+      "source": "O_C",
+      "target": "O_D",
+      "type": "outbound_stations",
+      "distance_m": 1.425,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1425,
+      "cost": 1.425
+    },
+    {
+      "id": "OUT3",
+      "source": "O_D",
+      "target": "O_E",
+      "type": "outbound_stations",
+      "distance_m": 1.1,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1100,
+      "cost": 1.1
+    },
+    {
+      "id": "OUT4",
+      "source": "O_E",
+      "target": "O_F",
+      "type": "outbound_stations",
+      "distance_m": 1.075,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1075,
+      "cost": 1.075
+    },
+    {
+      "id": "OUT5",
+      "source": "O_F",
+      "target": "O_G",
+      "type": "outbound_stations",
+      "distance_m": 1.1,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1100,
+      "cost": 1.1
+    },
+    {
+      "id": "OUT_CONNECT",
+      "source": "R3_10",
+      "target": "O_D",
+      "type": "outbound_connector",
+      "distance_m": 3.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 3950,
+      "cost": 3.95
+    },
+    {
+      "id": "CH1",
+      "source": "RJ01",
+      "target": "C01",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH2",
+      "source": "RJ02",
+      "target": "C02",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH3",
+      "source": "RJ03",
+      "target": "C03",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH4",
+      "source": "RJ04",
+      "target": "C04",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH5",
+      "source": "RJ05",
+      "target": "C05",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH6",
+      "source": "RJ06",
+      "target": "C06",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH7",
+      "source": "RJ07",
+      "target": "C07",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH8",
+      "source": "RJ08",
+      "target": "C08",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH9",
+      "source": "RJ09",
+      "target": "C09",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "CH10",
+      "source": "RJ10",
+      "target": "C10",
+      "type": "charging_connector",
+      "distance_m": 0.75,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 750,
+      "cost": 0.75
+    },
+    {
+      "id": "RA_K0_1_A_IN",
+      "source": "R0_1",
+      "target": "K0_1_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_1_A_OUT",
+      "source": "K0_1_ACCESS_A",
+      "target": "R0_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_1_B_IN",
+      "source": "R1_1",
+      "target": "K0_1_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_1_B_OUT",
+      "source": "K0_1_ACCESS_B",
+      "target": "R1_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_2_A_IN",
+      "source": "R0_2",
+      "target": "K0_2_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_2_A_OUT",
+      "source": "K0_2_ACCESS_A",
+      "target": "R0_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_2_B_IN",
+      "source": "R1_2",
+      "target": "K0_2_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_2_B_OUT",
+      "source": "K0_2_ACCESS_B",
+      "target": "R1_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_3_A_IN",
+      "source": "R0_3",
+      "target": "K0_3_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_3_A_OUT",
+      "source": "K0_3_ACCESS_A",
+      "target": "R0_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_3_B_IN",
+      "source": "R1_3",
+      "target": "K0_3_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_3_B_OUT",
+      "source": "K0_3_ACCESS_B",
+      "target": "R1_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_4_A_IN",
+      "source": "R0_4",
+      "target": "K0_4_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_4_A_OUT",
+      "source": "K0_4_ACCESS_A",
+      "target": "R0_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_4_B_IN",
+      "source": "R1_4",
+      "target": "K0_4_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_4_B_OUT",
+      "source": "K0_4_ACCESS_B",
+      "target": "R1_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_6_A_IN",
+      "source": "R0_6",
+      "target": "K0_6_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_6_A_OUT",
+      "source": "K0_6_ACCESS_A",
+      "target": "R0_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_6_B_IN",
+      "source": "R1_6",
+      "target": "K0_6_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_6_B_OUT",
+      "source": "K0_6_ACCESS_B",
+      "target": "R1_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_7_A_IN",
+      "source": "R0_7",
+      "target": "K0_7_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_7_A_OUT",
+      "source": "K0_7_ACCESS_A",
+      "target": "R0_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_7_B_IN",
+      "source": "R1_7",
+      "target": "K0_7_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_7_B_OUT",
+      "source": "K0_7_ACCESS_B",
+      "target": "R1_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_8_A_IN",
+      "source": "R0_8",
+      "target": "K0_8_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_8_A_OUT",
+      "source": "K0_8_ACCESS_A",
+      "target": "R0_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_8_B_IN",
+      "source": "R1_8",
+      "target": "K0_8_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_8_B_OUT",
+      "source": "K0_8_ACCESS_B",
+      "target": "R1_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_9_A_IN",
+      "source": "R0_9",
+      "target": "K0_9_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_9_A_OUT",
+      "source": "K0_9_ACCESS_A",
+      "target": "R0_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_9_B_IN",
+      "source": "R1_9",
+      "target": "K0_9_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K0_9_B_OUT",
+      "source": "K0_9_ACCESS_B",
+      "target": "R1_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_1_A_IN",
+      "source": "R1_1",
+      "target": "K1_1_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_1_A_OUT",
+      "source": "K1_1_ACCESS_A",
+      "target": "R1_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_1_B_IN",
+      "source": "R2_1",
+      "target": "K1_1_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_1_B_OUT",
+      "source": "K1_1_ACCESS_B",
+      "target": "R2_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_2_A_IN",
+      "source": "R1_2",
+      "target": "K1_2_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_2_A_OUT",
+      "source": "K1_2_ACCESS_A",
+      "target": "R1_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_2_B_IN",
+      "source": "R2_2",
+      "target": "K1_2_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_2_B_OUT",
+      "source": "K1_2_ACCESS_B",
+      "target": "R2_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_3_A_IN",
+      "source": "R1_3",
+      "target": "K1_3_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_3_A_OUT",
+      "source": "K1_3_ACCESS_A",
+      "target": "R1_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_3_B_IN",
+      "source": "R2_3",
+      "target": "K1_3_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_3_B_OUT",
+      "source": "K1_3_ACCESS_B",
+      "target": "R2_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_4_A_IN",
+      "source": "R1_4",
+      "target": "K1_4_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_4_A_OUT",
+      "source": "K1_4_ACCESS_A",
+      "target": "R1_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_4_B_IN",
+      "source": "R2_4",
+      "target": "K1_4_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_4_B_OUT",
+      "source": "K1_4_ACCESS_B",
+      "target": "R2_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_6_A_IN",
+      "source": "R1_6",
+      "target": "K1_6_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_6_A_OUT",
+      "source": "K1_6_ACCESS_A",
+      "target": "R1_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_6_B_IN",
+      "source": "R2_6",
+      "target": "K1_6_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_6_B_OUT",
+      "source": "K1_6_ACCESS_B",
+      "target": "R2_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_7_A_IN",
+      "source": "R1_7",
+      "target": "K1_7_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_7_A_OUT",
+      "source": "K1_7_ACCESS_A",
+      "target": "R1_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_7_B_IN",
+      "source": "R2_7",
+      "target": "K1_7_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_7_B_OUT",
+      "source": "K1_7_ACCESS_B",
+      "target": "R2_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_8_A_IN",
+      "source": "R1_8",
+      "target": "K1_8_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_8_A_OUT",
+      "source": "K1_8_ACCESS_A",
+      "target": "R1_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_8_B_IN",
+      "source": "R2_8",
+      "target": "K1_8_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_8_B_OUT",
+      "source": "K1_8_ACCESS_B",
+      "target": "R2_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_9_A_IN",
+      "source": "R1_9",
+      "target": "K1_9_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_9_A_OUT",
+      "source": "K1_9_ACCESS_A",
+      "target": "R1_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_9_B_IN",
+      "source": "R2_9",
+      "target": "K1_9_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K1_9_B_OUT",
+      "source": "K1_9_ACCESS_B",
+      "target": "R2_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_1_A_IN",
+      "source": "R2_1",
+      "target": "K2_1_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_1_A_OUT",
+      "source": "K2_1_ACCESS_A",
+      "target": "R2_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_1_B_IN",
+      "source": "R3_1",
+      "target": "K2_1_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_1_B_OUT",
+      "source": "K2_1_ACCESS_B",
+      "target": "R3_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_2_A_IN",
+      "source": "R2_2",
+      "target": "K2_2_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_2_A_OUT",
+      "source": "K2_2_ACCESS_A",
+      "target": "R2_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_2_B_IN",
+      "source": "R3_2",
+      "target": "K2_2_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_2_B_OUT",
+      "source": "K2_2_ACCESS_B",
+      "target": "R3_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_3_A_IN",
+      "source": "R2_3",
+      "target": "K2_3_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_3_A_OUT",
+      "source": "K2_3_ACCESS_A",
+      "target": "R2_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_3_B_IN",
+      "source": "R3_3",
+      "target": "K2_3_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_3_B_OUT",
+      "source": "K2_3_ACCESS_B",
+      "target": "R3_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_4_A_IN",
+      "source": "R2_4",
+      "target": "K2_4_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_4_A_OUT",
+      "source": "K2_4_ACCESS_A",
+      "target": "R2_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_4_B_IN",
+      "source": "R3_4",
+      "target": "K2_4_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_4_B_OUT",
+      "source": "K2_4_ACCESS_B",
+      "target": "R3_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_6_A_IN",
+      "source": "R2_6",
+      "target": "K2_6_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_6_A_OUT",
+      "source": "K2_6_ACCESS_A",
+      "target": "R2_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_6_B_IN",
+      "source": "R3_6",
+      "target": "K2_6_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_6_B_OUT",
+      "source": "K2_6_ACCESS_B",
+      "target": "R3_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_7_A_IN",
+      "source": "R2_7",
+      "target": "K2_7_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_7_A_OUT",
+      "source": "K2_7_ACCESS_A",
+      "target": "R2_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_7_B_IN",
+      "source": "R3_7",
+      "target": "K2_7_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_7_B_OUT",
+      "source": "K2_7_ACCESS_B",
+      "target": "R3_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_8_A_IN",
+      "source": "R2_8",
+      "target": "K2_8_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_8_A_OUT",
+      "source": "K2_8_ACCESS_A",
+      "target": "R2_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_8_B_IN",
+      "source": "R3_8",
+      "target": "K2_8_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_8_B_OUT",
+      "source": "K2_8_ACCESS_B",
+      "target": "R3_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_9_A_IN",
+      "source": "R2_9",
+      "target": "K2_9_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_9_A_OUT",
+      "source": "K2_9_ACCESS_A",
+      "target": "R2_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_9_B_IN",
+      "source": "R3_9",
+      "target": "K2_9_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K2_9_B_OUT",
+      "source": "K2_9_ACCESS_B",
+      "target": "R3_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_1_A_IN",
+      "source": "R3_1",
+      "target": "K3_1_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_1_A_OUT",
+      "source": "K3_1_ACCESS_A",
+      "target": "R3_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_1_B_IN",
+      "source": "R4_1",
+      "target": "K3_1_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_1_B_OUT",
+      "source": "K3_1_ACCESS_B",
+      "target": "R4_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_2_A_IN",
+      "source": "R3_2",
+      "target": "K3_2_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_2_A_OUT",
+      "source": "K3_2_ACCESS_A",
+      "target": "R3_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_2_B_IN",
+      "source": "R4_2",
+      "target": "K3_2_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_2_B_OUT",
+      "source": "K3_2_ACCESS_B",
+      "target": "R4_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_3_A_IN",
+      "source": "R3_3",
+      "target": "K3_3_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_3_A_OUT",
+      "source": "K3_3_ACCESS_A",
+      "target": "R3_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_3_B_IN",
+      "source": "R4_3",
+      "target": "K3_3_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_3_B_OUT",
+      "source": "K3_3_ACCESS_B",
+      "target": "R4_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_4_A_IN",
+      "source": "R3_4",
+      "target": "K3_4_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_4_A_OUT",
+      "source": "K3_4_ACCESS_A",
+      "target": "R3_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_4_B_IN",
+      "source": "R4_4",
+      "target": "K3_4_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_4_B_OUT",
+      "source": "K3_4_ACCESS_B",
+      "target": "R4_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_6_A_IN",
+      "source": "R3_6",
+      "target": "K3_6_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_6_A_OUT",
+      "source": "K3_6_ACCESS_A",
+      "target": "R3_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_6_B_IN",
+      "source": "R4_6",
+      "target": "K3_6_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_6_B_OUT",
+      "source": "K3_6_ACCESS_B",
+      "target": "R4_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_7_A_IN",
+      "source": "R3_7",
+      "target": "K3_7_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_7_A_OUT",
+      "source": "K3_7_ACCESS_A",
+      "target": "R3_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_7_B_IN",
+      "source": "R4_7",
+      "target": "K3_7_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_7_B_OUT",
+      "source": "K3_7_ACCESS_B",
+      "target": "R4_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_8_A_IN",
+      "source": "R3_8",
+      "target": "K3_8_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_8_A_OUT",
+      "source": "K3_8_ACCESS_A",
+      "target": "R3_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_8_B_IN",
+      "source": "R4_8",
+      "target": "K3_8_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_8_B_OUT",
+      "source": "K3_8_ACCESS_B",
+      "target": "R4_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_9_A_IN",
+      "source": "R3_9",
+      "target": "K3_9_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_9_A_OUT",
+      "source": "K3_9_ACCESS_A",
+      "target": "R3_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_9_B_IN",
+      "source": "R4_9",
+      "target": "K3_9_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K3_9_B_OUT",
+      "source": "K3_9_ACCESS_B",
+      "target": "R4_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_1_A_IN",
+      "source": "R4_1",
+      "target": "K4_1_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_1_A_OUT",
+      "source": "K4_1_ACCESS_A",
+      "target": "R4_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_1_B_IN",
+      "source": "R5_1",
+      "target": "K4_1_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_1_B_OUT",
+      "source": "K4_1_ACCESS_B",
+      "target": "R5_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_2_A_IN",
+      "source": "R4_2",
+      "target": "K4_2_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_2_A_OUT",
+      "source": "K4_2_ACCESS_A",
+      "target": "R4_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_2_B_IN",
+      "source": "R5_2",
+      "target": "K4_2_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_2_B_OUT",
+      "source": "K4_2_ACCESS_B",
+      "target": "R5_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_3_A_IN",
+      "source": "R4_3",
+      "target": "K4_3_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_3_A_OUT",
+      "source": "K4_3_ACCESS_A",
+      "target": "R4_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_3_B_IN",
+      "source": "R5_3",
+      "target": "K4_3_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_3_B_OUT",
+      "source": "K4_3_ACCESS_B",
+      "target": "R5_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_4_A_IN",
+      "source": "R4_4",
+      "target": "K4_4_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_4_A_OUT",
+      "source": "K4_4_ACCESS_A",
+      "target": "R4_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_4_B_IN",
+      "source": "R5_4",
+      "target": "K4_4_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_4_B_OUT",
+      "source": "K4_4_ACCESS_B",
+      "target": "R5_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_6_A_IN",
+      "source": "R4_6",
+      "target": "K4_6_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_6_A_OUT",
+      "source": "K4_6_ACCESS_A",
+      "target": "R4_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_6_B_IN",
+      "source": "R5_6",
+      "target": "K4_6_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_6_B_OUT",
+      "source": "K4_6_ACCESS_B",
+      "target": "R5_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_7_A_IN",
+      "source": "R4_7",
+      "target": "K4_7_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_7_A_OUT",
+      "source": "K4_7_ACCESS_A",
+      "target": "R4_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_7_B_IN",
+      "source": "R5_7",
+      "target": "K4_7_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_7_B_OUT",
+      "source": "K4_7_ACCESS_B",
+      "target": "R5_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_8_A_IN",
+      "source": "R4_8",
+      "target": "K4_8_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_8_A_OUT",
+      "source": "K4_8_ACCESS_A",
+      "target": "R4_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_8_B_IN",
+      "source": "R5_8",
+      "target": "K4_8_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_8_B_OUT",
+      "source": "K4_8_ACCESS_B",
+      "target": "R5_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_9_A_IN",
+      "source": "R4_9",
+      "target": "K4_9_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_9_A_OUT",
+      "source": "K4_9_ACCESS_A",
+      "target": "R4_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_9_B_IN",
+      "source": "R5_9",
+      "target": "K4_9_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K4_9_B_OUT",
+      "source": "K4_9_ACCESS_B",
+      "target": "R5_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_1_A_IN",
+      "source": "R5_1",
+      "target": "K5_1_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_1_A_OUT",
+      "source": "K5_1_ACCESS_A",
+      "target": "R5_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_1_B_IN",
+      "source": "R6_1",
+      "target": "K5_1_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_1_B_OUT",
+      "source": "K5_1_ACCESS_B",
+      "target": "R6_1",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_2_A_IN",
+      "source": "R5_2",
+      "target": "K5_2_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_2_A_OUT",
+      "source": "K5_2_ACCESS_A",
+      "target": "R5_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_2_B_IN",
+      "source": "R6_2",
+      "target": "K5_2_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_2_B_OUT",
+      "source": "K5_2_ACCESS_B",
+      "target": "R6_2",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_3_A_IN",
+      "source": "R5_3",
+      "target": "K5_3_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_3_A_OUT",
+      "source": "K5_3_ACCESS_A",
+      "target": "R5_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_3_B_IN",
+      "source": "R6_3",
+      "target": "K5_3_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_3_B_OUT",
+      "source": "K5_3_ACCESS_B",
+      "target": "R6_3",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_4_A_IN",
+      "source": "R5_4",
+      "target": "K5_4_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_4_A_OUT",
+      "source": "K5_4_ACCESS_A",
+      "target": "R5_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_4_B_IN",
+      "source": "R6_4",
+      "target": "K5_4_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_4_B_OUT",
+      "source": "K5_4_ACCESS_B",
+      "target": "R6_4",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_6_A_IN",
+      "source": "R5_6",
+      "target": "K5_6_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_6_A_OUT",
+      "source": "K5_6_ACCESS_A",
+      "target": "R5_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_6_B_IN",
+      "source": "R6_6",
+      "target": "K5_6_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_6_B_OUT",
+      "source": "K5_6_ACCESS_B",
+      "target": "R6_6",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_7_A_IN",
+      "source": "R5_7",
+      "target": "K5_7_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_7_A_OUT",
+      "source": "K5_7_ACCESS_A",
+      "target": "R5_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_7_B_IN",
+      "source": "R6_7",
+      "target": "K5_7_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_7_B_OUT",
+      "source": "K5_7_ACCESS_B",
+      "target": "R6_7",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_8_A_IN",
+      "source": "R5_8",
+      "target": "K5_8_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_8_A_OUT",
+      "source": "K5_8_ACCESS_A",
+      "target": "R5_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_8_B_IN",
+      "source": "R6_8",
+      "target": "K5_8_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_8_B_OUT",
+      "source": "K5_8_ACCESS_B",
+      "target": "R6_8",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_9_A_IN",
+      "source": "R5_9",
+      "target": "K5_9_ACCESS_A",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_9_A_OUT",
+      "source": "K5_9_ACCESS_A",
+      "target": "R5_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_9_B_IN",
+      "source": "R6_9",
+      "target": "K5_9_ACCESS_B",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "RA_K5_9_B_OUT",
+      "source": "K5_9_ACCESS_B",
+      "target": "R6_9",
+      "type": "rack_access",
+      "distance_m": 0.539,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 539,
+      "cost": 0.539
+    },
+    {
+      "id": "IH_IN_HANDOFF_1_ACCESS_A_IN",
+      "source": "R1_0",
+      "target": "IN_HANDOFF_1_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_1_ACCESS_A_OUT",
+      "source": "IN_HANDOFF_1_ACCESS_A",
+      "target": "R1_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_1_ACCESS_B_IN",
+      "source": "R2_0",
+      "target": "IN_HANDOFF_1_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_1_ACCESS_B_OUT",
+      "source": "IN_HANDOFF_1_ACCESS_B",
+      "target": "R2_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_2_ACCESS_A_IN",
+      "source": "R2_0",
+      "target": "IN_HANDOFF_2_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_2_ACCESS_A_OUT",
+      "source": "IN_HANDOFF_2_ACCESS_A",
+      "target": "R2_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_2_ACCESS_B_IN",
+      "source": "R3_0",
+      "target": "IN_HANDOFF_2_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_2_ACCESS_B_OUT",
+      "source": "IN_HANDOFF_2_ACCESS_B",
+      "target": "R3_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_3_ACCESS_A_IN",
+      "source": "R3_0",
+      "target": "IN_HANDOFF_3_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_3",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_3_ACCESS_A_OUT",
+      "source": "IN_HANDOFF_3_ACCESS_A",
+      "target": "R3_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_3",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_3_ACCESS_B_IN",
+      "source": "R4_0",
+      "target": "IN_HANDOFF_3_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_3",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_3_ACCESS_B_OUT",
+      "source": "IN_HANDOFF_3_ACCESS_B",
+      "target": "R4_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_3",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_4_ACCESS_A_IN",
+      "source": "R4_0",
+      "target": "IN_HANDOFF_4_ACCESS_A",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_4",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_4_ACCESS_A_OUT",
+      "source": "IN_HANDOFF_4_ACCESS_A",
+      "target": "R4_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_4",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_4_ACCESS_B_IN",
+      "source": "R5_0",
+      "target": "IN_HANDOFF_4_ACCESS_B",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_4",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "IH_IN_HANDOFF_4_ACCESS_B_OUT",
+      "source": "IN_HANDOFF_4_ACCESS_B",
+      "target": "R5_0",
+      "type": "inbound_handoff_access",
+      "resource_id": "IN_HANDOFF_4",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 0.875,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 875,
+      "cost": 0.875
+    },
+    {
+      "id": "OS_OUT_STATION_1_ACCESS_A_IN",
+      "source": "R1_10",
+      "target": "OUT_STATION_1_ACCESS_A",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_1_ACCESS_A_OUT",
+      "source": "OUT_STATION_1_ACCESS_A",
+      "target": "R1_10",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_1_ACCESS_B_IN",
+      "source": "R2_10",
+      "target": "OUT_STATION_1_ACCESS_B",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_1_ACCESS_B_OUT",
+      "source": "OUT_STATION_1_ACCESS_B",
+      "target": "R2_10",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_2_ACCESS_A_IN",
+      "source": "R4_10",
+      "target": "OUT_STATION_2_ACCESS_A",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_2_ACCESS_A_OUT",
+      "source": "OUT_STATION_2_ACCESS_A",
+      "target": "R4_10",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_2_ACCESS_B_IN",
+      "source": "R5_10",
+      "target": "OUT_STATION_2_ACCESS_B",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "OS_OUT_STATION_2_ACCESS_B_OUT",
+      "source": "OUT_STATION_2_ACCESS_B",
+      "target": "R5_10",
+      "type": "outbound_station_access",
+      "resource_id": "OUT_STATION_2",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.05,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1050,
+      "cost": 1.05
+    },
+    {
+      "id": "RETURN_V10_5",
+      "source": "R6_10",
+      "target": "R5_10",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "RETURN_V10_4",
+      "source": "R5_10",
+      "target": "R4_10",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "RETURN_V10_3",
+      "source": "R4_10",
+      "target": "R3_10",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "RETURN_V10_2",
+      "source": "R3_10",
+      "target": "R2_10",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "RETURN_V10_1",
+      "source": "R2_10",
+      "target": "R1_10",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "RETURN_V10_0",
+      "source": "R1_10",
+      "target": "R0_10",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.925,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1925,
+      "cost": 1.925
+    },
+    {
+      "id": "RETURN_H0_9",
+      "source": "R0_10",
+      "target": "R0_9",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.95,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1950,
+      "cost": 1.95
+    },
+    {
+      "id": "RETURN_H0_8",
+      "source": "R0_9",
+      "target": "R0_8",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "RETURN_H0_7",
+      "source": "R0_8",
+      "target": "R0_7",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "RETURN_H0_6",
+      "source": "R0_7",
+      "target": "R0_6",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.575,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1575,
+      "cost": 1.575
+    },
+    {
+      "id": "RETURN_H0_5",
+      "source": "R0_6",
+      "target": "R0_5",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "RETURN_H0_4",
+      "source": "R0_5",
+      "target": "R0_4",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.675,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1675,
+      "cost": 1.675
+    },
+    {
+      "id": "RETURN_H0_3",
+      "source": "R0_4",
+      "target": "R0_3",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "RETURN_H0_2",
+      "source": "R0_3",
+      "target": "R0_2",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "RETURN_H0_1",
+      "source": "R0_2",
+      "target": "R0_1",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 1.55,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1550,
+      "cost": 1.55
+    },
+    {
+      "id": "RETURN_H0_0",
+      "source": "R0_1",
+      "target": "R0_0",
+      "type": "return_perimeter",
+      "direction": "counter_clockwise",
+      "distance_m": 2.25,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 2250,
+      "cost": 2.25
+    },
+    {
+      "id": "ETB_EMPTY_TOTE_BUFFER_1_IN",
+      "source": "R6_10",
+      "target": "EMPTY_TOTE_BUFFER_1_ACCESS",
+      "type": "empty_tote_buffer_access",
+      "resource_id": "EMPTY_TOTE_BUFFER_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.389244,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1389,
+      "cost": 1.389244
+    },
+    {
+      "id": "ETB_EMPTY_TOTE_BUFFER_1_OUT",
+      "source": "EMPTY_TOTE_BUFFER_1_ACCESS",
+      "target": "R6_10",
+      "type": "empty_tote_buffer_access",
+      "resource_id": "EMPTY_TOTE_BUFFER_1",
+      "service_only": true,
+      "mobile_robot_traversable": true,
+      "distance_m": 1.389244,
+      "speed_limit_mps": 1.0,
+      "nominal_travel_time_ms": 1389,
+      "cost": 1.389244
+    }
+  ],
+  "routing_model": {
+    "rack_entities_in_route_graph": false,
+    "rack_access_node_type": "rack_access",
+    "access_nodes_are_service_only": true,
+    "rack_through_travel_allowed": false
+  },
+  "facility_routing_model": {
+    "inbound_business_ports_in_facility_catalog": true,
+    "inbound_handoff_access_node_type": "inbound_handoff_access",
+    "outbound_business_chutes_in_facility_catalog": true,
+    "outbound_station_access_node_type": "outbound_station_access",
+    "mobile_robot_delivers_handling_unit_to_station": true,
+    "station_robot_sorts_to_order_chutes": true,
+    "legacy_direct_io_nodes_active_for_new_work": false,
+    "outbound_return_perimeter": true,
+    "return_perimeter_direction": "counter_clockwise",
+    "logical_outbound_destinations": [
+      "O_A",
+      "O_B",
+      "O_C",
+      "O_D",
+      "O_E",
+      "O_F",
+      "O_G"
+    ],
+    "station_is_mandatory_processing_waypoint": true,
+    "amr_physical_destination_is_station_access": true,
+    "station_robot_routes_to_logical_destination": true,
+    "all_stations_serve_all_destinations": true,
+    "empty_tote_buffer_access_node_type": "empty_tote_buffer_access"
+  },
+  "physical_distance_unit": "meters",
+  "fallback_meters_per_coordinate_unit": 2.5,
+  "default_robot_speed_mps": 1.0,
+  "warehouse_id": "WH-001",
+  "distance_source": "explicit_edge_metrics_v13_19",
+  "render_coordinate_unit": "PowerPoint inches",
+  "coordinate_system": "METERS",
+  "meters_per_coordinate_unit": 2.5
+}

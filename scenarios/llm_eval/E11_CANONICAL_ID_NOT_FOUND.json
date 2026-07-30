@@ -1,0 +1,46 @@
+{
+  "scenario_id": "E11_CANONICAL_ID_NOT_FOUND",
+  "title": "존재하지 않는 코드 차단",
+  "category": "INPUT_REJECTION",
+  "evaluation_stage": "FULL_AGENT",
+  "difficulty": 4,
+  "argument": "형식은 맞지만 권위 DB에 없다.",
+  "why_rule_is_or_is_not_enough": "유사 주문을 추측하지 않고 ENTITY_NOT_FOUND로 종료한다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ORD-999를 처리해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": null,
+    "final_route": null,
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": "CANONICAL_ENTITY_NOT_FOUND",
+    "final_status": [
+      "input_rejected"
+    ],
+    "preserve_operation_ids": [
+      "ORD-999"
+    ],
+    "must_call_nodes": [
+      "query_key_resolver"
+    ],
+    "must_not_call_nodes": [
+      "optimizer"
+    ],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

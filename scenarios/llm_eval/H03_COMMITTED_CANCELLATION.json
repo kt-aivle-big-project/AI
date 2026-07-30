@@ -1,0 +1,53 @@
+{
+  "scenario_id": "H03_COMMITTED_CANCELLATION",
+  "title": "Pickup 완료 주문 취소",
+  "category": "HITL_EXCEPTION",
+  "evaluation_stage": "HITL_RESUME",
+  "difficulty": 5,
+  "argument": "물리적으로 Commit된 작업의 취소다.",
+  "why_rule_is_or_is_not_enough": "원위치·버퍼·완료 후 반품 중 책임 있는 선택이 필요하다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ORD-001은 이미 Pickup 완료했는데 지금 취소해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REQUIRE_HUMAN_APPROVAL",
+    "final_route": null,
+    "hitl_stage": "PRE_ROUTE",
+    "reason_code": "COMMITTED_TASK_CANCELLATION",
+    "input_rejection_reason_code": null,
+    "final_status": [
+      "awaiting_human_approval"
+    ],
+    "preserve_operation_ids": [
+      "ORD-001"
+    ],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": {
+    "action": "SELECT",
+    "selected_option_id": "MOVE_TO_BUFFER",
+    "selected_entity_ids": [
+      "ORD-001"
+    ],
+    "actor_id": "shift-manager",
+    "comment": "버퍼 적치"
+  },
+  "tags": [
+    "hitl",
+    "cancellation"
+  ],
+  "notes": []
+}

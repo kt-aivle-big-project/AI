@@ -1,0 +1,187 @@
+{
+  "version": "13.14",
+  "updated_at": "2026-07-27T03:45:04.369728+00:00",
+  "routing_contract": {
+    "business_ports_are_not_mobile_robot_destinations": true,
+    "inbound_uses_handoff_access_nodes": true,
+    "outbound_uses_goods_to_person_stations": true,
+    "station_robot_sorts_one_handling_unit_to_many_orders": true,
+    "remainder_returns_to_home_rack_when_positive": true,
+    "orders_keep_logical_outbound_destination": true,
+    "station_is_mandatory_processing_waypoint": true,
+    "stations_are_not_fixed_on_orders": true,
+    "all_stations_serve_all_outbound_destinations": true,
+    "station_robot_routes_units_to_logical_destinations": true,
+    "depleted_handling_unit_moves_to_empty_tote_buffer": true
+  },
+  "inbound_ports": [
+    {
+      "port_id": "I_a",
+      "label": "a",
+      "handoff_id": "IN_HANDOFF_1"
+    },
+    {
+      "port_id": "I_b",
+      "label": "b",
+      "handoff_id": "IN_HANDOFF_1"
+    },
+    {
+      "port_id": "I_c",
+      "label": "c",
+      "handoff_id": "IN_HANDOFF_2"
+    },
+    {
+      "port_id": "I_d",
+      "label": "d",
+      "handoff_id": "IN_HANDOFF_2"
+    },
+    {
+      "port_id": "I_e",
+      "label": "e",
+      "handoff_id": "IN_HANDOFF_3"
+    },
+    {
+      "port_id": "I_f",
+      "label": "f",
+      "handoff_id": "IN_HANDOFF_4"
+    },
+    {
+      "port_id": "I_g",
+      "label": "g",
+      "handoff_id": "IN_HANDOFF_4"
+    }
+  ],
+  "inbound_handoffs": [
+    {
+      "handoff_id": "IN_HANDOFF_1",
+      "access_node_ids": [
+        "IN_HANDOFF_1_ACCESS_A",
+        "IN_HANDOFF_1_ACCESS_B"
+      ],
+      "buffer_capacity": 2
+    },
+    {
+      "handoff_id": "IN_HANDOFF_2",
+      "access_node_ids": [
+        "IN_HANDOFF_2_ACCESS_A",
+        "IN_HANDOFF_2_ACCESS_B"
+      ],
+      "buffer_capacity": 2
+    },
+    {
+      "handoff_id": "IN_HANDOFF_3",
+      "access_node_ids": [
+        "IN_HANDOFF_3_ACCESS_A",
+        "IN_HANDOFF_3_ACCESS_B"
+      ],
+      "buffer_capacity": 2
+    },
+    {
+      "handoff_id": "IN_HANDOFF_4",
+      "access_node_ids": [
+        "IN_HANDOFF_4_ACCESS_A",
+        "IN_HANDOFF_4_ACCESS_B"
+      ],
+      "buffer_capacity": 2
+    }
+  ],
+  "outbound_chutes": [
+    {
+      "chute_id": "O_A",
+      "label": "A"
+    },
+    {
+      "chute_id": "O_B",
+      "label": "B"
+    },
+    {
+      "chute_id": "O_C",
+      "label": "C"
+    },
+    {
+      "chute_id": "O_D",
+      "label": "D"
+    },
+    {
+      "chute_id": "O_E",
+      "label": "E"
+    },
+    {
+      "chute_id": "O_F",
+      "label": "F"
+    },
+    {
+      "chute_id": "O_G",
+      "label": "G"
+    }
+  ],
+  "outbound_stations": [
+    {
+      "station_id": "OUT_STATION_1",
+      "station_robot_id": "SR-OUT-01",
+      "access_node_ids": [
+        "OUT_STATION_1_ACCESS_A",
+        "OUT_STATION_1_ACCESS_B"
+      ],
+      "served_chute_ids": [
+        "O_A",
+        "O_B",
+        "O_C",
+        "O_D",
+        "O_E",
+        "O_F",
+        "O_G"
+      ],
+      "tote_buffer_capacity": 2,
+      "status": "available",
+      "serves_all_destinations": true
+    },
+    {
+      "station_id": "OUT_STATION_2",
+      "station_robot_id": "SR-OUT-02",
+      "access_node_ids": [
+        "OUT_STATION_2_ACCESS_A",
+        "OUT_STATION_2_ACCESS_B"
+      ],
+      "served_chute_ids": [
+        "O_A",
+        "O_B",
+        "O_C",
+        "O_D",
+        "O_E",
+        "O_F",
+        "O_G"
+      ],
+      "tote_buffer_capacity": 2,
+      "status": "available",
+      "serves_all_destinations": true
+    }
+  ],
+  "station_robots": [
+    {
+      "station_robot_id": "SR-OUT-01",
+      "station_id": "OUT_STATION_1",
+      "status": "idle",
+      "max_orders_per_wave": 16,
+      "items_per_tick": 1
+    },
+    {
+      "station_robot_id": "SR-OUT-02",
+      "station_id": "OUT_STATION_2",
+      "status": "idle",
+      "max_orders_per_wave": 16,
+      "items_per_tick": 1
+    }
+  ],
+  "empty_tote_buffers": [
+    {
+      "buffer_id": "EMPTY_TOTE_BUFFER_1",
+      "access_node_ids": [
+        "EMPTY_TOTE_BUFFER_1_ACCESS"
+      ],
+      "capacity": 32,
+      "status": "available"
+    }
+  ],
+  "warehouse_id": "WH-001"
+}

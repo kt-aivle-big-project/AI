@@ -1,0 +1,35 @@
+{
+  "scenario_id": "S7_language_priority_conflict",
+  "title": "다중 주문 + 언어적 우선순위 — VIP·마감을 문장에서 추출해 triage",
+  "argument": "정식화 자율성: 데이터 priority가 전부 medium인 상태에서, 언어로만 주어진 VIP·마감 제약을 priority 상향/defer로 정식화해야 한다.",
+  "data_dir": "scenarios/fixtures/V9_three_orders_language",
+  "repetitions": 3,
+  "request": {
+    "simulation_id": "VAL-S7",
+    "request_mode": "human_command",
+    "planning_mode": "llm_router",
+    "optimization_backend": "ortools",
+    "user_command": "대기 주문 3건 상황이야. ORD-003은 VIP 고객 건이라 반드시 이번에 나가야 하고, ORD-001은 출고 마감이 임박했어. ORD-002는 여유 있는 건이야. 로봇이 부족하면 여유 있는 건은 미뤄도 돼. 처리 미션을 만들어.",
+    "events": [],
+    "max_agent_steps": 8
+  },
+  "expectations": {
+    "expected_intent_types": [
+      "MISSION"
+    ],
+    "expected_statuses": [
+      "plan_validated"
+    ],
+    "require_full_coverage": true,
+    "require_assigned_orders": [
+      "ORD-001",
+      "ORD-003"
+    ],
+    "require_deferred_orders": [
+      "ORD-002"
+    ],
+    "require_schedule_valid": true,
+    "forbid_unknown_identifiers": true,
+    "require_valid_evidence": true
+  }
+}
