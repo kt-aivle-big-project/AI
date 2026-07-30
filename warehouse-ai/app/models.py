@@ -53,6 +53,7 @@ class ResponseView(str, Enum):
     AUTO = "AUTO"
     COMPACT = "COMPACT"
     FULL = "FULL"
+    ROUTE_PLAN = "ROUTE_PLAN"
 
 
 class ReportDetailLevel(str, Enum):

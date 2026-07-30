@@ -184,6 +184,42 @@ def test_response_view_resolution_contract():
     assert resolve_response_view("AUTO", report_detail_level="DEBUG") == ResponseView.FULL
     assert resolve_response_view("COMPACT", report_detail_level="DEBUG") == ResponseView.COMPACT
     assert resolve_response_view("FULL", report_detail_level="SUMMARY") == ResponseView.FULL
+    assert (
+        resolve_response_view("ROUTE_PLAN", report_detail_level="DEBUG")
+        == ResponseView.ROUTE_PLAN
+    )
+
+
+def test_route_plan_request_preserves_clarification_contract():
+    source = full_response("STANDARD")
+    source.update(
+        status="CLARIFICATION_REQUIRED",
+        clarification={
+            "clarification_id": "CL-1",
+            "conversation_id": "CONV-1",
+            "command_id": "CMD-1",
+            "status": "CLARIFICATION_REQUIRED",
+            "reason_code": "MISSING_TARGET",
+            "question": "어느 작업을 대상으로 할까요?",
+            "missing_fields": ["target_task_id"],
+            "ambiguous_fields": [],
+            "options": [
+                {
+                    "value": "W-1",
+                    "label": "작업 1",
+                }
+            ],
+            "original_text": "그 작업을 재계획해줘",
+        },
+    )
+
+    result = shape_planning_response(source, ResponseView.ROUTE_PLAN)
+
+    assert result["response_view"] == "COMPACT"
+    assert result["status"] == "CLARIFICATION_REQUIRED"
+    assert result["clarification"]["clarification_id"] == "CL-1"
+    assert result["clarification"]["question"] == "어느 작업을 대상으로 할까요?"
+    assert "original_text" not in result["clarification"]
 
 
 

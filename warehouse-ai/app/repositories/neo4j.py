@@ -1,6 +1,18 @@
+import logging
 from typing import Any
+from urllib.parse import urlsplit
 
-from neo4j import GraphDatabase, RoutingControl
+from neo4j import GraphDatabase, READ_ACCESS, RoutingControl
+
+
+logger = logging.getLogger(__name__)
+
+
+class Neo4jConnectivityError(RuntimeError):
+    def __init__(self, host: str, error_type: str):
+        super().__init__(
+            f"Neo4j connectivity failed: host={host}, error_type={error_type}"
+        )
 
 
 class Neo4jRepository:
@@ -9,12 +21,42 @@ class Neo4jRepository:
     def __init__(self, uri: str, user: str, password: str, database: str):
         if not uri or not password:
             raise RuntimeError("NEO4J_URI와 NEO4J_PASSWORD가 필요합니다.")
-        self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        self.host = urlsplit(uri).hostname or "unknown"
+        self.uses_tls = uri.lower().startswith(
+            ("neo4j+s://", "neo4j+ssc://")
+        )
         self.database = database
+        try:
+            self.driver = GraphDatabase.driver(uri, auth=(user, password))
+        except Exception as exc:
+            self._raise_connectivity_error(exc)
 
     def healthcheck(self) -> dict[str, Any]:
-        self.driver.verify_connectivity()
-        return {"ok": True, "database": self.database}
+        try:
+            with self.driver.session(
+                database=self.database,
+                default_access_mode=READ_ACCESS,
+            ) as session:
+                record = session.run("RETURN 1 AS result").single()
+                if record is None or record["result"] != 1:
+                    raise RuntimeError("Unexpected connectivity result")
+        except Exception as exc:
+            self._raise_connectivity_error(exc)
+        return {
+            "ok": True,
+            "database": self.database,
+            "host": self.host,
+            "tls": self.uses_tls,
+        }
+
+    def _raise_connectivity_error(self, exc: Exception) -> None:
+        error_type = exc.__class__.__name__
+        logger.warning(
+            "Neo4j connectivity failed host=%s error_type=%s",
+            self.host,
+            error_type,
+        )
+        raise Neo4jConnectivityError(self.host, error_type) from None
 
     def close(self) -> None:
         self.driver.close()

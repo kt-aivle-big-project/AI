@@ -29,6 +29,7 @@ def _output() -> dict:
             ]
         },
         "collision_plan": {
+            "engine": "PRIORITIZED_TIME_ASTAR",
             "time_step_seconds": 5,
             "routes": [
                 {
@@ -77,11 +78,12 @@ def test_simulation_view_keeps_routes_without_internal_verification_evidence() -
 
     view = build_simulation_view(run)
 
-    assert view.schema_version == "simulation-view.v1"
-    assert view.robots == [{"robot_id": "R-1", "route_index": 0}]
-    assert len(view.tasks) == 1
+    assert view.valid
+    assert view.planner == "prioritized_time_astar"
     assert len(view.routes) == 1
-    assert view.metrics["total_distance"] == 10.0
+    assert view.routes[0].steps[0].step_type == "MOVE"
+    assert view.routes[0].finish_at_ms == 5000
+    assert view.makespan_ms == 5000
 
 
 def test_execution_status_view_combines_plan_approval_and_latest_dispatch() -> None:

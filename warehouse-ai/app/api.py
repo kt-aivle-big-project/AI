@@ -4,6 +4,15 @@ from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Query
 
+from app.backend_integration import (
+    BackendOptimizationRequest,
+    BackendOptimizationResponse,
+    BackendReoptimizationRequest,
+    BackendReoptimizationResponse,
+    load_backend_map,
+    optimize_for_backend,
+    reoptimize_for_backend,
+)
 from app.config import get_settings
 from app.execution import handle_robot_event
 from app.models import (
@@ -133,9 +142,61 @@ def health() -> dict[str, Any]:
     if missing:
         return {"status": "not_configured", "missing": missing}
     try:
-        return {"status": "ok", "dependencies": get_services().healthcheck()}
+        dependencies = get_services().healthcheck()
     except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "status": "unavailable",
+                "error_type": exc.__class__.__name__,
+            },
+        ) from None
+    status = (
+        "ok"
+        if all(item.get("ok") is True for item in dependencies.values())
+        else "degraded"
+    )
+    return {"status": status, "dependencies": dependencies}
+
+
+@app.post(
+    "/optimize",
+    response_model=BackendOptimizationResponse,
+    response_model_by_alias=True,
+)
+def backend_optimize(
+    request: BackendOptimizationRequest,
+) -> BackendOptimizationResponse:
+    """Spring BE-main compatible initial route optimization endpoint."""
+
+    try:
+        return optimize_for_backend(request, get_settings())
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.post(
+    "/reoptimize",
+    response_model=BackendReoptimizationResponse,
+    response_model_by_alias=True,
+)
+def backend_reoptimize(
+    request: BackendReoptimizationRequest,
+) -> BackendReoptimizationResponse:
+    """Spring BE-main compatible runtime reoptimization endpoint."""
+
+    settings = get_settings()
+    try:
+        backend_map = load_backend_map(request.warehouse_id, settings)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Backend warehouse map is unavailable",
+        ) from exc
+    try:
+        return reoptimize_for_backend(request, settings, backend_map)
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/v1/planning/commands")
@@ -911,6 +972,7 @@ def get_simulation(simulation_id: str) -> dict[str, Any]:
 @app.get(
     "/v1/simulations/{simulation_id}/view",
     response_model=SimulationViewResponse,
+    response_model_exclude_none=True,
 )
 def get_simulation_view(simulation_id: str) -> SimulationViewResponse:
     try:

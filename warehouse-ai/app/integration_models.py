@@ -5,7 +5,7 @@ planning evidence can continue to evolve while the public integration contracts
 remain small and versioned.
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -38,21 +38,36 @@ class PlanningUiResponse(BaseModel):
     resources: IntegrationResourceLinks
 
 
+class RoutePlanStep(BaseModel):
+    step_type: Literal["MOVE", "WAIT", "SERVICE"]
+    start_at_ms: int = Field(ge=0)
+    end_at_ms: int = Field(ge=0)
+    edge_id: str | None = None
+    from_node: str | None = None
+    to_node: str | None = None
+    node_id: str | None = None
+    reason: str | None = None
+    task_id: str | None = None
+    service_kind: Literal["PICKUP", "DROPOFF", "CHARGE"] | None = None
+
+
+class RoutePlanRobotRoute(BaseModel):
+    robot_id: str
+    steps: list[RoutePlanStep] = Field(default_factory=list)
+    finish_at_ms: int = Field(ge=0)
+
+
 class SimulationViewResponse(BaseModel):
-    schema_version: str = "simulation-view.v1"
-    simulation_id: str
-    command_id: str | None = None
-    warehouse_id: int | None = None
-    plan_version: str | None = None
-    status: str | None = None
-    time_step_seconds: int = 5
-    robots: list[dict[str, Any]] = Field(default_factory=list)
-    tasks: list[dict[str, Any]] = Field(default_factory=list)
-    routes: list[dict[str, Any]] = Field(default_factory=list)
-    timeline: list[dict[str, Any]] = Field(default_factory=list)
-    metrics: dict[str, Any] = Field(default_factory=dict)
-    warnings: list[Any] = Field(default_factory=list)
-    errors: list[Any] = Field(default_factory=list)
+    valid: bool
+    planner: str
+    routes: list[RoutePlanRobotRoute] = Field(default_factory=list)
+    reservations: list[dict[str, Any]] = Field(default_factory=list)
+    station_reservations: list[dict[str, Any]] = Field(default_factory=list)
+    conflicts: list[dict[str, Any]] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    total_wait_ms: int = Field(ge=0)
+    total_service_ms: int = Field(ge=0)
+    makespan_ms: int = Field(ge=0)
 
 
 class ExecutionStatusResponse(BaseModel):

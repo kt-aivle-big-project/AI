@@ -1,6 +1,8 @@
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import quote_plus
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,11 +23,20 @@ class Settings(BaseSettings):
     warehouse_timezone: str = ""
 
     database_url: str = ""
+    postgres_schema_profile: Literal["legacy_ai", "backend_laro"] = "legacy_ai"
+    postgres_db: str = ""
+    postgres_user: str = ""
+    postgres_password: str = ""
+    postgres_host: str = "127.0.0.1"
+    postgres_port: int = 5432
     neo4j_uri: str = ""
     neo4j_user: str = "neo4j"
     neo4j_password: str = ""
     neo4j_database: str = "neo4j"
     redis_url: str = ""
+    redis_password: str = ""
+    redis_host: str = "127.0.0.1"
+    redis_port: int = 6379
 
     optimizer_backend: Literal["auto", "local", "cuopt"] = "auto"
     routing_backend: Literal["internal", "mapf"] = "internal"
@@ -61,6 +72,46 @@ class Settings(BaseSettings):
     opportunity_charge_target_battery: float = 95.0
     opportunity_charge_min_idle_minutes: float = 15.0
     opportunity_charge_min_gain_percent: float = 2.0
+
+    @model_validator(mode="after")
+    def build_backend_connection_urls(self) -> "Settings":
+        """Accept the Spring/Docker component-style connection variables.
+
+        BE-main's compose file publishes POSTGRES_* and REDIS_PASSWORD
+        variables, while the AI service historically required pre-built URLs.
+        Neo4j deliberately requires an explicit NEO4J_URI so an Aura address
+        can never be replaced by a localhost or Docker-service fallback.
+        """
+
+        if (
+            not self.database_url
+            and self.postgres_db
+            and self.postgres_user
+            and self.postgres_password
+        ):
+            user = quote_plus(self.postgres_user)
+            password = quote_plus(self.postgres_password)
+            database = quote_plus(self.postgres_db)
+            self.database_url = (
+                f"postgresql+psycopg://{user}:{password}"
+                f"@{self.postgres_host}:{self.postgres_port}/{database}"
+            )
+            if "postgres_schema_profile" not in self.model_fields_set:
+                self.postgres_schema_profile = "backend_laro"
+
+        if not self.redis_url and self.redis_password:
+            password = quote_plus(self.redis_password)
+            self.redis_url = (
+                f"redis://:{password}@{self.redis_host}:{self.redis_port}/0"
+            )
+
+        return self
+
+    @property
+    def neo4j_uses_tls(self) -> bool:
+        return self.neo4j_uri.lower().startswith(
+            ("neo4j+s://", "neo4j+ssc://")
+        )
 
     def missing_for_connections(self) -> list[str]:
         required = {

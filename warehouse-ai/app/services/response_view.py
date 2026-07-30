@@ -9,6 +9,7 @@ from app.services.public_output import (
     sanitize_public_verification,
     sanitize_public_warnings,
 )
+from app.services.route_plan_view import build_route_plan_view
 from app.services.wait_compression import (
     compress_resolution_events,
     compress_timeline,
@@ -349,6 +350,7 @@ def resolve_response_view(
 
 def compact_planning_response(response: dict[str, Any]) -> dict[str, Any]:
     data = _as_dict(response.get("data"))
+    clarification = _as_dict(response.get("clarification"))
     assignments = _as_list(data.get("task_assignments"))
     charger_selections = _as_list(data.get("charger_selections"))
     if not charger_selections:
@@ -421,6 +423,19 @@ def compact_planning_response(response: dict[str, Any]) -> dict[str, Any]:
         "report_source": response.get("report_source"),
         "warnings": sanitize_public_warnings(response.get("warnings")),
         "errors": sanitize_public_warnings(response.get("errors")),
+        "clarification": _pick(
+            clarification,
+            "clarification_id",
+            "conversation_id",
+            "command_id",
+            "status",
+            "reason_code",
+            "question",
+            "missing_fields",
+            "ambiguous_fields",
+            "options",
+            "expires_at",
+        ),
         "details": {
             "full_response_request": {
                 "response_view": ResponseView.FULL.value,
@@ -466,8 +481,19 @@ def shape_planning_response(
         requested,
         report_detail_level=response.get("report_detail_level"),
     )
+    if (
+        str(response.get("status") or "").upper()
+        == "CLARIFICATION_REQUIRED"
+        and resolved == ResponseView.ROUTE_PLAN
+    ):
+        return compact_planning_response(response)
     if resolved == ResponseView.COMPACT:
         return compact_planning_response(response)
+    if resolved == ResponseView.ROUTE_PLAN:
+        return build_route_plan_view(response).model_dump(
+            mode="json",
+            exclude_none=True,
+        )
     full = _compress_full_response_for_view(response)
     full["response_schema_version"] = RESPONSE_SCHEMA_VERSION
     full["response_view"] = ResponseView.FULL.value

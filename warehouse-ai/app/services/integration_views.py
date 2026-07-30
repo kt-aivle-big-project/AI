@@ -22,6 +22,7 @@ from app.services.public_output import (
     sanitize_public_verification,
     sanitize_public_warnings,
 )
+from app.services.route_plan_view import build_route_plan_view
 
 
 
@@ -160,58 +161,9 @@ def build_planning_ui_view(
 
 def build_simulation_view(run: dict[str, Any]) -> SimulationViewResponse:
     output = _as_dict(run.get("output_payload"))
-    simulation = _as_dict(output.get("simulation"))
-    collision_plan = _as_dict(output.get("collision_plan"))
-    cuopt_plan = _as_dict(output.get("cuopt_plan"))
-    metrics = _as_dict(simulation.get("metrics"))
-    time_step_seconds = int(
-        metrics.get("time_step_seconds")
-        or output.get("time_step_seconds")
-        or collision_plan.get("time_step_seconds")
-        or 5
-    )
-    simulation_id = str(run.get("simulation_id") or output.get("simulation_id") or "")
-    if not simulation_id:
+    if not (run.get("simulation_id") or output.get("simulation_id")):
         raise ValueError("simulation_id가 필요합니다.")
-
-    routes = _as_list(simulation.get("robot_routes")) or _as_list(
-        collision_plan.get("routes")
-    )
-    tasks = _as_list(simulation.get("task_assignments")) or _as_list(
-        cuopt_plan.get("scheduled_tasks")
-    )
-    battery_by_robot = _as_dict(metrics.get("battery_by_robot"))
-    robots: list[dict[str, Any]] = []
-    for index, route_value in enumerate(routes):
-        route = _as_dict(route_value)
-        robot_id = route.get("robot_id")
-        if not robot_id:
-            continue
-        battery = _as_dict(battery_by_robot.get(str(robot_id)))
-        robot = {
-            "robot_id": str(robot_id),
-            "route_index": index,
-            "route_distance": route.get("distance") or route.get("route_distance"),
-            "initial_battery": battery.get("initial_battery"),
-            "final_battery": battery.get("final_battery"),
-        }
-        robots.append({key: value for key, value in robot.items() if value is not None})
-
-    return SimulationViewResponse(
-        simulation_id=simulation_id,
-        command_id=run.get("command_id"),
-        warehouse_id=run.get("warehouse_id"),
-        plan_version=run.get("plan_version"),
-        status=run.get("status") or simulation.get("status"),
-        time_step_seconds=time_step_seconds,
-        robots=robots,
-        tasks=tasks,
-        routes=routes,
-        timeline=_as_list(simulation.get("timeline")),
-        metrics=metrics,
-        warnings=sanitize_public_warnings(simulation.get("warnings") or output.get("warnings")),
-        errors=_as_list(simulation.get("errors") or output.get("errors")),
-    )
+    return build_route_plan_view(output)
 
 
 def build_execution_status_view(

@@ -63,6 +63,32 @@
 `FULL`에는 `response_schema_version`과 `response_view=FULL`이 추가되며 기존 필드는
 그대로 유지됩니다.
 
+## ROUTE_PLAN
+
+백엔드와 시뮬레이션 화면에서 경로를 직접 소비할 때 사용하는 고정 출력
+계약입니다. 내부 time step을 밀리초로 변환하고, 연속 처리 구간은
+`MOVE`, `WAIT`, `SERVICE` step으로 정규화합니다.
+
+```json
+{
+  "warehouse_id": 1,
+  "text": "출고 작업 경로를 계획해줘.",
+  "requested_execution_mode": "PLAN_ONLY",
+  "response_view": "ROUTE_PLAN"
+}
+```
+
+최상위 필드는 다음으로 고정됩니다.
+
+- `valid`, `planner`, `routes`
+- `reservations`, `station_reservations`, `conflicts`, `warnings`
+- `total_wait_ms`, `total_service_ms`, `makespan_ms`
+
+각 route에는 `robot_id`, `steps`, `finish_at_ms`가 포함됩니다. 노드 코드나
+간선 ID가 Snapshot에 있으면 해당 외부 식별자를 사용하고, 없으면 숫자
+ID 또는 `from->to` 식별자를 사용합니다. `planner`는 호환용 이름을
+임의로 만들지 않고 실제 사용한 경로 엔진을 소문자로 반환합니다.
+
 ## 상세 근거 재조회
 
 COMPACT 응답의 `details.evidence_api`에 계획 근거 조회 경로가 포함됩니다.

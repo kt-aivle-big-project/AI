@@ -2067,7 +2067,19 @@ def build_snapshot_node(state: PlanningState) -> dict[str, Any]:
             command.simulation_id
             and interpretation.execution_mode == "SIMULATE_ONLY"
         )
-        if command.simulation_id and not use_simulation_state:
+        use_backend_run_scope = bool(
+            command.simulation_id
+            and getattr(
+                services.postgres,
+                "schema_profile",
+                None,
+            ) == "backend_laro"
+        )
+        if (
+            command.simulation_id
+            and not use_simulation_state
+            and not use_backend_run_scope
+        ):
             raise RuntimeError(
                 "simulation_id는 SIMULATE_ONLY 명령에서만 사용할 수 있습니다."
             )
@@ -2100,10 +2112,17 @@ def build_snapshot_node(state: PlanningState) -> dict[str, Any]:
                 "temporary_closures": [],
             }
         else:
-            sql_snapshot = services.postgres.snapshot(
-                command.warehouse_id,
-                interpretation.item_ids,
-            )
+            if use_backend_run_scope:
+                sql_snapshot = services.postgres.snapshot(
+                    command.warehouse_id,
+                    interpretation.item_ids,
+                    command.simulation_id,
+                )
+            else:
+                sql_snapshot = services.postgres.snapshot(
+                    command.warehouse_id,
+                    interpretation.item_ids,
+                )
             redis_snapshot = services.redis.live_snapshot(command.warehouse_id)
         scenario_definition = command.scenario_definition or {}
         source_plan = scenario_definition.get("source_plan_snapshot") or {}
@@ -9243,6 +9262,31 @@ def generate_final_report_node(state: PlanningState) -> dict[str, Any]:
         "inventory_unknown_item_ids": state.get("inventory_unknown_item_ids", []),
         "inventory_item_candidates": state.get("inventory_item_candidates", {}),
         "collision_plan": state.get("collision_plan", {}),
+        "route_view_context": {
+            "nodes": [
+                {
+                    "node_id": row.get("node_id"),
+                    "node_code": row.get("node_code"),
+                }
+                for row in state.get("optimization_problem", {}).get(
+                    "nodes", []
+                )
+                if row.get("node_id") is not None
+            ],
+            "edges": [
+                {
+                    "edge_id": row.get("edge_id"),
+                    "from_node": row.get("from_node"),
+                    "to_node": row.get("to_node"),
+                    "direction": row.get("direction"),
+                }
+                for row in state.get("optimization_problem", {}).get(
+                    "edges", []
+                )
+                if row.get("from_node") is not None
+                and row.get("to_node") is not None
+            ],
+        },
         "validation": state.get("validation", {}),
         "snapshot_summary": (
             compact_snapshot(state["snapshot"]) if state.get("snapshot") else None
