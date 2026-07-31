@@ -37,6 +37,7 @@ def _now() -> str:
 _TOOL_DATA_SOURCE: dict[str, str] = {
     "find_orders": "postgres",
     "get_order_facts": "postgres",
+    "get_inbound_facts": "postgres",
     "get_inventory_candidates": "postgres",
     "get_robot_candidates": "redis",
     "get_active_operations": "redis",
@@ -80,6 +81,11 @@ class ParallelRetrievalPlanCompiler:
             for value in normalized_request.operations
             if value.operation_type == "OUTBOUND_ORDER"
         ))
+        inbound_ids = list(dict.fromkeys(
+            value.operation_id
+            for value in normalized_request.operations
+            if value.operation_type == "INBOUND_ITEM"
+        ))
         recovery_ids = list(dict.fromkeys(
             value.operation_id
             for value in normalized_request.operations
@@ -96,13 +102,29 @@ class ParallelRetrievalPlanCompiler:
 
         requests: list[RetrievalToolRequest] = []
         if outbound_ids:
-            requests.extend([
+            requests.append(
                 RetrievalToolRequest(
                     request_id="ORDER_FACTS",
                     tool_name="get_order_facts",
                     exact_ids=outbound_ids,
                     purpose="Load authoritative order lines, quantities, priorities, and destinations.",
-                ),
+                )
+            )
+        if inbound_ids:
+            requests.append(
+                RetrievalToolRequest(
+                    request_id="INBOUND_FACTS",
+                    tool_name="get_inbound_facts",
+                    exact_ids=inbound_ids,
+                    purpose=(
+                        "Load authoritative inbound receipts, handling units, source handoffs, "
+                        "and putaway constraints."
+                    ),
+                )
+            )
+
+        if outbound_ids or inbound_ids or recovery_ids:
+            requests.append(
                 RetrievalToolRequest(
                     request_id="ROBOT_RUNTIME",
                     tool_name="get_robot_candidates",
@@ -112,26 +134,29 @@ class ParallelRetrievalPlanCompiler:
                     ),
                     exact_ids=list(normalized_request.constraints.excluded_robot_ids),
                     purpose="Load the complete runtime fleet and deterministic eligibility facts.",
+                )
+            )
+
+        if explicit_edges:
+            requests.extend([
+                RetrievalToolRequest(
+                    request_id="EXPLICIT_MAP_ENTITIES",
+                    tool_name="resolve_map_entities",
+                    exact_ids=explicit_edges,
+                    expected_entity_types=["EDGE"],
+                    allow_multiple_matches=True,
+                    purpose="Validate canonical edge identifiers used by request policies.",
+                ),
+                RetrievalToolRequest(
+                    request_id="EXPLICIT_EDGE_RUNTIME",
+                    tool_name="get_runtime_constraints",
+                    exact_ids=explicit_edges,
+                    purpose="Read current runtime evidence for explicitly named edges.",
                 ),
             ])
-            if explicit_edges:
-                requests.extend([
-                    RetrievalToolRequest(
-                        request_id="EXPLICIT_MAP_ENTITIES",
-                        tool_name="resolve_map_entities",
-                        exact_ids=explicit_edges,
-                        expected_entity_types=["EDGE"],
-                        allow_multiple_matches=True,
-                        purpose="Validate canonical edge identifiers used by request policies.",
-                    ),
-                    RetrievalToolRequest(
-                        request_id="EXPLICIT_EDGE_RUNTIME",
-                        tool_name="get_runtime_constraints",
-                        exact_ids=explicit_edges,
-                        purpose="Read current runtime evidence for explicitly named edges.",
-                    ),
-                ])
-            requests.extend([
+
+        if outbound_ids:
+            requests.append(
                 RetrievalToolRequest(
                     request_id="INVENTORY_CANDIDATES",
                     tool_name="get_inventory_candidates",
@@ -139,17 +164,25 @@ class ParallelRetrievalPlanCompiler:
                     derive_from_previous_results=True,
                     depends_on=["ORDER_FACTS"],
                     purpose="Load every positive-quantity rack-level stock candidate for the orders.",
-                ),
+                )
+            )
+
+        if outbound_ids or inbound_ids:
+            subgraph_dependencies = ["ROBOT_RUNTIME"]
+            if outbound_ids:
+                subgraph_dependencies.extend(["ORDER_FACTS", "INVENTORY_CANDIDATES"])
+            if inbound_ids:
+                subgraph_dependencies.append("INBOUND_FACTS")
+            requests.extend([
                 RetrievalToolRequest(
                     request_id="CONNECTING_SUBGRAPH",
                     tool_name="get_connecting_subgraph",
                     derive_from_previous_results=True,
-                    depends_on=[
-                        "ORDER_FACTS",
-                        "INVENTORY_CANDIDATES",
-                        "ROBOT_RUNTIME",
-                    ],
-                    purpose="Build directed robot-to-access and access-to-destination path evidence.",
+                    depends_on=list(dict.fromkeys(subgraph_dependencies)),
+                    purpose=(
+                        "Build directed robot-to-pickup and pickup-to-delivery/station "
+                        "path evidence for every actionable operation."
+                    ),
                 ),
                 RetrievalToolRequest(
                     request_id="PATH_RUNTIME",
@@ -169,14 +202,6 @@ class ParallelRetrievalPlanCompiler:
                     purpose="Load authoritative active/loaded robot operations for recovery.",
                 )
             )
-            if not any(value.tool_name == "get_robot_candidates" for value in requests):
-                requests.append(
-                    RetrievalToolRequest(
-                        request_id="ROBOT_RUNTIME",
-                        tool_name="get_robot_candidates",
-                        purpose="Load current robot runtime for recovery planning.",
-                    )
-                )
 
         return ParallelRetrievalPlan(
             requests=requests,
@@ -214,7 +239,7 @@ class ParallelRetrievalPlanCompiler:
             return True
         if normalized_request.incidents:
             return True
-        supported = {"OUTBOUND_ORDER", "RECOVERY"}
+        supported = {"OUTBOUND_ORDER", "INBOUND_ITEM", "RECOVERY"}
         if any(value.operation_type not in supported for value in normalized_request.operations):
             return True
         return False
@@ -332,6 +357,7 @@ class ParallelRetrievalPlanValidator:
 
     _MAP_DERIVATION_TOOLS = {
         "get_order_facts",
+        "get_inbound_facts",
         "find_orders",
         "get_inventory_candidates",
         "get_robot_candidates",
@@ -407,10 +433,21 @@ class ParallelRetrievalPlanValidator:
                 )
                 if not direct_reference and not valid_derived_source:
                     errors.append(f"MAP_PLAN_REQUIRES_REFERENCE_SOURCE:{request.request_id}")
-            if request.tool_name == "get_connecting_subgraph" and not {
-                "get_order_facts", "get_inventory_candidates", "get_robot_candidates"
-            }.issubset(dependency_tools):
-                errors.append(f"SUBGRAPH_PLAN_DEPENDENCIES_INCOMPLETE:{request.request_id}")
+            if request.tool_name == "get_inbound_facts" and not (
+                request.exact_ids or request.raw_references
+            ):
+                errors.append(f"INBOUND_PLAN_REQUIRES_INBOUND_REFERENCE:{request.request_id}")
+            if request.tool_name == "get_connecting_subgraph":
+                has_robot = "get_robot_candidates" in dependency_tools
+                has_outbound_pair = {
+                    "get_order_facts", "get_inventory_candidates"
+                }.issubset(dependency_tools)
+                has_inbound = "get_inbound_facts" in dependency_tools
+                partial_outbound = bool(
+                    {"get_order_facts", "get_inventory_candidates"} & dependency_tools
+                ) and not has_outbound_pair
+                if not has_robot or not (has_outbound_pair or has_inbound) or partial_outbound:
+                    errors.append(f"SUBGRAPH_PLAN_DEPENDENCIES_INCOMPLETE:{request.request_id}")
             if request.tool_name == "get_runtime_constraints" and not (
                 request.exact_ids or "get_connecting_subgraph" in dependency_tools
             ):

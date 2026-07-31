@@ -62,6 +62,28 @@ def _has_conditional_policy(request: NormalizedWarehouseRequest) -> bool:
     return bool(request.constraints.conditional_edge_policies)
 
 
+def _has_agent_policy_stack(request: NormalizedWarehouseRequest) -> bool:
+    """Return whether typed constraints require semantic policy composition.
+
+    One conditional edge predicate is deterministic by itself.  It becomes an
+    Agent policy stack when combined with an emergency reserve or multiple
+    business objectives.  These fields are typed, so the final decision remains
+    deterministic even when the LLM recommendation is unstable.
+    """
+
+    constraints = request.constraints
+    objective_terms = list(dict.fromkeys(constraints.objective_terms))
+    return bool(
+        constraints.reserve_robot_count > 0
+        or len(objective_terms) > 1
+        or (
+            constraints.conditional_edge_policies
+            and objective_terms
+            and objective_terms != ["MIN_COMPLETION_TIME"]
+        )
+    )
+
+
 def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
     folded = text.casefold()
     return any(marker.casefold() in folded for marker in markers)
@@ -180,6 +202,82 @@ def _router_clarification_is_context_only(
     if recommendation.gate_action != "ASK_CLARIFICATION":
         return False
     return (recommendation.reason_code or "").strip().upper() in _CONTEXT_ONLY_ROUTER_REASON_CODES
+
+
+_GENERIC_EXECUTION_MARKERS = (
+    "처리",
+    "실행",
+    "수행",
+    "process",
+    "execute",
+    "handle",
+)
+
+_OPERATION_EXECUTION_MARKERS = {
+    "OUTBOUND_ORDER": ("출고", "주문 처리", "fulfill", "ship", "dispatch"),
+    "INBOUND_ITEM": ("입고", "적치", "putaway", "receive"),
+    "RECOVERY": ("복구", "recovery", "recover"),
+}
+
+
+def _explicit_canonical_natural_request(
+    request: NormalizedWarehouseRequest,
+    command: str,
+) -> bool:
+    """Return whether natural input already states executable canonical work.
+
+    The request-router LLM is advisory.  Once a caller supplied canonical operation
+    IDs together with an explicit action verb, the model may not turn that request
+    into ``UNREADABLE_COMMAND`` or invent a menu of alternative operations.
+    Deterministic conflict and safety checks run before this helper is consulted.
+    """
+
+    if request.source not in {"natural_language", "mixed"} or not command.strip():
+        return False
+    if request.incidents or not request.operations:
+        return False
+
+    folded = command.casefold()
+    generic_action = _contains_any(folded, _GENERIC_EXECUTION_MARKERS)
+    actionable_count = 0
+    for operation in request.operations:
+        if operation.operation_type in {"QUERY", "INCIDENT"}:
+            return False
+        if operation.operation_type == "UNKNOWN":
+            return False
+        operation_id = (operation.operation_id or "").strip()
+        if not _canonical_operation_reference(operation.operation_type, operation_id):
+            return False
+        if operation_id.casefold() not in folded:
+            return False
+        markers = _OPERATION_EXECUTION_MARKERS.get(operation.operation_type, ())
+        if not generic_action and not _contains_any(folded, markers):
+            return False
+        actionable_count += 1
+    return actionable_count > 0
+
+
+def _explicit_canonical_natural_rule_safe(
+    request: NormalizedWarehouseRequest,
+    command: str,
+) -> bool:
+    """Return whether an explicit canonical command is deterministic Rule input."""
+
+    if not _explicit_canonical_natural_request(request, command):
+        return False
+    constraints = request.constraints
+    if constraints.objective_profile != "MIN_COMPLETION_TIME":
+        return False
+    if _has_agent_policy_stack(request):
+        return False
+    return not bool(
+        constraints.excluded_robot_references
+        or constraints.excluded_robot_status_references
+        or constraints.soft_avoid_edge_references
+        or constraints.hard_block_edge_references
+        or constraints.conditional_edge_policies
+        or request.incidents
+    )
 
 
 def _rejection(
@@ -526,6 +624,9 @@ def resolve_request_gate(
 
     conditional_policy = _has_conditional_policy(request)
     simple_conditional_policy = len(request.constraints.conditional_edge_policies) == 1
+    agent_policy_stack = _has_agent_policy_stack(request)
+    explicit_canonical_natural = _explicit_canonical_natural_request(request, command)
+    explicit_canonical_rule_safe = _explicit_canonical_natural_rule_safe(request, command)
 
     invalid_operations, required_operation_ids = _noncanonical_operation_references(request)
     if invalid_operations:
@@ -769,6 +870,11 @@ def resolve_request_gate(
         reasons.append(
             "The router asked for repository-owned runtime context; the question was suppressed and the system will fetch it."
         )
+    elif explicit_canonical_natural and recommendation.gate_action == "ASK_CLARIFICATION":
+        reasons.append(
+            "The router called an explicit canonical natural-language command unreadable; "
+            "the model-only clarification was suppressed because every actionable ID and verb is present."
+        )
     elif recommendation.gate_action == "ASK_CLARIFICATION":
         return _rejection(
             reason_code=recommendation.reason_code or "INVALID_MISSION_INPUT",
@@ -819,6 +925,16 @@ def resolve_request_gate(
     elif planning_mode == "force_rule":
         route = "RULE_FORMULATION"
         reasons.append("force_rule selected the Rule branch before execution.")
+    elif agent_policy_stack:
+        route = "AGENT_FORMULATION"
+        reasons.append(
+            "Typed multi-objective or emergency-reserve constraints require Agent policy composition before deterministic validation."
+        )
+    elif planning_mode == "llm_router" and explicit_canonical_rule_safe:
+        route = "RULE_FORMULATION"
+        reasons.append(
+            "An explicit natural-language command with canonical operation IDs and deterministic semantics is locked to Rule."
+        )
     elif conditional_policy and not simple_conditional_policy:
         route = "AGENT_FORMULATION"
         reasons.append(
@@ -829,7 +945,7 @@ def resolve_request_gate(
         reasons.append(
             "A single typed conditional edge policy is evaluated deterministically from runtime evidence in the Rule branch."
         )
-    elif route == "RULE_FORMULATION" and requires_agent_guard:
+    elif route == "RULE_FORMULATION" and requires_agent_guard and not explicit_canonical_rule_safe:
         route = "AGENT_FORMULATION"
         reasons.append("Unresolved semantic references require Agent formulation before branch entry.")
 

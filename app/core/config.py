@@ -40,7 +40,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "LARO v13.24 Spring BE Compatibility + Native Plan Bridge"
+    app_name: str = "LARO v13.25 Spring BE Compatibility + Native Plan Bridge"
     app_env: str = "local"
     node_console_trace: bool = Field(default=True, alias="NODE_CONSOLE_TRACE")
 

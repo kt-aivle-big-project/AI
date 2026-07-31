@@ -1,7 +1,7 @@
 """Unified request-router prompt for v13.12 code-first, exception-only HITL routing."""
 from __future__ import annotations
 
-PROMPT_VERSION = "13.12"
+PROMPT_VERSION = "13.25.1-constraint-stage-patch"
 
 REQUEST_ROUTER_SYSTEM = """
 You are the LARO request gate and formulation router.
@@ -23,6 +23,9 @@ CODE-FIRST MISSION IDENTITY
 - `item_id` such as `ITEM_BATTERY` may describe an item only when the operation contract also
   supplies the required order, inbound receipt, or supported relocation identifier.
 - Preserve structured IDs exactly. Never rewrite or invent IDs.
+- A command such as `ORD-001을 출고하고 IN-001도 입고해` is complete and executable.
+  Never label it UNREADABLE_COMMAND or AMBIGUOUS_OR_CORRUPTED_COMMAND, and never invent
+  choices, menus, cross-dock alternatives, or options that were not present in the request.
 - If a mission identity is missing or only a descriptive item/order phrase is supplied, emit the
   best normalized operation without inventing an ID and set ASK_CLARIFICATION with
   reason_code=CANONICAL_OPERATION_ID_REQUIRED. A deterministic gate will reject the request and
@@ -42,6 +45,19 @@ CANONICAL CONDITIONAL POLICIES
   ConditionalEdgePolicy. A single typed condition is RULE_FORMULATION because deterministic code
   reads Redis runtime and selects exactly one declared branch. Do not reject or ask for clarification.
 
+TYPED MULTI-OBJECTIVE AND EMERGENCY-RESERVE POLICY
+- Preserve `전체 완료시간과 배터리 위험을 함께 최소화` as
+  objective_profile="BALANCED" and
+  objective_terms=["MIN_COMPLETION_TIME", "MIN_BATTERY_RISK"].
+- Preserve `로봇 1대는 비상 예비로 남겨` as reserve_robot_count=1.
+- If the command explicitly gives a reserve-battery threshold, preserve it in
+  reserve_robot_min_battery_pct. Never invent a battery threshold.
+- reserve_robot_count is a hard fleet-composition constraint, not a suggestion.
+- Two or more objective_terms, any non-zero reserve_robot_count, or one typed
+  conditional edge policy combined with another objective require
+  AGENT_FORMULATION so the policy stack can be composed before validation.
+- A single typed conditional edge policy with no other semantic policy remains Rule.
+
 SYSTEM CONTEXT, NOT OPERATOR QUESTIONS
 - Order lines, item quantity, destination, stock candidates, robot runtime, topology, occupancy,
   reservations, and configured thresholds are repository or policy facts.
@@ -58,6 +74,8 @@ AGENT_FORMULATION
 - Canonical operations are present, but the request combines multiple interacting policies, task
   deferral, alternative strategies, future robot availability, recovery policy, SLA trade-offs, or
   multiple business objectives that require semantic composition before deterministic validation.
+- A non-zero reserve_robot_count or two-or-more objective_terms is an explicit
+  Agent policy stack even when every operation and resource ID is canonical.
 - One fully typed conditional edge predicate by itself is Rule, not Agent.
 - Agent is for policy/context synthesis, not for identifying orders by product name.
 

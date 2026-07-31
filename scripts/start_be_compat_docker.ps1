@@ -24,6 +24,10 @@ if (-not (Test-Path ".env.docker")) {
 }
 
 $ConflictingContainers = @(
+    "laro-be-plan-bridge-v3-postgres",
+    "laro-be-plan-bridge-v3-redis",
+    "laro-be-plan-bridge-v3-neo4j",
+    "laro-be-plan-bridge-v3-api",
     "laro-be-compat-v2-postgres",
     "laro-be-compat-v2-redis",
     "laro-be-compat-v2-neo4j",

@@ -189,6 +189,11 @@ class NativePlanDiagnosticsService:
                 if result.mapf_validation is not None
                 else None
             ),
+            "logical_operation_coverage_valid": (
+                getattr(result, "logical_operation_coverage_validation", None).valid
+                if getattr(result, "logical_operation_coverage_validation", None) is not None
+                else None
+            ),
         }
 
         optimizer = None
@@ -215,6 +220,39 @@ class NativePlanDiagnosticsService:
                 else None
             ),
             "optimization_backend": result.optimization_backend,
+            "repository": (
+                {
+                    "repository_type": getattr(
+                        getattr(result, "context_snapshot", None),
+                        "repository_type",
+                        "unknown",
+                    ),
+                    "source_manifest": dict(
+                        getattr(
+                            getattr(result, "context_snapshot", None),
+                            "source_manifest",
+                            {},
+                        )
+                    ),
+                    "graph_version": getattr(
+                        getattr(result, "context_snapshot", None),
+                        "graph_version",
+                        None,
+                    ),
+                    "inventory_version": getattr(
+                        getattr(result, "context_snapshot", None),
+                        "inventory_version",
+                        None,
+                    ),
+                    "runtime_version": getattr(
+                        getattr(result, "context_snapshot", None),
+                        "runtime_version",
+                        None,
+                    ),
+                }
+                if getattr(result, "context_snapshot", None) is not None
+                else None
+            ),
             "optimizer": optimizer,
             "checks": checks,
             "workflow_trace": list(result.workflow_trace),

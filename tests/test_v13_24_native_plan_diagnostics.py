@@ -111,6 +111,18 @@ def test_native_plan_trace_compacts_node_and_validation_evidence(monkeypatch) ->
         optimizer_assignment_validation=valid,
         route_validation=valid,
         mapf_validation=valid,
+        logical_operation_coverage_validation=valid,
+        context_snapshot=SimpleNamespace(
+            repository_type="LiveWarehouseRepository",
+            source_manifest={
+                "route_nodes": "neo4j_snapshot",
+                "racks": "postgres_snapshot",
+                "robots": "redis_live",
+            },
+            graph_version="MAP-1",
+            inventory_version="INV-1",
+            runtime_version="RT-1",
+        ),
         optimizer_result=optimizer,
         orchestration_plan=SimpleNamespace(formulation_route="RULE_FORMULATION"),
         optimization_backend="ortools",
@@ -127,5 +139,8 @@ def test_native_plan_trace_compacts_node_and_validation_evidence(monkeypatch) ->
 
     assert value["workflow_status"] == "plan_validated"
     assert value["checks"]["mapf_valid"] is True
+    assert value["checks"]["logical_operation_coverage_valid"] is True
+    assert value["repository"]["repository_type"] == "LiveWarehouseRepository"
+    assert value["repository"]["source_manifest"]["route_nodes"] == "neo4j_snapshot"
     assert value["optimizer"]["route_count"] == 2
     assert value["plan_summary"]["step_count"] == 3

@@ -13,12 +13,19 @@ from pathlib import Path
 from typing import Any, Callable
 
 from app.core.config import get_settings
+from app.domain.schemas import normalize_warehouse_id
 from app.infrastructure.manager import get_infrastructure_manager
 from app.repositories.json_repository import DataContractError, JsonWarehouseRepository
 
 
 class LiveWarehouseRepository(JsonWarehouseRepository):
-    """JSON-compatible facade whose authoritative records come from live stores."""
+    """Request-scoped facade whose authoritative records come from live stores.
+
+    The class inherits the stable read methods from ``JsonWarehouseRepository``
+    but deliberately does not call its file-loading constructor.  Live mode is
+    therefore usable without ``data/*.json`` and cannot silently fall back to a
+    local fixture when PostgreSQL, Redis, or Neo4j is incomplete.
+    """
 
     def __init__(
         self,
@@ -28,17 +35,48 @@ class LiveWarehouseRepository(JsonWarehouseRepository):
         simulation_id: str | None = None,
     ) -> None:
         cfg = get_settings()
-        # Live stores are authoritative.  The default JSON documents are loaded
-        # only as a shape-compatible fallback before PostgreSQL/Redis/Neo4j replace
-        # each domain, so an arbitrary live warehouse does not need a local folder.
-        super().__init__(
-            data_dir or cfg.data_dir,
-            warehouse_id=warehouse_id,
-            simulation_id=simulation_id,
-            validate_document_warehouse=False,
-        )
         if data_dir is not None:
             raise DataContractError("LiveWarehouseRepository does not support fixture overrides.")
+        self.warehouse_id = normalize_warehouse_id(
+            warehouse_id or cfg.default_warehouse_id
+        )
+        self.simulation_id = str(simulation_id or cfg.runtime_simulation_id)
+        # Keep path attributes only for compatibility with inherited diagnostics;
+        # no live code reads these files.
+        self.data_root = cfg.data_dir
+        self.graph_path = self.data_root / "warehouse_graph.json"
+        self.inventory_path = self.data_root / "rack_inventory.json"
+        self.scenario_path = self.data_root / "scenario_state.json"
+        self.facility_path = self.data_root / "facility_resources.json"
+        self.inventory: dict[str, Any] = {
+            "warehouse_id": self.warehouse_id,
+            "racks": [],
+        }
+        self.scenario: dict[str, Any] = {
+            "warehouse_id": self.warehouse_id,
+            "orders": [],
+            "inbound_receipts": [],
+            "robots": [],
+            "edge_runtime": [],
+            "edge_reservations": [],
+            "buffer_nodes": [],
+        }
+        self.facility: dict[str, Any] = {
+            "warehouse_id": self.warehouse_id,
+            "inbound_ports": [],
+            "inbound_handoffs": [],
+            "outbound_chutes": [],
+            "outbound_stations": [],
+            "station_robots": [],
+            "empty_tote_buffers": [],
+        }
+        self.graph: dict[str, Any] = {
+            "title": "Uninitialized live route projection",
+            "summary": {"node_count": 0, "edge_count": 0},
+            "nodes": [],
+            "edges": [],
+        }
+        self._graph_version: str | None = None
         self.settings = cfg
         self.infrastructure = get_infrastructure_manager()
         self.infrastructure.start()
@@ -156,7 +194,7 @@ class LiveWarehouseRepository(JsonWarehouseRepository):
 
         versions = values.get("postgres_versions") or {}
         self._live_versions = {
-            "graph_version": self._graph_version or super().versions["graph_version"],
+            "graph_version": self._graph_version or "missing-live-graph-version",
             "inventory_version": str(versions.get("inventory_version", "live")),
             "business_version": str(versions.get("business_version", "live")),
             "facility_version": str(versions.get("facility_version", "live")),
@@ -172,6 +210,33 @@ class LiveWarehouseRepository(JsonWarehouseRepository):
         except Exception:
             pass
         return values
+
+    @property
+    def source_manifest(self) -> dict[str, str]:
+        """Expose the live authority used by each plan data domain."""
+
+        return {
+            "route_nodes": "neo4j_snapshot",
+            "route_edges": "neo4j_snapshot",
+            "racks": "postgres_snapshot",
+            "handling_units": "postgres_live",
+            "orders": "postgres_live",
+            "inbound_receipts": "postgres_live",
+            "facilities": "postgres_snapshot",
+            "robots": "redis_live",
+            "edge_runtime": "redis_live",
+            "reservations": "redis_live",
+        }
+
+    def buffer_nodes(self) -> list[str]:
+        """Return live recovery buffers without consulting local JSON files.
+
+        The current native contract has no dedicated recovery-buffer table.  An
+        empty list is therefore explicit and fail-closed; a future facility table
+        can populate this method without reintroducing fixture fallback.
+        """
+
+        return []
 
     def get_order(self, order_id: str) -> dict[str, Any] | None:
         try:

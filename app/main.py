@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
 settings = get_settings()
 app = FastAPI(
     title=settings.app_name,
-    version="13.24.0",
+    version="13.25.1",
     lifespan=lifespan,
     default_response_class=UTF8JSONResponse,
 )

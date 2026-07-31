@@ -22,6 +22,7 @@ from app.services.parallel_retrieval_service import (
 def _catalog() -> list[dict[str, str]]:
     return [
         {"name": "get_order_facts", "purpose": "Authoritative facts for canonical order IDs."},
+        {"name": "get_inbound_facts", "purpose": "Authoritative inbound receipt, handoff, handling-unit, and putaway facts."},
         {"name": "get_inventory_candidates", "purpose": "Stock candidates and rack access nodes."},
         {"name": "get_robot_candidates", "purpose": "Complete robot runtime and eligibility."},
         {"name": "resolve_map_entities", "purpose": "Validate canonical edge/node/access IDs."},

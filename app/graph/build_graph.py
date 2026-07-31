@@ -106,6 +106,7 @@ from app.graph.routes import (
     start_router,
 )
 from app.graph.simulation_plan import simulation_plan_builder_node
+from app.graph.logical_operation_validation import logical_operation_coverage_validator_node
 from app.graph.terminal_relocation import terminal_relocation_enricher_node
 from app.graph.situation_graph import (
     situation_graph_sufficiency_guard_node,
@@ -190,6 +191,7 @@ def build_laro_graph():
         "route_static_validator": route_static_validator_node,
         "mapf_plan_validator": mapf_plan_validator_node,
         "simulation_plan_builder": simulation_plan_builder_node,
+        "logical_operation_coverage_validator": logical_operation_coverage_validator_node,
         "query_response": query_response_node,
         "no_action": no_action_node,
         "incident_handled": incident_handled_node,
@@ -580,6 +582,18 @@ def build_laro_graph():
     )
     graph.add_conditional_edges(
         "simulation_plan_builder",
+        lambda state: (
+            "workflow_failure"
+            if state.get("failure_requested")
+            else "logical_operation_coverage_validator"
+        ),
+        {
+            "logical_operation_coverage_validator": "logical_operation_coverage_validator",
+            "workflow_failure": "workflow_failure",
+        },
+    )
+    graph.add_conditional_edges(
+        "logical_operation_coverage_validator",
         lambda state: "workflow_failure" if state.get("failure_requested") else "frontend_explanation",
         {"frontend_explanation": "frontend_explanation", "workflow_failure": "workflow_failure"},
     )

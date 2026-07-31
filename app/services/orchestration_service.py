@@ -46,6 +46,7 @@ from app.domain.schemas import (
     LLMNodeSummary,
     MapContext,
     MAPFValidationResult,
+    LogicalOperationCoverageValidationResult,
     MissionIntent,
     MissionSpec,
     NodeExecutionRecord,
@@ -76,7 +77,8 @@ from app.domain.schemas import (
 )
 from app.graph.build_graph import get_laro_graph
 from app.policies.routing_policy import resolve_effective_planning_mode
-from app.repositories.context import repository_scope
+from app.repositories.context import repository_instance_scope, repository_scope
+from app.repositories.json_repository import create_request_repository
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -204,9 +206,14 @@ class OrchestrationService:
             request, trusted_planning_mode=trusted_planning_mode
         )
         with repository_scope(request.warehouse_id, request.simulation_id):
-            final = get_laro_graph().invoke(
-                self._initial_state(request, trusted_planning_mode=trusted_planning_mode),
-                config={
+            request_repository = create_request_repository(
+                request.warehouse_id,
+                request.simulation_id,
+            )
+            with repository_instance_scope(request_repository):
+                final = get_laro_graph().invoke(
+                    self._initial_state(request, trusted_planning_mode=trusted_planning_mode),
+                    config={
                 "run_name": "LARO::orchestration",
                 "tags": [
                     "laro",
@@ -228,8 +235,8 @@ class OrchestrationService:
                     "event_types": [event.type for event in request.events],
                     "mission_spec_supplied": request.mission_spec is not None,
                 },
-            },
-        )
+                    },
+                )
         errors = [
             value if isinstance(value, WorkflowError) else WorkflowError.model_validate(value)
             for value in final.get("errors", [])
@@ -395,6 +402,10 @@ class OrchestrationService:
             route_validation=_optional(final.get("route_validation"), RouteValidationResult),
             traffic_schedule=_optional(final.get("traffic_schedule"), TrafficScheduleResult),
             mapf_validation=_optional(final.get("mapf_validation"), MAPFValidationResult),
+            logical_operation_coverage_validation=_optional(
+                final.get("logical_operation_coverage_validation"),
+                LogicalOperationCoverageValidationResult,
+            ),
             goods_to_person_plan=_optional(
                 final.get("goods_to_person_plan"), GoodsToPersonPlanResult
             ),
@@ -409,7 +420,11 @@ class OrchestrationService:
             dashboard_event=_optional(final.get("dashboard_event"), DashboardEvent),
             simulation_plan=_optional(final.get("simulation_plan"), SimulationPlan),
         )
-        if result.simulation_plan is not None and persist_simulation_plan:
+        if (
+            result.status == "plan_validated"
+            and result.simulation_plan is not None
+            and persist_simulation_plan
+        ):
             from app.services.simulation_plan_service import SimulationPlanStore
             SimulationPlanStore().save(result.simulation_plan, result)
         return result

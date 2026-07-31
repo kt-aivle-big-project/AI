@@ -68,6 +68,11 @@ class WarehouseSituationGraphBuilder:
             for operation in normalized_request.operations
             if operation.operation_type == "OUTBOUND_ORDER"
         ]
+        requested_inbound_ids = [
+            operation.operation_id
+            for operation in normalized_request.operations
+            if operation.operation_type == "INBOUND_ITEM"
+        ]
         g2p_mode = bool(
             requested_order_ids
             and get_settings().outbound_fulfillment_mode == "goods_to_person"
@@ -81,8 +86,17 @@ class WarehouseSituationGraphBuilder:
             ).hexdigest()[:10]
             evidence_id = f"EVID-{source.upper()}-{record_id}-{digest}"
             source_tool_map = {
-                "inventory_store": ["get_order_facts", "get_inventory_candidates", "find_orders"],
-                "facility_master": ["resolve_map_entities", "get_connecting_subgraph"],
+                "inventory_store": [
+                    "get_order_facts",
+                    "get_inbound_facts",
+                    "get_inventory_candidates",
+                    "find_orders",
+                ],
+                "facility_master": [
+                    "get_inbound_facts",
+                    "resolve_map_entities",
+                    "get_connecting_subgraph",
+                ],
                 "robot_runtime": ["get_robot_candidates", "get_active_operations"],
                 "traffic_runtime": ["get_runtime_constraints"],
                 "warehouse_graph": ["get_connecting_subgraph", "resolve_map_entities"],
@@ -172,6 +186,13 @@ class WarehouseSituationGraphBuilder:
                     f"order:{operation.operation_id}",
                     "order",
                     {"order_id": operation.operation_id, "requested_by_input": True},
+                    [evidence_id],
+                )
+            elif operation.operation_type == "INBOUND_ITEM":
+                add_node(
+                    f"inbound:{operation.operation_id}",
+                    "inbound",
+                    {"inbound_id": operation.operation_id, "requested_by_input": True},
                     [evidence_id],
                 )
 
@@ -316,6 +337,159 @@ class WarehouseSituationGraphBuilder:
                 "STORED_AT",
                 evidence_ids=[stock_evidence],
             )
+
+        # Authoritative inbound receipt, handling-unit, handoff, and putaway
+        # candidates.  Agent formulation must receive the same physical facts
+        # that the direct Rule path uses; otherwise a mixed G2P+inbound request
+        # cannot be represented without silently dropping the inbound work.
+        inbound_needs_by_id = {
+            need.inbound_id: need for need in inventory.inbound_needs
+        }
+        inbound_pickup_nodes: dict[str, list[str]] = defaultdict(list)
+        inbound_delivery_nodes: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
+        for need in inventory.inbound_needs:
+            inbound_evidence = add_evidence(
+                "inventory_store",
+                need.inbound_id,
+                need.model_dump(mode="json"),
+            )
+            inbound_node_id = f"inbound:{need.inbound_id}"
+            item_node_id = f"item:{need.item_id}"
+            handling_unit_node_id = f"handling_unit:{need.handling_unit_id}"
+            add_node(
+                inbound_node_id,
+                "inbound",
+                {
+                    **need.model_dump(mode="json"),
+                    "requested_by_input": need.inbound_id in request_anchor_ids,
+                },
+                [inbound_evidence],
+            )
+            add_node(
+                item_node_id,
+                "item",
+                {"item_id": need.item_id},
+                [inbound_evidence],
+            )
+            add_node(
+                handling_unit_node_id,
+                "handling_unit",
+                {
+                    "handling_unit_id": need.handling_unit_id,
+                    "item_id": need.item_id,
+                    "quantity": need.quantity,
+                    "status": need.status,
+                    "source_inbound_id": need.inbound_id,
+                },
+                [inbound_evidence],
+            )
+            add_relation(
+                f"rel:{need.inbound_id}:requires:{need.item_id}",
+                inbound_node_id,
+                item_node_id,
+                "REQUIRES_ITEM",
+                evidence_ids=[inbound_evidence],
+            )
+            add_relation(
+                f"rel:{need.inbound_id}:handling_unit:{need.handling_unit_id}",
+                inbound_node_id,
+                handling_unit_node_id,
+                "USES_HANDLING_UNIT",
+                evidence_ids=[inbound_evidence],
+            )
+
+            handoff = self.repository.inbound_handoff_for_port(need.source_port_id)
+            if handoff:
+                handoff_evidence = add_evidence(
+                    "facility_master",
+                    str(handoff.get("handoff_id") or need.source_port_id),
+                    handoff,
+                )
+                for pickup_node in [
+                    str(value) for value in handoff.get("access_node_ids", [])
+                ]:
+                    inbound_pickup_nodes[need.inbound_id].append(pickup_node)
+                    self._add_map_node(
+                        add_node=add_node,
+                        node_id=pickup_node,
+                        evidence=add_evidence,
+                        snapshot=snapshot,
+                    )
+                    add_relation(
+                        f"rel:{need.inbound_id}:pickup:{pickup_node}",
+                        inbound_node_id,
+                        f"map:{pickup_node}",
+                        "PICKUP_FROM",
+                        evidence_ids=[inbound_evidence, handoff_evidence],
+                    )
+
+            candidate_slots = list(inventory.candidate_putaway_slots)
+            if need.target_rack_id:
+                candidate_slots = [
+                    slot for slot in candidate_slots
+                    if slot.rack_id == need.target_rack_id
+                ]
+            if need.target_rack_level:
+                candidate_slots = [
+                    slot for slot in candidate_slots
+                    if slot.rack_level == need.target_rack_level
+                ]
+            for slot in candidate_slots:
+                slot_record_id = f"{slot.rack_id}:L{slot.rack_level}"
+                slot_evidence = add_evidence(
+                    "inventory_store",
+                    f"rack_slot:{slot_record_id}",
+                    slot.model_dump(mode="json"),
+                )
+                slot_node_id = f"rack_slot:{slot_record_id}"
+                rack_node_id = f"rack:{slot.rack_id}"
+                add_node(
+                    slot_node_id,
+                    "rack_slot",
+                    slot.model_dump(mode="json"),
+                    [slot_evidence],
+                )
+                add_node(
+                    rack_node_id,
+                    "rack",
+                    {
+                        "rack_id": slot.rack_id,
+                        "access_node_ids": list(slot.access_node_ids),
+                    },
+                    [slot_evidence],
+                )
+                add_relation(
+                    f"rel:{need.inbound_id}:putaway:{slot_record_id}",
+                    inbound_node_id,
+                    slot_node_id,
+                    "PUTAWAY_TO",
+                    evidence_ids=[inbound_evidence, slot_evidence],
+                )
+                add_relation(
+                    f"rel:{slot_record_id}:rack:{slot.rack_id}",
+                    slot_node_id,
+                    rack_node_id,
+                    "STORED_AT",
+                    evidence_ids=[slot_evidence],
+                )
+                for delivery_node in slot.access_node_ids:
+                    delivery_node = str(delivery_node)
+                    inbound_delivery_nodes[need.inbound_id].append(
+                        (slot.rack_id, slot.rack_level, delivery_node)
+                    )
+                    self._add_map_node(
+                        add_node=add_node,
+                        node_id=delivery_node,
+                        evidence=add_evidence,
+                        snapshot=snapshot,
+                    )
+                    add_relation(
+                        f"rel:{slot_record_id}:access:{delivery_node}",
+                        rack_node_id,
+                        f"map:{delivery_node}",
+                        "HAS_ACCESS_POINT",
+                        evidence_ids=[slot_evidence],
+                    )
 
         if g2p_mode:
             # Handling units are the physical outbound transport units.  Orders
@@ -661,6 +835,61 @@ class WarehouseSituationGraphBuilder:
                         evidence_ids=ev,
                     )
 
+        # Direct inbound work needs the same complete path evidence as legacy
+        # outbound tasks.  The LLM may choose one authoritative handoff access
+        # and one authoritative putaway access, but it may not invent either.
+        for inbound_id in requested_inbound_ids:
+            pickup_nodes = list(dict.fromkeys(inbound_pickup_nodes.get(inbound_id, [])))
+            delivery_records = list(dict.fromkeys(inbound_delivery_nodes.get(inbound_id, [])))
+            for pickup_node in pickup_nodes:
+                for robot in eligible_robots:
+                    _, arcs = graph.shortest_path(
+                        robot.current_node, pickup_node, metric="travel_time"
+                    )
+                    if not arcs and robot.current_node != pickup_node:
+                        continue
+                    path = self._path_evidence(
+                        path_id=f"path:robot:{robot.robot_id}:to:inbound:{inbound_id}:{pickup_node}",
+                        purpose="ROBOT_TO_PICKUP",
+                        source=robot.current_node,
+                        target=pickup_node,
+                        arcs=arcs,
+                        affected_constraints=constraint_ids_by_edge,
+                    )
+                    register_path(path)
+                    add_relation(
+                        f"rel:{robot.robot_id}:can_reach:inbound:{inbound_id}:{pickup_node}",
+                        f"robot:{robot.robot_id}",
+                        f"inbound:{inbound_id}",
+                        "CAN_REACH",
+                        attributes={
+                            "path_id": path.path_id,
+                            "access_node_id": pickup_node,
+                            "travel_time_ms": path.travel_time_ms,
+                            "cost": path.cost,
+                        },
+                        evidence_ids=nodes[f"path_option:{path.path_id}"].evidence_ids,
+                    )
+                for rack_id, rack_level, delivery_node in delivery_records:
+                    _, arcs = graph.shortest_path(
+                        pickup_node, delivery_node, metric="travel_time"
+                    )
+                    if not arcs and pickup_node != delivery_node:
+                        continue
+                    register_path(
+                        self._path_evidence(
+                            path_id=(
+                                f"path:inbound:{inbound_id}:{pickup_node}:to:"
+                                f"{rack_id}:L{rack_level}:{delivery_node}"
+                            ),
+                            purpose="PICKUP_TO_DELIVERY",
+                            source=pickup_node,
+                            target=delivery_node,
+                            arcs=arcs,
+                            affected_constraints=constraint_ids_by_edge,
+                        )
+                    )
+
         if g2p_mode:
             logical_destinations = sorted({need.delivery_node for need in inventory.task_needs})
             station_records = self.repository.outbound_station_candidates(logical_destinations)
@@ -779,14 +1008,24 @@ class WarehouseSituationGraphBuilder:
                             )
 
         missing: list[str] = []
-        order_facts_complete = all(
+        outbound_facts_complete = all(
             order_id in needs_by_order for order_id in requested_order_ids
         )
-        if not order_facts_complete:
+        inbound_facts_complete = all(
+            inbound_id in inbound_needs_by_id for inbound_id in requested_inbound_ids
+        )
+        order_facts_complete = outbound_facts_complete and inbound_facts_complete
+        if not outbound_facts_complete:
             missing.extend(
                 f"Order {order_id} is missing from the inventory snapshot."
                 for order_id in requested_order_ids
                 if order_id not in needs_by_order
+            )
+        if not inbound_facts_complete:
+            missing.extend(
+                f"Inbound receipt {inbound_id} is missing from the inventory snapshot."
+                for inbound_id in requested_inbound_ids
+                if inbound_id not in inbound_needs_by_id
             )
 
         inventory_complete = True
@@ -896,6 +1135,38 @@ class WarehouseSituationGraphBuilder:
                     missing.append(
                         f"Order {order_id} has no complete robot-pickup-delivery path evidence."
                     )
+
+        for inbound_id in requested_inbound_ids:
+            need = inbound_needs_by_id.get(inbound_id)
+            if need is None:
+                continue
+            pickups = set(inbound_pickup_nodes.get(inbound_id, []))
+            deliveries = {value[2] for value in inbound_delivery_nodes.get(inbound_id, [])}
+            if not pickups or not deliveries:
+                inventory_complete = False
+                missing.append(
+                    f"Inbound receipt {inbound_id} has no authoritative handoff or putaway candidate."
+                )
+                continue
+            has_robot_path = any(
+                path.purpose == "ROBOT_TO_PICKUP"
+                and path.target_node_id in pickups
+                and f":inbound:{inbound_id}:" in path.path_id
+                for path in paths.values()
+            )
+            has_delivery_path = any(
+                path.purpose == "PICKUP_TO_DELIVERY"
+                and path.source_node_id in pickups
+                and path.target_node_id in deliveries
+                and path.path_id.startswith(f"path:inbound:{inbound_id}:")
+                for path in paths.values()
+            )
+            if not has_robot_path or not has_delivery_path:
+                map_paths_complete = False
+                missing.append(
+                    f"Inbound receipt {inbound_id} lacks complete robot-to-handoff or "
+                    "handoff-to-putaway path evidence."
+                )
 
         robot_complete = bool(robots.candidate_robot_ids)
         if not robot_complete:

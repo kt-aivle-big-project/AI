@@ -46,7 +46,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "version": "13.24.0",
+                    "version": "13.25.1",
                     "status": "FAIL",
                     "error": f"Native plan fixture is incomplete: {missing}",
                     "data_dir": str(data_dir),
@@ -68,7 +68,7 @@ def main() -> int:
         get_repository.cache_clear()
         scenario = json.loads((data_dir / "scenario_state.json").read_text(encoding="utf-8"))
         output = {
-            "version": "13.24.0",
+            "version": "13.25.1",
             "status": "PASS",
             "warehouse_id": args.warehouse_id,
             "simulation_id": scenario.get("simulation_id"),
@@ -83,7 +83,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "version": "13.24.0",
+                    "version": "13.25.1",
                     "status": "FAIL",
                     "warehouse_id": args.warehouse_id,
                     "data_dir": str(data_dir),

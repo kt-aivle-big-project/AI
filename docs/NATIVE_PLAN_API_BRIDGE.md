@@ -1,4 +1,4 @@
-# Native LARO Plan API Bridge
+# Native LARO Plan API Bridge v13.25
 
 ## 1. Purpose
 
@@ -15,7 +15,7 @@ At the same time it enables the LARO-native planning endpoint that is intended t
 POST /api/v1/warehouses/{warehouse_id}/missions/plan
 ```
 
-The current goal is **communication and planning-pipeline verification**, not BE migration. `BE-main` source code is unchanged.
+The current goal is **communication and planning-pipeline verification**, not BE migration. `BE-main` source code is unchanged. v13.25 also enforces exact mixed-operation coverage so an Agent plan cannot silently drop an inbound operation while preserving only an outbound G2P order.
 
 ```text
 Existing Spring path
@@ -333,7 +333,8 @@ Expected checks:
   "candidate_space_valid": true,
   "assignment_valid": true,
   "route_valid": true,
-  "mapf_valid": true
+  "mapf_valid": true,
+  "logical_operation_coverage_valid": true
 }
 ```
 
@@ -343,7 +344,22 @@ The full persisted orchestration result is still available at:
 GET /api/v1/warehouses/WH-001/missions/plans/{plan_id}/debug
 ```
 
-The compact trace endpoint is recommended for BE integration checks because it avoids returning the full cuOpt payload and context snapshot.
+The compact trace endpoint is recommended for BE integration checks because it avoids returning the full cuOpt payload and context snapshot. It also returns a `repository` block proving the request-scoped data sources:
+
+```json
+{
+  "repository_type": "LiveWarehouseRepository",
+  "source_manifest": {
+    "route_nodes": "neo4j_snapshot",
+    "route_edges": "neo4j_snapshot",
+    "racks": "postgres_snapshot",
+    "handling_units": "postgres_live",
+    "orders": "postgres_live",
+    "inbound_receipts": "postgres_live",
+    "robots": "redis_live"
+  }
+}
+```
 
 ---
 
@@ -367,6 +383,9 @@ status = plan_validated
 MOVE step exists
 SERVICE step exists
 payload/candidate/assignment/route/MAPF checks are true
+logical_operation_coverage_valid is true
+ORD-001 and IN-001 both have task_ids and assigned_robot_id
+repository source manifest proves Neo4j/PostgreSQL/Redis authority
 repeated structural signatures match
 ```
 
@@ -411,7 +430,22 @@ $body = @{
 } | ConvertTo-Json -Depth 20
 ```
 
-Now `router_llm_executed` should be `True`. The Router may select Rule or Agent; `final_route` records the locked branch.
+Now `router_llm_executed` should be `True`. The Router may select Rule or Agent; `final_route` records the locked branch. Either branch must preserve `ORD-001` and `IN-001` exactly once. If an Agent draft omits `IN-001`, validation emits `OPERATION_COVERAGE_MISMATCH:IN-001`, performs at most one repair call, and does not persist a plan unless the final coverage guard passes.
+
+One-command natural-language check:
+
+```powershell
+.\scripts\run_native_plan_api_check.ps1 `
+  -Backend cuopt `
+  -InputMode natural `
+  -Repeat 1
+```
+
+Or:
+
+```powershell
+.\examples\powershell\call_native_llm_cuopt_plan.ps1
+```
 
 ---
 
@@ -430,7 +464,28 @@ The request can omit `optimization_backend` to use the server default, or explic
 
 ---
 
-## 11. What is not changed
+## 11. Mixed-operation fail-closed contract
+
+For an actionable request, every canonical operation must appear exactly once in one of these locations:
+
+```text
+g2p_order_ids
+direct tasks
+explicit deferred operation IDs
+```
+
+The mixed request `ORD-001 + IN-001` therefore requires:
+
+```text
+ORD-001 → g2p_order_ids (in goods-to-person mode)
+IN-001  → direct INBOUND_ITEM task
+```
+
+The final SimulationPlan is independently checked after MAPF. An executable logical operation must have both `task_ids` and `assigned_robot_id`, and the logical task must appear in a SERVICE step. Failed coverage clears the plan and terminates the workflow; it is never stored as `plan_validated`. See [v13.25 Mixed Operation Hardening](V13_25_MIXED_OPERATION_HARDENING.md).
+
+---
+
+## 12. What is not changed
 
 ```text
 BE-main source code                         unchanged

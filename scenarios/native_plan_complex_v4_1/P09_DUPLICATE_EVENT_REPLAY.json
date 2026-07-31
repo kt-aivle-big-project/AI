@@ -1,0 +1,58 @@
+{
+  "scenario_id": "P09_DUPLICATE_EVENT_REPLAY",
+  "title": "중복 이벤트 재전송",
+  "category": "IDEMPOTENCY",
+  "difficulty": 3,
+  "requires_openai": false,
+  "input_kind": "structured",
+  "description": "동일 주문·입고 이벤트가 두 번 들어와도 논리 Operation과 물리 Task가 중복 생성되지 않아야 한다.",
+  "request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-V18-MIXED",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "inbound_item_arrived",
+        "inbound_id": "IN-001"
+      },
+      {
+        "type": "inbound_item_arrived",
+        "inbound_id": "IN-001"
+      }
+    ]
+  },
+  "expected": {
+    "require_live_repository": true,
+    "required_repository_sources": {
+      "route_nodes": "neo4j_snapshot",
+      "route_edges": "neo4j_snapshot",
+      "racks": "postgres_snapshot",
+      "robots": "redis_live"
+    },
+    "allowed_status": [
+      "plan_validated"
+    ],
+    "expected_operations": [
+      "ORD-001",
+      "IN-001"
+    ],
+    "require_unique_operations": true,
+    "require_plan": true,
+    "require_all_trace_checks": true
+  },
+  "tags": [
+    "structured",
+    "idempotency",
+    "dedup"
+  ],
+  "input_requires_openai": false,
+  "requires_openai_if_llm_router": true
+}

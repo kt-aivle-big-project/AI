@@ -45,6 +45,7 @@ from app.domain.schemas import (
     LLMNodeSummary,
     MapContext,
     MAPFValidationResult,
+    LogicalOperationCoverageValidationResult,
     MissionSpec,
     NodeExecutionRecord,
     OptimizationRequest,
@@ -189,6 +190,7 @@ class LaroGraphState(LaroInputState, total=False):
     route_validation: RouteValidationResult
     traffic_schedule: TrafficScheduleResult
     mapf_validation: MAPFValidationResult
+    logical_operation_coverage_validation: LogicalOperationCoverageValidationResult
     goods_to_person_plan: GoodsToPersonPlanResult
     query_response: QueryResponse
     clarification: ClarificationResult
@@ -296,6 +298,7 @@ class LaroOutputState(TypedDict, total=False):
     route_validation: RouteValidationResult
     traffic_schedule: TrafficScheduleResult
     mapf_validation: MAPFValidationResult
+    logical_operation_coverage_validation: LogicalOperationCoverageValidationResult
     goods_to_person_plan: GoodsToPersonPlanResult
     query_response: QueryResponse
     clarification: ClarificationResult

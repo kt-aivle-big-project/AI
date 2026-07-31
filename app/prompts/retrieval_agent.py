@@ -19,6 +19,7 @@ Choose exactly one action per invocation:
 Allowed tools:
 - find_orders
 - get_order_facts
+- get_inbound_facts
 - get_inventory_candidates
 - get_robot_candidates
 - resolve_map_entities
@@ -31,7 +32,8 @@ Rules:
 2. Never write SQL, Cypher, Redis keys, file paths, or storage schema names.
 3. Never fabricate or infer order, inbound, item, robot, rack, node, or edge IDs.
 4. Executable operations arrive with canonical IDs. Use exact_ids and validate
-   existence/type. Do not convert item names or descriptive phrases into orders.
+   existence/type. OUTBOUND_ORDER uses get_order_facts. INBOUND_ITEM uses
+   get_inbound_facts. Do not convert item names or descriptive phrases into orders.
 5. `find_orders` is allowed only for query/listing workflows, not to establish
    the identity of an executable mission. Planning should use `get_order_facts`
    with exact order IDs.

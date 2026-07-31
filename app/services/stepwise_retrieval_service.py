@@ -16,12 +16,14 @@ from typing import Any, Iterable
 
 from app.core.config import get_settings
 from app.domain.schemas import (
+    CandidatePutawaySlot,
     CandidateStock,
     EdgeOccupancy,
     EdgePenalty,
     EdgeReservation,
     EntityResolutionCandidate,
     EntityResolutionResult,
+    InboundTaskNeed,
     InventoryContext,
     InventoryQueryScope,
     InventoryTaskNeed,
@@ -46,6 +48,7 @@ from app.services.graph_service import DirectedGraphService
 ALLOWED_TOOLS: set[str] = {
     "find_orders",
     "get_order_facts",
+    "get_inbound_facts",
     "get_inventory_candidates",
     "get_robot_candidates",
     "resolve_map_entities",
@@ -157,6 +160,9 @@ class RetrievalToolCallValidator:
         elif request.tool_name == "get_order_facts":
             if not (request.exact_ids or request.raw_references or "find_orders" in completed):
                 errors.append("GET_ORDER_FACTS_REQUIRES_ORDER_REFERENCE")
+        elif request.tool_name == "get_inbound_facts":
+            if not (request.exact_ids or request.raw_references):
+                errors.append("GET_INBOUND_FACTS_REQUIRES_INBOUND_REFERENCE")
         elif request.tool_name == "get_inventory_candidates":
             if not (
                 request.exact_ids
@@ -175,12 +181,16 @@ class RetrievalToolCallValidator:
             if not (request.exact_ids or request.raw_references):
                 errors.append("MAP_ENTITY_RESOLUTION_REQUIRES_REFERENCE")
         elif request.tool_name == "get_connecting_subgraph":
-            if "get_inventory_candidates" not in completed:
-                errors.append("SUBGRAPH_REQUIRES_INVENTORY_OBSERVATION")
-            if "get_robot_candidates" not in completed:
+            has_robot = "get_robot_candidates" in completed
+            has_order = "get_order_facts" in completed or "find_orders" in completed
+            has_inventory = "get_inventory_candidates" in completed
+            has_inbound = "get_inbound_facts" in completed
+            if not has_robot:
                 errors.append("SUBGRAPH_REQUIRES_ROBOT_OBSERVATION")
-            if "get_order_facts" not in completed and "find_orders" not in completed:
-                errors.append("SUBGRAPH_REQUIRES_ORDER_OBSERVATION")
+            if has_order != has_inventory:
+                errors.append("SUBGRAPH_REQUIRES_COMPLETE_OUTBOUND_OBSERVATIONS")
+            if not ((has_order and has_inventory) or has_inbound):
+                errors.append("SUBGRAPH_REQUIRES_OPERATION_OBSERVATION")
         elif request.tool_name == "get_runtime_constraints":
             if "get_connecting_subgraph" not in completed and not request.exact_ids:
                 errors.append("RUNTIME_CONSTRAINTS_REQUIRE_SUBGRAPH_OR_EXPLICIT_EDGE")
@@ -211,6 +221,8 @@ class ResolvedRetrievalToolCallValidator:
         completed = {value.tool_name for value in observations}
         if request.tool_name == "get_order_facts" and not request.order_ids:
             errors.append("RESOLVED_ORDER_FACTS_REQUIRES_ORDER_ID")
+        elif request.tool_name == "get_inbound_facts" and not request.inbound_ids:
+            errors.append("RESOLVED_INBOUND_FACTS_REQUIRES_INBOUND_ID")
         elif request.tool_name == "get_inventory_candidates" and not (
             request.order_ids or request.item_ids
         ):
@@ -220,12 +232,15 @@ class ResolvedRetrievalToolCallValidator:
         ):
             errors.append("DERIVED_MAP_REFERENCE_EMPTY")
         elif request.tool_name == "get_connecting_subgraph":
-            required = {
-                "get_order_facts",
-                "get_inventory_candidates",
-                "get_robot_candidates",
-            }
-            if not required.issubset(completed):
+            has_robot = "get_robot_candidates" in completed
+            has_order = "get_order_facts" in completed or "find_orders" in completed
+            has_inventory = "get_inventory_candidates" in completed
+            has_inbound = "get_inbound_facts" in completed
+            if (
+                not has_robot
+                or has_order != has_inventory
+                or not ((has_order and has_inventory) or has_inbound)
+            ):
                 errors.append("RESOLVED_SUBGRAPH_DEPENDENCIES_INCOMPLETE")
         elif request.tool_name == "get_runtime_constraints" and not (
             request.edge_ids or "get_connecting_subgraph" in completed
@@ -264,6 +279,7 @@ class StepwiseQueryKeyResolver:
         selected_entity_ids: list[str] | None = None,
     ) -> ToolResolutionOutcome:
         order_ids: list[str] = []
+        inbound_ids: list[str] = []
         item_ids: list[str] = list(tool_request.item_ids)
         robot_ids: list[str] = []
         rack_ids: list[str] = []
@@ -371,6 +387,40 @@ class StepwiseQueryKeyResolver:
                 ))
             if not order_ids and tool == "get_order_facts":
                 order_ids.extend(observed.order_ids)
+        elif tool == "get_inbound_facts":
+            for index, exact in enumerate(tool_request.exact_ids, start=1):
+                receipt = self.repository.get_inbound_receipt(exact)
+                candidates = (
+                    []
+                    if receipt is None
+                    else [self._inbound_candidate(receipt, "EXACT_ID", 1.0)]
+                )
+                inbound_ids.extend(record(
+                    reference_id=f"inbound-exact:{index}",
+                    raw_text=exact,
+                    candidates=candidates,
+                    allow_multiple=False,
+                ))
+            for index, reference in enumerate(tool_request.raw_references, start=1):
+                target = reference.exact_id_hint
+                if not target:
+                    embedded = re.findall(r"(?<![A-Za-z0-9])IN-[A-Za-z0-9_-]+", reference.raw_text, flags=re.I)
+                    target = embedded[0].upper() if len(embedded) == 1 else reference.raw_text.strip()
+                receipt = self.repository.get_inbound_receipt(target) if target else None
+                candidates = (
+                    []
+                    if receipt is None
+                    else [self._inbound_candidate(receipt, "EXACT_ID", 1.0)]
+                )
+                inbound_ids.extend(record(
+                    reference_id=reference.reference_id or f"inbound-ref:{index}",
+                    raw_text=reference.raw_text,
+                    candidates=candidates,
+                    allow_multiple=False,
+                    required=reference.required,
+                ))
+            if not inbound_ids:
+                inbound_ids.extend(observed.inbound_ids)
         elif tool == "get_inventory_candidates":
             for exact in tool_request.exact_ids:
                 order = self.repository.get_order(exact)
@@ -532,6 +582,7 @@ class StepwiseQueryKeyResolver:
                 request_id=tool_request.request_id,
                 tool_name=tool_request.tool_name,
                 order_ids=self._dedupe(order_ids),
+                inbound_ids=self._dedupe(inbound_ids),
                 item_ids=self._dedupe(item_ids),
                 robot_ids=self._dedupe(robot_ids),
                 rack_ids=self._dedupe(rack_ids),
@@ -594,6 +645,10 @@ class StepwiseQueryKeyResolver:
                     destination = order.get("delivery_node") or order.get("logical_destination_id")
                     if destination:
                         values.append(str(destination))
+                for handoff in data.get("inbound_handoffs", []):
+                    values.extend(str(value) for value in handoff.get("access_node_ids", []) if value)
+                for slot in data.get("putaway_slots", []):
+                    values.extend(str(value) for value in slot.get("access_node_ids", []) if value)
                 for stock in data.get("stocks", []):
                     values.extend(str(value) for value in stock.get("access_node_ids", []) if value)
                 for robot in data.get("robots", []):
@@ -606,6 +661,11 @@ class StepwiseQueryKeyResolver:
                     str(stock.get("rack_id"))
                     for stock in data.get("stocks", [])
                     if stock.get("rack_id")
+                )
+                values.extend(
+                    str(slot.get("rack_id"))
+                    for slot in data.get("putaway_slots", [])
+                    if slot.get("rack_id")
                 )
             if allow_edges:
                 values.extend(str(value) for value in data.get("relevant_edge_ids", []) if value)
@@ -730,6 +790,23 @@ class StepwiseQueryKeyResolver:
             confidence=confidence,
         )
 
+    def _inbound_candidate(
+        self,
+        receipt: dict[str, Any],
+        method: str,
+        confidence: float,
+    ) -> EntityResolutionCandidate:
+        return EntityResolutionCandidate(
+            entity_id=str(receipt["inbound_id"]),
+            entity_type="INBOUND",
+            display_name=(
+                f"{receipt['inbound_id']} / "
+                f"{receipt.get('handling_unit_id') or receipt.get('item_id')}"
+            ),
+            match_method=method,
+            confidence=confidence,
+        )
+
     def _node_entity_type(self, node_id: str) -> str:
         node = self.repository.node(node_id) or {}
         return {
@@ -799,10 +876,27 @@ class ObservationIndex:
         return list(dict.fromkeys(values))
 
     @property
+    def inbound_records(self) -> list[dict[str, Any]]:
+        """Return deduplicated authoritative inbound receipt facts."""
+
+        values: dict[str, dict[str, Any]] = {}
+        for observation in self.by_tool("get_inbound_facts"):
+            for record in observation.data.get("inbound_receipts", []):
+                inbound_id = record.get("inbound_id")
+                if inbound_id:
+                    values[str(inbound_id)] = dict(record)
+        return list(values.values())
+
+    @property
+    def inbound_ids(self) -> list[str]:
+        return [str(value["inbound_id"]) for value in self.inbound_records]
+
+    @property
     def item_ids(self) -> list[str]:
         values: list[str] = []
         for observation in self.observations:
             values.extend(str(value.get("item_id")) for value in observation.data.get("orders", []) if value.get("item_id"))
+            values.extend(str(value.get("item_id")) for value in observation.data.get("inbound_receipts", []) if value.get("item_id"))
             values.extend(str(value.get("item_id")) for value in observation.data.get("stocks", []) if value.get("item_id"))
         return list(dict.fromkeys(values))
 
@@ -857,6 +951,87 @@ class WarehouseReadToolExecutor:
             data = {"orders": orders}
             canonical_ids = [str(value["order_id"]) for value in orders]
             summary = f"Loaded authoritative facts for {len(orders)} order(s)."
+        elif tool == "get_inbound_facts":
+            inbound_ids = request.inbound_ids or index.inbound_ids
+            receipts = [self.repository.get_inbound_receipt(value) for value in inbound_ids]
+            receipts = [value for value in receipts if value is not None]
+            handoffs: list[dict[str, Any]] = []
+            handoff_seen: set[str] = set()
+            all_slots = self.repository.empty_putaway_slots()
+            putaway_slots: list[dict[str, Any]] = []
+            slot_seen: set[tuple[str, int]] = set()
+            inbound_movements: list[dict[str, Any]] = []
+            for receipt in receipts:
+                handoff = self.repository.inbound_handoff_for_port(
+                    str(receipt.get("source_port_id"))
+                )
+                if handoff is not None:
+                    handoff_id = str(handoff.get("handoff_id"))
+                    if handoff_id not in handoff_seen:
+                        handoff_seen.add(handoff_id)
+                        handoffs.append(handoff)
+                target_rack_id = receipt.get("target_rack_id")
+                target_rack_level = receipt.get("target_rack_level")
+                matching = [
+                    slot
+                    for slot in all_slots
+                    if (
+                        not target_rack_id
+                        or str(slot.get("rack_id")) == str(target_rack_id)
+                    )
+                    and (
+                        target_rack_level is None
+                        or int(slot.get("rack_level", 0)) == int(target_rack_level)
+                    )
+                ]
+                for slot in matching:
+                    key = (str(slot.get("rack_id")), int(slot.get("rack_level", 0)))
+                    if key not in slot_seen:
+                        slot_seen.add(key)
+                        putaway_slots.append(slot)
+                inbound_movements.append({
+                    "inbound_id": str(receipt["inbound_id"]),
+                    "handling_unit_id": str(receipt.get("handling_unit_id") or ""),
+                    "item_id": str(receipt.get("item_id") or ""),
+                    "quantity": int(receipt.get("quantity", 0)),
+                    "source_port_id": str(receipt.get("source_port_id") or ""),
+                    "handoff_id": str(handoff.get("handoff_id")) if handoff else None,
+                    "pickup_access_node_ids": (
+                        [str(value) for value in handoff.get("access_node_ids", [])]
+                        if handoff else []
+                    ),
+                    "putaway_slots": [dict(value) for value in matching],
+                    "priority": str(receipt.get("priority", "medium")),
+                    "status": str(receipt.get("status", "pending")),
+                })
+            data = {
+                "inbound_receipts": receipts,
+                "inbound_handoffs": handoffs,
+                "putaway_slots": putaway_slots,
+                "inbound_movements": inbound_movements,
+            }
+            canonical_ids = [
+                *[str(value["inbound_id"]) for value in receipts],
+                *[str(value.get("handling_unit_id")) for value in receipts if value.get("handling_unit_id")],
+                *[str(value.get("item_id")) for value in receipts if value.get("item_id")],
+                *[str(value.get("source_port_id")) for value in receipts if value.get("source_port_id")],
+                *[str(value.get("handoff_id")) for value in handoffs if value.get("handoff_id")],
+                *[
+                    str(access_node_id)
+                    for value in handoffs
+                    for access_node_id in value.get("access_node_ids", [])
+                ],
+                *[str(value.get("rack_id")) for value in putaway_slots if value.get("rack_id")],
+                *[
+                    str(access_node_id)
+                    for value in putaway_slots
+                    for access_node_id in value.get("access_node_ids", [])
+                ],
+            ]
+            summary = (
+                f"Loaded {len(receipts)} inbound receipt(s), {len(handoffs)} handoff(s), "
+                f"and {len(putaway_slots)} putaway slot candidate(s)."
+            )
         elif tool == "get_inventory_candidates":
             order_ids = request.order_ids or index.order_ids
             orders = [self.repository.get_order(value) for value in order_ids]
@@ -973,13 +1148,12 @@ class WarehouseReadToolExecutor:
         )
 
     def _connecting_subgraph(self, index: ObservationIndex) -> dict[str, Any]:
-        """Build directed physical path evidence for the active fulfillment mode.
+        """Build one directed path-evidence subgraph for outbound and inbound work.
 
-        In goods-to-person mode, ``O_*`` remains a logical destination served by
-        a fixed outbound station.  AMRs physically travel robot -> rack access ->
-        station access, then the same AMR continues to either the source rack
-        access or the empty-tote buffer.  Legacy mode retains direct
-        pickup-to-delivery evidence for historical fixtures.
+        The method consumes only completed retrieval observations plus the
+        request-scoped repository snapshot.  Goods-to-person affects outbound
+        operations only; inbound receipts remain direct handoff-to-putaway
+        tasks in the same graph.
         """
 
         orders = index.order_records
@@ -988,12 +1162,28 @@ class WarehouseReadToolExecutor:
             for obs in index.by_tool("get_inventory_candidates")
             for value in obs.data.get("stocks", [])
         ]
+        inbound_movements = [
+            value
+            for obs in index.by_tool("get_inbound_facts")
+            for value in obs.data.get("inbound_movements", [])
+        ]
         robot_obs = index.by_tool("get_robot_candidates")
         robots = [value for obs in robot_obs for value in obs.data.get("robots", [])]
         candidate_robot_ids = {
-            value for obs in robot_obs for value in obs.data.get("candidate_robot_ids", [])
+            value
+            for obs in robot_obs
+            for value in obs.data.get("candidate_robot_ids", [])
         }
-        arcs = self.repository.adjusted_arcs(blocked_edge_ids=set(), blocked_node_ids=set())
+        eligible_robots = [
+            value
+            for value in robots
+            if str(value.get("robot_id")) in candidate_robot_ids
+        ]
+
+        arcs = self.repository.adjusted_arcs(
+            blocked_edge_ids=set(),
+            blocked_node_ids=set(),
+        )
         graph = DirectedGraphService(arcs)
         g2p_mode = bool(
             orders and get_settings().outbound_fulfillment_mode == "goods_to_person"
@@ -1005,9 +1195,22 @@ class WarehouseReadToolExecutor:
             if int(stock.get("quantity", stock.get("available_qty", 0))) > 0
             for access_node_id in stock.get("access_node_ids", [])
         }
+        inbound_pickups = {
+            str(access_node_id)
+            for movement in inbound_movements
+            for access_node_id in movement.get("pickup_access_node_ids", [])
+        }
+        inbound_deliveries = {
+            str(access_node_id)
+            for movement in inbound_movements
+            for slot in movement.get("putaway_slots", [])
+            for access_node_id in slot.get("access_node_ids", [])
+        }
         anchors = {
             *[str(value["current_node"]) for value in robots],
             *stock_accesses,
+            *inbound_pickups,
+            *inbound_deliveries,
         }
         summaries: list[dict[str, Any]] = []
         relevant_edges: list[str] = []
@@ -1027,35 +1230,39 @@ class WarehouseReadToolExecutor:
                 **metadata,
             })
 
-        # Every positive handling-unit location must be reachable by at least one
-        # eligible AMR, independent of whether one location alone satisfies the
-        # full order quantity.
         positive_stocks = [
             stock
             for stock in stocks
             if int(stock.get("quantity", stock.get("available_qty", 0))) > 0
         ]
+
+        # Outbound robot-to-stock evidence.
         for stock in positive_stocks:
             for access_node_id in [str(value) for value in stock.get("access_node_ids", [])]:
-                for robot in robots:
-                    if str(robot.get("robot_id")) not in candidate_robot_ids:
-                        continue
+                for robot in eligible_robots:
                     append_path(
                         purpose="ROBOT_TO_PICKUP",
                         source=str(robot["current_node"]),
                         target=access_node_id,
+                        operation_type="OUTBOUND_ORDER",
                         robot_id=str(robot["robot_id"]),
                         stock_id=str(stock["stock_id"]),
                         rack_id=str(stock["rack_id"]),
                         access_node_id=access_node_id,
                     )
 
-        if g2p_mode:
+        logical_destinations: list[str] = []
+        station_ids: list[str] = []
+        if orders and g2p_mode:
             logical_destinations = sorted({str(value["delivery_node"]) for value in orders})
             stations = self.repository.outbound_station_candidates(logical_destinations)
             empty_buffers = self.repository.empty_tote_buffer_candidates()
             station_accesses = [
-                (str(station["station_id"]), str(access_node_id), list(station.get("served_chute_ids", [])))
+                (
+                    str(station["station_id"]),
+                    str(access_node_id),
+                    list(station.get("served_chute_ids", [])),
+                )
                 for station in stations
                 for access_node_id in station.get("access_node_ids", [])
             ]
@@ -1064,6 +1271,7 @@ class WarehouseReadToolExecutor:
                 for buffer in empty_buffers
                 for access_node_id in buffer.get("access_node_ids", [])
             ]
+            station_ids = [str(value["station_id"]) for value in stations]
             anchors.update(access for _, access, _ in station_accesses)
             anchors.update(access for _, access in empty_accesses)
 
@@ -1074,6 +1282,7 @@ class WarehouseReadToolExecutor:
                             purpose="PICKUP_TO_STATION",
                             source=source_access,
                             target=station_access,
+                            operation_type="OUTBOUND_ORDER",
                             stock_id=str(stock["stock_id"]),
                             rack_id=str(stock["rack_id"]),
                             access_node_id=source_access,
@@ -1085,6 +1294,7 @@ class WarehouseReadToolExecutor:
                             purpose="STATION_TO_POST_MOVE",
                             source=station_access,
                             target=source_access,
+                            operation_type="OUTBOUND_ORDER",
                             stock_id=str(stock["stock_id"]),
                             rack_id=str(stock["rack_id"]),
                             station_id=station_id,
@@ -1103,40 +1313,88 @@ class WarehouseReadToolExecutor:
                         purpose="STATION_TO_POST_MOVE",
                         source=station_access,
                         target=buffer_access,
+                        operation_type="OUTBOUND_ORDER",
                         station_id=station_id,
                         station_access_node=station_access,
                         empty_tote_buffer_id=buffer_id,
                         post_move_kind="MOVE_TO_EMPTY_TOTE_BUFFER",
                     )
-            return {
-                "fulfillment_mode": "goods_to_person",
-                "logical_destination_ids": logical_destinations,
-                "station_ids": [str(value["station_id"]) for value in stations],
-                "anchor_node_ids": sorted(anchors),
-                "path_summaries": summaries,
-                "relevant_edge_ids": list(dict.fromkeys(relevant_edges)),
-            }
+        elif orders:
+            stocks_by_item: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            for stock in stocks:
+                stocks_by_item[str(stock["item_id"])].append(stock)
+            anchors.update(str(value["delivery_node"]) for value in orders)
+            for order in orders:
+                for stock in stocks_by_item.get(str(order["item_id"]), []):
+                    if int(stock.get("quantity", stock.get("available_qty", 0))) < int(order["required_qty"]):
+                        continue
+                    for access_node_id in [str(value) for value in stock.get("access_node_ids", [])]:
+                        append_path(
+                            purpose="PICKUP_TO_DELIVERY",
+                            source=access_node_id,
+                            target=str(order["delivery_node"]),
+                            operation_type="OUTBOUND_ORDER",
+                            order_id=str(order["order_id"]),
+                            stock_id=str(stock["stock_id"]),
+                            rack_id=str(stock["rack_id"]),
+                            access_node_id=access_node_id,
+                        )
 
-        stocks_by_item: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        for stock in stocks:
-            stocks_by_item[str(stock["item_id"])].append(stock)
-        anchors.update(str(value["delivery_node"]) for value in orders)
-        for order in orders:
-            for stock in stocks_by_item.get(str(order["item_id"]), []):
-                if int(stock.get("quantity", stock.get("available_qty", 0))) < int(order["required_qty"]):
-                    continue
-                for access_node_id in [str(value) for value in stock.get("access_node_ids", [])]:
+        # Inbound work always remains a direct task, even when outbound uses G2P.
+        for movement in inbound_movements:
+            inbound_id = str(movement.get("inbound_id"))
+            handling_unit_id = str(movement.get("handling_unit_id") or "")
+            pickup_accesses = [
+                str(value) for value in movement.get("pickup_access_node_ids", [])
+            ]
+            putaway_slots = list(movement.get("putaway_slots", []))
+            for pickup_access in pickup_accesses:
+                for robot in eligible_robots:
                     append_path(
-                        purpose="PICKUP_TO_DELIVERY",
-                        source=access_node_id,
-                        target=str(order["delivery_node"]),
-                        order_id=str(order["order_id"]),
-                        stock_id=str(stock["stock_id"]),
-                        rack_id=str(stock["rack_id"]),
-                        access_node_id=access_node_id,
+                        purpose="ROBOT_TO_PICKUP",
+                        source=str(robot["current_node"]),
+                        target=pickup_access,
+                        operation_type="INBOUND_ITEM",
+                        inbound_id=inbound_id,
+                        handling_unit_id=handling_unit_id,
+                        robot_id=str(robot["robot_id"]),
+                        handoff_id=movement.get("handoff_id"),
+                        access_node_id=pickup_access,
                     )
+                for slot in putaway_slots:
+                    for delivery_access in [
+                        str(value) for value in slot.get("access_node_ids", [])
+                    ]:
+                        append_path(
+                            purpose="PICKUP_TO_DELIVERY",
+                            source=pickup_access,
+                            target=delivery_access,
+                            operation_type="INBOUND_ITEM",
+                            inbound_id=inbound_id,
+                            handling_unit_id=handling_unit_id,
+                            handoff_id=movement.get("handoff_id"),
+                            rack_id=str(slot.get("rack_id")),
+                            rack_level=int(slot.get("rack_level", 0)),
+                            pickup_access_node=pickup_access,
+                            delivery_access_node=delivery_access,
+                        )
+
+        if orders and inbound_movements:
+            fulfillment_mode = "mixed_operations"
+        elif inbound_movements:
+            fulfillment_mode = "inbound_putaway"
+        elif g2p_mode:
+            fulfillment_mode = "goods_to_person"
+        else:
+            fulfillment_mode = "legacy_order_tasks"
+
         return {
-            "fulfillment_mode": "legacy_order_tasks",
+            "fulfillment_mode": fulfillment_mode,
+            "logical_destination_ids": logical_destinations,
+            "station_ids": station_ids,
+            "inbound_ids": [
+                str(value.get("inbound_id")) for value in inbound_movements
+            ],
             "anchor_node_ids": sorted(anchors),
             "path_summaries": summaries,
             "relevant_edge_ids": list(dict.fromkeys(relevant_edges)),
@@ -1300,6 +1558,100 @@ class StepwiseRetrievalSufficiencyValidator:
                         repair_target="SITUATION_GRAPH",
                     ))
 
+        inbound = [
+            value for value in request.operations
+            if value.operation_type == "INBOUND_ITEM"
+        ]
+        if inbound:
+            requirements: list[tuple[str, str, RetrievalToolName]] = [
+                ("get_inbound_facts", "inventory", "get_inbound_facts"),
+                ("get_robot_candidates", "robot_runtime", "get_robot_candidates"),
+                ("get_connecting_subgraph", "map_graph", "get_connecting_subgraph"),
+                ("get_runtime_constraints", "map_graph", "get_runtime_constraints"),
+            ]
+            for tool_name, domain, recommendation in requirements:
+                if tool_name not in tools:
+                    missing_domains.append(domain)
+                    recommended.append(recommendation)
+
+            receipt_by_id = {
+                str(value.get("inbound_id")): value
+                for value in index.inbound_records
+                if value.get("inbound_id")
+            }
+            for operation in inbound:
+                if operation.operation_id not in receipt_by_id and "get_inbound_facts" in tools:
+                    not_found.append(operation.raw_reference or operation.operation_id)
+
+            inbound_observations = index.by_tool("get_inbound_facts")
+            if inbound_observations:
+                movements = [
+                    value
+                    for observation in inbound_observations
+                    for value in observation.data.get("inbound_movements", [])
+                ]
+                movement_by_id = {
+                    str(value.get("inbound_id")): value
+                    for value in movements
+                    if value.get("inbound_id")
+                }
+                for operation in inbound:
+                    movement = movement_by_id.get(operation.operation_id)
+                    if movement is None:
+                        continue
+                    if not movement.get("pickup_access_node_ids"):
+                        issues.append(WorkflowValidationIssue(
+                            code="INBOUND_HANDOFF_ACCESS_MISSING",
+                            node_name="retrieval_context_sufficiency_guard",
+                            message=(
+                                f"Inbound {operation.operation_id} has no robot-accessible handoff node."
+                            ),
+                            entity_ids=[operation.operation_id],
+                            repair_target="SITUATION_GRAPH",
+                        ))
+                    if not movement.get("putaway_slots"):
+                        issues.append(WorkflowValidationIssue(
+                            code="INBOUND_PUTAWAY_SLOT_MISSING",
+                            node_name="retrieval_context_sufficiency_guard",
+                            message=(
+                                f"Inbound {operation.operation_id} has no eligible putaway slot."
+                            ),
+                            entity_ids=[operation.operation_id],
+                            requires_human_review=True,
+                        ))
+
+            subgraph_obs = index.by_tool("get_connecting_subgraph")
+            if subgraph_obs:
+                path_summaries = [
+                    value
+                    for observation in subgraph_obs
+                    for value in observation.data.get("path_summaries", [])
+                ]
+                for operation in inbound:
+                    has_robot_to_pickup = any(
+                        value.get("purpose") == "ROBOT_TO_PICKUP"
+                        and value.get("operation_type") == "INBOUND_ITEM"
+                        and str(value.get("inbound_id")) == operation.operation_id
+                        for value in path_summaries
+                    )
+                    has_pickup_to_delivery = any(
+                        value.get("purpose") == "PICKUP_TO_DELIVERY"
+                        and value.get("operation_type") == "INBOUND_ITEM"
+                        and str(value.get("inbound_id")) == operation.operation_id
+                        for value in path_summaries
+                    )
+                    if not (has_robot_to_pickup and has_pickup_to_delivery):
+                        issues.append(WorkflowValidationIssue(
+                            code="NO_REACHABLE_INBOUND_PATH",
+                            node_name="retrieval_context_sufficiency_guard",
+                            message=(
+                                f"Inbound {operation.operation_id} lacks complete robot-to-handoff "
+                                "or handoff-to-putaway path evidence."
+                            ),
+                            entity_ids=[operation.operation_id],
+                            repair_target="SITUATION_GRAPH",
+                        ))
+
         recovery = [value for value in request.operations if value.operation_type == "RECOVERY"]
         if recovery and "get_active_operations" not in tools:
             missing_domains.append("active_operations")
@@ -1364,6 +1716,12 @@ class ObservationContextMaterializer:
     ) -> tuple[NormalizedWarehouseRequest, InventoryContext, RobotRuntimeContext, MapContext, list[str], dict[str, str], list[dict[str, Any]]]:
         index = ObservationIndex(observations)
         orders = index.order_records
+        inbound_receipts = index.inbound_records
+        inbound_movements = [
+            value
+            for obs in index.by_tool("get_inbound_facts")
+            for value in obs.data.get("inbound_movements", [])
+        ]
         stocks = [value for obs in index.by_tool("get_inventory_candidates") for value in obs.data.get("stocks", [])]
         robot_observations = index.by_tool("get_robot_candidates")
         robots = [value for obs in robot_observations for value in obs.data.get("robots", [])]
@@ -1457,15 +1815,77 @@ class ObservationContextMaterializer:
             )
             for value in stocks
         ]
+        inbound_needs = [
+            InboundTaskNeed(
+                inbound_id=str(value["inbound_id"]),
+                handling_unit_id=str(value["handling_unit_id"]),
+                item_id=str(value["item_id"]),
+                quantity=int(value["quantity"]),
+                source_port_id=str(value["source_port_id"]),
+                priority=str(value.get("priority", "medium")),
+                target_rack_id=(
+                    str(value["target_rack_id"])
+                    if value.get("target_rack_id") is not None
+                    else None
+                ),
+                target_rack_level=(
+                    int(value["target_rack_level"])
+                    if value.get("target_rack_level") is not None
+                    else None
+                ),
+                status=str(value.get("status", "arrived")),
+            )
+            for value in inbound_receipts
+        ]
+        putaway_values: dict[tuple[str, int], dict[str, Any]] = {}
+        for movement in inbound_movements:
+            for slot in movement.get("putaway_slots", []):
+                access_node_ids = [
+                    str(value) for value in slot.get("access_node_ids", []) if value
+                ]
+                if not access_node_ids:
+                    continue
+                key = (str(slot["rack_id"]), int(slot["rack_level"]))
+                putaway_values[key] = dict(slot)
+        candidate_putaway_slots = [
+            CandidatePutawaySlot(
+                rack_id=rack_id,
+                rack_level=rack_level,
+                access_node_ids=[str(value) for value in value.get("access_node_ids", [])],
+                capacity=int(value.get("capacity", 0)),
+            )
+            for (rack_id, rack_level), value in sorted(putaway_values.items())
+        ]
+        if task_needs and inbound_needs:
+            inventory_mode = "mixed_operations"
+        elif inbound_needs:
+            inventory_mode = "inbound_putaway"
+        elif task_needs:
+            inventory_mode = "order_fulfillment"
+        else:
+            inventory_mode = "warehouse_overview"
+
         inventory = InventoryContext(
             query_scope=InventoryQueryScope(
-                mode="order_fulfillment",
+                mode=inventory_mode,
                 warehouse_id=self.repository.warehouse_id,
                 order_ids=canonical_orders,
-                reason="Materialized from stepwise Agent Tool observations.",
+                inbound_ids=[str(value["inbound_id"]) for value in inbound_receipts],
+                item_ids=list(dict.fromkeys([
+                    *[value.item_id for value in task_needs],
+                    *[value.item_id for value in inbound_needs],
+                ])),
+                reason="Materialized from authoritative Agent Tool observations.",
             ),
-            inventory_summary=f"Materialized {len(task_needs)} order(s) and {len(candidate_stocks)} stock candidate(s).",
+            inventory_summary=(
+                f"Materialized {len(task_needs)} outbound order(s), "
+                f"{len(inbound_needs)} inbound receipt(s), "
+                f"{len(candidate_stocks)} stock candidate(s), and "
+                f"{len(candidate_putaway_slots)} putaway slot candidate(s)."
+            ),
             task_needs=task_needs,
+            inbound_needs=inbound_needs,
+            candidate_putaway_slots=candidate_putaway_slots,
             candidate_stocks=candidate_stocks,
         )
 
@@ -1539,6 +1959,17 @@ class ObservationContextMaterializer:
                 for access_node_id in value.get("access_node_ids", [])
             ],
             *[str(value["delivery_node"]) for value in orders],
+            *[
+                str(access_node_id)
+                for movement in inbound_movements
+                for access_node_id in movement.get("pickup_access_node_ids", [])
+            ],
+            *[
+                str(access_node_id)
+                for movement in inbound_movements
+                for slot in movement.get("putaway_slots", [])
+                for access_node_id in slot.get("access_node_ids", [])
+            ],
             *[str(value["current_node"]) for value in robots],
         }
         for edge_id in [

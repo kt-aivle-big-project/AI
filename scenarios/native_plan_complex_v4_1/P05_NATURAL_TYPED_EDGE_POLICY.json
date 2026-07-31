@@ -1,0 +1,47 @@
+{
+  "scenario_id": "P05_NATURAL_TYPED_EDGE_POLICY",
+  "title": "자연어 조건부 통로 정책",
+  "category": "CONDITIONAL_POLICY",
+  "difficulty": 4,
+  "requires_openai": true,
+  "input_kind": "natural",
+  "description": "H3_7 예상 대기 임계값에 따라 hard/soft avoid를 결정하는 typed 정책과 Operation 보존을 검증한다.",
+  "request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-V18-MIXED",
+    "optimization_backend": "ortools",
+    "events": [],
+    "user_command": "ORD-001을 출고하고 IN-001도 입고해. H3_7 예상 대기가 8초를 넘으면 hard avoid, 아니면 soft avoid로 적용해."
+  },
+  "expected": {
+    "require_live_repository": true,
+    "required_repository_sources": {
+      "route_nodes": "neo4j_snapshot",
+      "route_edges": "neo4j_snapshot",
+      "racks": "postgres_snapshot",
+      "robots": "redis_live"
+    },
+    "allowed_status": [
+      "plan_validated",
+      "human_review",
+      "awaiting_human_approval",
+      "held_for_human_action"
+    ],
+    "expected_operations_if_plan": [
+      "ORD-001",
+      "IN-001"
+    ],
+    "require_router_llm": true,
+    "allowed_final_routes": [
+      "RULE_FORMULATION",
+      "AGENT_FORMULATION"
+    ]
+  },
+  "tags": [
+    "natural",
+    "edge-policy",
+    "conditional"
+  ],
+  "input_requires_openai": true,
+  "requires_openai_if_llm_router": true
+}

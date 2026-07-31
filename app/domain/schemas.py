@@ -88,6 +88,12 @@ OptimizationBackend = Literal["ortools", "cuopt", "cuopt_payload_only"]
 OutboundFulfillmentMode = Literal["goods_to_person", "legacy_order_tasks"]
 OptimizerResultBackend = Literal["rule", "ortools", "cuopt"]
 ObjectiveProfile = Literal["MIN_COMPLETION_TIME", "URGENT_FIRST", "THROUGHPUT", "MIN_REHANDLE", "BALANCED"]
+ObjectiveTerm = Literal[
+    "MIN_COMPLETION_TIME",
+    "MIN_BATTERY_RISK",
+    "MIN_TRAVEL_DISTANCE",
+    "MAX_THROUGHPUT",
+]
 PlanningRouteRecommendation = Literal["RULE", "GLOBAL_SOLVER"]
 FormulationRoute = Literal[
     "RULE_FORMULATION",
@@ -446,6 +452,12 @@ class PublicRuntimeSnapshot(StrictModel):
     mode: Literal["OVERLAY", "COMPLETE"] = "OVERLAY"
     captured_at_sim_time_ms: int = Field(default=0, ge=0)
     robot_states: list[RobotRuntimeOverride] = Field(default_factory=list)
+    # Test/replan-only committed intervals. They remain request-scoped and are
+    # never written back to Redis by the planning API. Exposing them here lets
+    # integration tests prove that MAPF inserts WAIT around a real reservation.
+    preserved_edge_reservations: list[EdgeReservation] = Field(default_factory=list)
+    preserved_node_reservations: list[NodeReservation] = Field(default_factory=list)
+    preserved_station_reservations: list[StationServiceReservation] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_runtime_snapshot(self) -> "PublicRuntimeSnapshot":
@@ -465,6 +477,13 @@ class PublicRuntimeSnapshot(StrictModel):
                     "COMPLETE runtime_snapshot requires battery_pct and capacity_units "
                     f"for every robot: {', '.join(incomplete)}"
                 )
+        reservation_ids = [
+            *[value.reservation_id for value in self.preserved_edge_reservations],
+            *[value.reservation_id for value in self.preserved_node_reservations],
+            *[value.reservation_id for value in self.preserved_station_reservations],
+        ]
+        if len(reservation_ids) != len(set(reservation_ids)):
+            raise ValueError("runtime_snapshot reservation_id values must be unique")
         return self
 
     def to_internal(self) -> RuntimePlanningOverrides:
@@ -483,6 +502,9 @@ class PublicRuntimeSnapshot(StrictModel):
         return RuntimePlanningOverrides(
             robot_states=states,
             runtime_snapshot_mode=self.mode,
+            preserved_edge_reservations=list(self.preserved_edge_reservations),
+            preserved_node_reservations=list(self.preserved_node_reservations),
+            preserved_station_reservations=list(self.preserved_station_reservations),
         )
 
 
@@ -718,6 +740,14 @@ class NormalizedRequestConstraints(StrictModel):
     hard_block_edge_references: list[str] = Field(default_factory=list)
     conditional_edge_policies: list[ConditionalEdgePolicy] = Field(default_factory=list)
     objective_profile: ObjectiveProfile = "MIN_COMPLETION_TIME"
+    # The profile is the single solver-facing mode; these terms preserve a
+    # semantic multi-objective request for routing, validation, and audit.
+    objective_terms: list[ObjectiveTerm] = Field(default_factory=list)
+    # Keep this many eligible robots outside the optimization fleet as an
+    # emergency reserve. The highest-battery robots are selected
+    # deterministically and are distinct from explicit exclusions.
+    reserve_robot_count: int = Field(default=0, ge=0, le=32)
+    reserve_robot_min_battery_pct: float | None = Field(default=None, ge=0.0, le=100.0)
     max_edge_wait_ms: int | None = Field(default=None, ge=0)
 
 
@@ -868,14 +898,14 @@ SituationNodeType = Literal[
     "order", "item", "stock", "handling_unit", "rack", "rack_access", "robot",
     "route_node", "outbound", "logical_destination", "outbound_station",
     "outbound_station_access", "empty_tote_buffer", "empty_tote_buffer_access",
-    "inbound", "inbound_handoff_access", "charging_slot", "edge", "runtime_constraint", "active_task",
+    "inbound", "inbound_handoff_access", "rack_slot", "charging_slot", "edge", "runtime_constraint", "active_task",
     "path_option"
 ]
 SituationRelationType = Literal[
     "REQUIRES_ITEM", "DELIVER_TO", "OF_ITEM", "STORED_AT", "HAS_ACCESS_POINT", "LOCATED_AT",
     "AFFECTS", "OCCUPIED_BY", "STARTS_AT", "ENDS_AT", "CAN_REACH",
     "USES_EDGE", "HAS_ACTIVE_TASK", "REPRESENTS_STOCK", "SERVES_DESTINATION",
-    "ROUTES_THROUGH", "POST_MOVE_TO"
+    "ROUTES_THROUGH", "POST_MOVE_TO", "USES_HANDLING_UNIT", "PICKUP_FROM", "PUTAWAY_TO"
 ]
 
 
@@ -971,6 +1001,7 @@ class SituationGraphValidationResult(StrictModel):
 RetrievalToolName = Literal[
     "find_orders",
     "get_order_facts",
+    "get_inbound_facts",
     "get_inventory_candidates",
     "get_robot_candidates",
     "resolve_map_entities",
@@ -1143,6 +1174,7 @@ class ResolvedToolRequest(StrictModel):
     request_id: str
     tool_name: RetrievalToolName
     order_ids: list[str] = Field(default_factory=list)
+    inbound_ids: list[str] = Field(default_factory=list)
     item_ids: list[str] = Field(default_factory=list)
     robot_ids: list[str] = Field(default_factory=list)
     rack_ids: list[str] = Field(default_factory=list)
@@ -1202,6 +1234,9 @@ class CuOptTaskDraft(StrictModel):
 
     task_id: str
     operation_type: Literal["OUTBOUND_ORDER", "INBOUND_ITEM", "RECOVERY"] = "OUTBOUND_ORDER"
+    # Historical field name retained for compatibility.  The value is the
+    # canonical source operation ID and may therefore be ORD-###, IN-###, or a
+    # supported REC-* identifier depending on ``operation_type``.
     order_id: str
     item_id: str
     stock_id: str
@@ -1221,6 +1256,7 @@ class CuOptFleetDraft(StrictModel):
 
     included_robot_ids: list[str]
     excluded_robot_ids: list[str] = Field(default_factory=list)
+    reserved_robot_ids: list[str] = Field(default_factory=list)
     evidence_ids: list[str] = Field(default_factory=list)
 
 
@@ -1236,10 +1272,12 @@ class CuOptMapConstraintDraft(StrictModel):
 class CuOptDynamicInputDraft(StrictModel):
     """Human-readable dynamic portion of a cuOpt request.
 
-    In goods-to-person mode, the LLM preserves the canonical order wave in
-    ``g2p_order_ids`` while the deterministic G2P compiler creates physical
-    handling-unit tasks later.  This prevents an LLM from assigning one rack
-    movement per order when several orders share one tote.
+    ``formulation_mode=GOODS_TO_PERSON`` controls outbound fulfillment only.
+    Canonical outbound orders are preserved in ``g2p_order_ids`` while the
+    deterministic G2P compiler creates physical handling-unit cycles later.
+    Direct non-outbound work such as INBOUND_ITEM or RECOVERY remains in
+    ``tasks``.  This makes mixed outbound/inbound requests representable without
+    turning one logical order into one AMR trip.
     """
 
     formulation_mode: Literal["ORDER_TASKS", "GOODS_TO_PERSON"] = "ORDER_TASKS"
@@ -1248,7 +1286,10 @@ class CuOptDynamicInputDraft(StrictModel):
     graph_version: str
     formulation_source: Literal["rule", "llm"]
     objective_profile: ObjectiveProfile
+    objective_terms: list[ObjectiveTerm] = Field(default_factory=list)
     tasks: list[CuOptTaskDraft]
+    # Historical field name retained for compatibility.  Values are canonical
+    # operation IDs of any supported type, not outbound orders only.
     deferred_order_ids: list[str] = Field(default_factory=list)
     fleet: CuOptFleetDraft
     map_constraints: CuOptMapConstraintDraft = Field(default_factory=CuOptMapConstraintDraft)
@@ -1290,6 +1331,7 @@ class AgentToolCall(StrictModel):
 
     tool_name: AgentToolName
     order_ids: list[str] = Field(default_factory=list)
+    inbound_ids: list[str] = Field(default_factory=list)
     item_ids: list[str] = Field(default_factory=list)
     edge_ids: list[str] = Field(default_factory=list)
     node_ids: list[str] = Field(default_factory=list)
@@ -1446,6 +1488,8 @@ class ContextSnapshot(StrictModel):
     graph_version: str
     inventory_version: str
     runtime_version: str
+    repository_type: str = "unknown"
+    source_manifest: dict[str, str] = Field(default_factory=dict)
 
 
 class InventoryQueryScope(StrictModel):
@@ -1454,6 +1498,7 @@ class InventoryQueryScope(StrictModel):
     mode: Literal["warehouse_overview", "item_detail", "order_fulfillment", "inbound_putaway", "mixed_operations"]
     warehouse_id: str
     order_ids: list[str] = Field(default_factory=list)
+    inbound_ids: list[str] = Field(default_factory=list)
     item_ids: list[str] = Field(default_factory=list)
     reason: str
 
@@ -2610,6 +2655,30 @@ class SimulationLogicalOperation(StrictModel):
     task_ids: list[str] = Field(default_factory=list)
 
 
+class LogicalOperationCoverageValidationResult(StrictModel):
+    """Independent final-plan coverage check for every actionable operation.
+
+    The dynamic-input validators run before the solver.  This final guard runs
+    after SimulationPlan materialization so an operation cannot silently lose
+    its task/robot mapping in any downstream compiler, enrichment, MAPF, or
+    projection step.
+    """
+
+    valid: bool
+    requested_operation_ids: list[str] = Field(default_factory=list)
+    executable_operation_ids: list[str] = Field(default_factory=list)
+    deferred_operation_ids: list[str] = Field(default_factory=list)
+    planned_operation_ids: list[str] = Field(default_factory=list)
+    missing_operation_ids: list[str] = Field(default_factory=list)
+    duplicate_operation_ids: list[str] = Field(default_factory=list)
+    unexpected_operation_ids: list[str] = Field(default_factory=list)
+    operations_without_tasks: list[str] = Field(default_factory=list)
+    operations_without_robots: list[str] = Field(default_factory=list)
+    task_ids_missing_from_plan: list[str] = Field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class PlanHandoverPoint(StrictModel):
     robot_id: str
     node_id: str
@@ -2807,6 +2876,7 @@ class OrchestrationResult(StrictModel):
     route_validation: RouteValidationResult | None = None
     traffic_schedule: TrafficScheduleResult | None = None
     mapf_validation: MAPFValidationResult | None = None
+    logical_operation_coverage_validation: LogicalOperationCoverageValidationResult | None = None
     goods_to_person_plan: GoodsToPersonPlanResult | None = None
     query_response: QueryResponse | None = None
     clarification: ClarificationResult | None = None

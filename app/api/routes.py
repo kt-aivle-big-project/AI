@@ -94,7 +94,7 @@ def health(request: Request) -> dict[str, object]:
     return {
         "status": "ok",
         "app": settings.app_name,
-        "version": "13.24.0",
+        "version": "13.25.1",
         "environment": settings.app_env,
         "default_warehouse_id": settings.default_warehouse_id,
         "warehouse_repository_backend": settings.warehouse_repository_backend,

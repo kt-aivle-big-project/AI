@@ -979,16 +979,29 @@ def _pre_route_guard_requires_agent(request: NormalizedWarehouseRequest) -> bool
 
     def has_noncanonical_operation_reference() -> bool:
         for operation in request.operations:
-            raw = (operation.raw_reference or "").strip()
-            if not raw:
+            # A canonical normalized operation ID is authoritative.  The raw
+            # phrase may contain verbs or Korean particles (for example
+            # "ORD-001을 출고해") and must not force an otherwise exact request
+            # into Agent formulation after normalization has already resolved it.
+            canonical = (operation.operation_id or "").strip().upper()
+            if operation.operation_type == "OUTBOUND_ORDER" and re.fullmatch(r"ORD-\d{3,}", canonical):
                 continue
-            upper = raw.upper()
-            if operation.operation_type == "OUTBOUND_ORDER" and re.fullmatch(r"ORD-\d{3,}", upper):
-                continue
-            if operation.operation_type == "INBOUND_ITEM" and re.fullmatch(r"IN-\d{3,}", upper):
+            if operation.operation_type == "INBOUND_ITEM" and re.fullmatch(r"IN-\d{3,}", canonical):
                 continue
             if operation.operation_type == "RECOVERY" and (
-                re.fullmatch(r"R\d{3}", upper) or upper.startswith("REC-")
+                re.fullmatch(r"R\d{3}", canonical) or canonical.startswith("REC-")
+            ):
+                continue
+
+            raw = (operation.raw_reference or "").strip().upper()
+            if not raw:
+                return True
+            if operation.operation_type == "OUTBOUND_ORDER" and re.fullmatch(r"ORD-\d{3,}", raw):
+                continue
+            if operation.operation_type == "INBOUND_ITEM" and re.fullmatch(r"IN-\d{3,}", raw):
+                continue
+            if operation.operation_type == "RECOVERY" and (
+                re.fullmatch(r"R\d{3}", raw) or raw.startswith("REC-")
             ):
                 continue
             return True

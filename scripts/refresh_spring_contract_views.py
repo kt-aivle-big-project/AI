@@ -45,7 +45,7 @@ def main() -> int:
     print(
         json.dumps(
             {
-                "version": "13.24.0",
+                "version": "13.25.1",
                 "status": "PASS" if refreshed else "WAITING_FOR_SPRING_TABLES",
                 "refreshed": refreshed,
                 "postgres_database": settings.postgres_dsn.rsplit("/", 1)[-1],

@@ -24,8 +24,118 @@ from app.services.cuopt_formulation_service import (
     CuOptDraftEvidenceEnricher,
     CuOptDynamicInputValidator,
     DynamicInputOptimizationRequestAdapter,
+    _apply_emergency_reserve,
+    _objective_terms,
 )
 from app.services.terminal_relocation_service import RobotTerminalPolicyService
+
+
+
+
+def _required_operation_coverage(request: NormalizedWarehouseRequest) -> dict[str, list[str]]:
+    """Return the exact operation partition that an LLM draft must preserve."""
+
+    actionable = [
+        value.operation_id
+        for value in request.operations
+        if value.operation_type in {"OUTBOUND_ORDER", "INBOUND_ITEM", "RECOVERY"}
+    ]
+    outbound = [
+        value.operation_id
+        for value in request.operations
+        if value.operation_type == "OUTBOUND_ORDER"
+    ]
+    direct = [
+        value.operation_id
+        for value in request.operations
+        if value.operation_type in {"INBOUND_ITEM", "RECOVERY"}
+    ]
+    return {
+        "actionable_operation_ids": actionable,
+        "outbound_g2p_operation_ids": outbound,
+        "direct_task_operation_ids": direct,
+    }
+
+
+def _enforce_outbound_fulfillment_contract(
+    *,
+    draft: CuOptDynamicInputDraft,
+    graph: WarehouseSituationGraph,
+) -> CuOptDynamicInputDraft:
+    """Enforce only the outbound G2P boundary without deleting direct work.
+
+    GOODS_TO_PERSON controls how outbound orders are compiled.  Inbound and
+    recovery operations remain direct tasks.  Earlier versions replaced the
+    entire task list with ``[]`` and silently dropped mixed-request operations.
+    """
+
+    if graph.fulfillment_mode != "goods_to_person":
+        return draft
+    direct_tasks = [
+        task for task in draft.tasks if task.operation_type != "OUTBOUND_ORDER"
+    ]
+    return draft.model_copy(
+        update={
+            "formulation_mode": "GOODS_TO_PERSON",
+            "g2p_order_ids": list(graph.g2p_order_ids),
+            "tasks": direct_tasks,
+            "formulation_summary": (
+                f"G2P outbound formulation preserved {len(graph.g2p_order_ids)} "
+                f"canonical order(s) and {len(direct_tasks)} direct non-outbound "
+                "task(s); the deterministic compiler will create handling-unit "
+                "cycles for outbound work."
+            ),
+        }
+    )
+
+
+def _enforce_typed_policy_contract(
+    *,
+    draft: CuOptDynamicInputDraft,
+    request: NormalizedWarehouseRequest,
+    graph: WarehouseSituationGraph,
+) -> CuOptDynamicInputDraft:
+    """Apply typed objective/reserve constraints after LLM formulation.
+
+    The LLM explains and composes the policy stack, while deterministic code
+    owns the final candidate-space partition.  This prevents a valid natural
+    language reserve policy from being silently ignored or interpreted as an
+    ordinary exclusion.
+    """
+
+    explicit_exclusions = set(request.constraints.excluded_robot_ids)
+    eligible_nodes = [
+        node
+        for node in graph.nodes
+        if node.node_type == "robot" and bool(node.attributes.get("baseline_eligible"))
+    ]
+    candidate_ids = sorted(
+        str(node.attributes["robot_id"])
+        for node in eligible_nodes
+        if str(node.attributes["robot_id"]) not in explicit_exclusions
+    )
+    included, reserved = _apply_emergency_reserve(
+        candidate_robot_ids=candidate_ids,
+        battery_by_robot={
+            str(node.attributes["robot_id"]): float(node.attributes.get("battery_pct") or 0.0)
+            for node in eligible_nodes
+        },
+        request=request,
+    )
+    fleet = draft.fleet.model_copy(
+        update={
+            "included_robot_ids": included,
+            "excluded_robot_ids": sorted(explicit_exclusions),
+            "reserved_robot_ids": reserved,
+        }
+    )
+    return draft.model_copy(
+        update={
+            "objective_profile": request.constraints.objective_profile,
+            "objective_terms": _objective_terms(request),
+            "fleet": fleet,
+        }
+    )
 
 
 def _time_limit(state: LaroGraphState) -> int:
@@ -70,6 +180,7 @@ def llm_cuopt_formulator_node(state: LaroGraphState) -> dict:
                     else []
                 ),
                 "retry_count": retry_count,
+                "required_operation_coverage": _required_operation_coverage(request),
             },
             output_model=CuOptDynamicInputDraft,
             trace_name="LARO::llm_cuopt_formulator",
@@ -82,24 +193,15 @@ def llm_cuopt_formulator_node(state: LaroGraphState) -> dict:
                 "retry_count": retry_count,
             },
         )
-        # GOODS_TO_PERSON is a warehouse execution contract, not an LLM
-        # business choice.  The LLM may reason about objective/fleet/runtime
-        # constraints, but physical handling-unit tasks are compiled
-        # deterministically after validation.  Enforce that boundary before the
-        # factual validator so one order can never become one AMR trip by accident.
-        if graph.fulfillment_mode == "goods_to_person":
-            draft = draft.model_copy(
-                update={
-                    "formulation_mode": "GOODS_TO_PERSON",
-                    "g2p_order_ids": list(graph.g2p_order_ids),
-                    "tasks": [],
-                    "deferred_order_ids": [],
-                    "formulation_summary": (
-                        f"G2P formulation preserved {len(graph.g2p_order_ids)} canonical "
-                        "order(s); the deterministic compiler will create handling-unit cycles."
-                    ),
-                }
-            )
+        # GOODS_TO_PERSON is an outbound execution contract, not a request-wide
+        # prohibition on direct tasks.  Enforce canonical outbound IDs while
+        # preserving inbound/recovery tasks authored from authoritative facts.
+        draft = _enforce_outbound_fulfillment_contract(draft=draft, graph=graph)
+        draft = _enforce_typed_policy_contract(
+            draft=draft,
+            request=request,
+            graph=graph,
+        )
         # Snapshot, graph version, source, fleet, objective, and constraints are
         # independently checked by validators.
         summary = llm_summary(
@@ -176,23 +278,34 @@ def cuopt_dynamic_input_validator_node(state: LaroGraphState) -> dict:
         expected_source = "llm" if getattr(decision, "route", None) == "AGENT_FORMULATION" else "rule"
         validator = CuOptDynamicInputValidator()
         normalized_request = model_from_state(state, "normalized_request", NormalizedWarehouseRequest)
+        context_validation = validator.validate_from_contexts(
+            draft=draft,
+            normalized_request=normalized_request,
+            snapshot=model_from_state(state, "context_snapshot", ContextSnapshot),
+            inventory=model_from_state(state, "inventory_context", InventoryContext),
+            robots=model_from_state(state, "robot_context", RobotRuntimeContext),
+            map_context=model_from_state(state, "map_context", MapContext),
+            graph_arcs=list(state["graph_arcs"]),
+            expected_source=expected_source,
+        )
         if draft.formulation_source == "rule":
-            validation = validator.validate_from_contexts(
-                draft=draft,
-                normalized_request=normalized_request,
-                snapshot=model_from_state(state, "context_snapshot", ContextSnapshot),
-                inventory=model_from_state(state, "inventory_context", InventoryContext),
-                robots=model_from_state(state, "robot_context", RobotRuntimeContext),
-                map_context=model_from_state(state, "map_context", MapContext),
-                graph_arcs=list(state["graph_arcs"]),
-                expected_source=expected_source,
-            )
+            validation = context_validation
         else:
-            validation = validator.validate(
+            graph_validation = validator.validate(
                 draft=draft,
                 normalized_request=normalized_request,
                 graph=model_from_state(state, "warehouse_situation_graph", WarehouseSituationGraph),
                 expected_source=expected_source,
+            )
+            validation = CuOptDynamicInputValidationResult(
+                valid=graph_validation.valid and context_validation.valid,
+                repairable=bool(graph_validation.errors or context_validation.errors),
+                errors=list(
+                    dict.fromkeys([*graph_validation.errors, *context_validation.errors])
+                ),
+                warnings=list(
+                    dict.fromkeys([*graph_validation.warnings, *context_validation.warnings])
+                ),
             )
         return {
             "cuopt_dynamic_input_validation": validation,

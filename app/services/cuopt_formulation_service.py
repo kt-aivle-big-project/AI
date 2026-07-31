@@ -46,6 +46,55 @@ def _conditional_edge_policy_ids(request: NormalizedWarehouseRequest) -> set[str
     return {value.edge_id for value in request.constraints.conditional_edge_policies}
 
 
+def _objective_terms(request: NormalizedWarehouseRequest) -> list[str]:
+    """Return an auditable objective-term list for the dynamic draft."""
+
+    explicit = list(dict.fromkeys(request.constraints.objective_terms))
+    if explicit:
+        return explicit
+    mapped = {
+        "MIN_COMPLETION_TIME": "MIN_COMPLETION_TIME",
+        "THROUGHPUT": "MAX_THROUGHPUT",
+        "BALANCED": "MIN_COMPLETION_TIME",
+        "URGENT_FIRST": "MIN_COMPLETION_TIME",
+        "MIN_REHANDLE": "MIN_TRAVEL_DISTANCE",
+    }
+    return [mapped[request.constraints.objective_profile]]
+
+
+def _apply_emergency_reserve(
+    *,
+    candidate_robot_ids: list[str],
+    battery_by_robot: dict[str, float],
+    request: NormalizedWarehouseRequest,
+) -> tuple[list[str], list[str]]:
+    """Deterministically split eligible robots into active and reserve fleets.
+
+    The highest-battery eligible robots are kept as reserve.  At least one
+    robot remains active; if the requested reserve is infeasible the validator
+    reports the exact mismatch rather than silently weakening the constraint.
+    """
+
+    candidates = list(dict.fromkeys(candidate_robot_ids))
+    requested = int(request.constraints.reserve_robot_count or 0)
+    if requested <= 0 or len(candidates) <= 1:
+        return sorted(candidates), []
+    threshold = request.constraints.reserve_robot_min_battery_pct
+    pool = [
+        robot_id
+        for robot_id in candidates
+        if threshold is None or float(battery_by_robot.get(robot_id, -1.0)) >= float(threshold)
+    ]
+    ranked = sorted(
+        pool,
+        key=lambda robot_id: (-float(battery_by_robot.get(robot_id, -1.0)), robot_id),
+    )
+    reserve_count = min(requested, max(0, len(candidates) - 1), len(ranked))
+    reserved = ranked[:reserve_count]
+    included = [robot_id for robot_id in candidates if robot_id not in set(reserved)]
+    return sorted(included), sorted(reserved)
+
+
 
 
 def _compare_runtime_value(value: int, operator: str, threshold: int) -> bool:
@@ -284,12 +333,21 @@ class RuleCuOptFormulator:
             if node.node_type == "robot" and bool(node.attributes.get("baseline_eligible"))
         ]
         explicit_exclusions = set(normalized_request.constraints.excluded_robot_ids)
-        included_robot_ids = sorted(
+        candidate_robot_ids = sorted(
             str(node.attributes["robot_id"])
             for node in eligible_robot_nodes
             if str(node.attributes["robot_id"]) not in explicit_exclusions
         )
-        relevant_robot_ids = set(included_robot_ids) | explicit_exclusions
+        battery_by_robot = {
+            str(node.attributes["robot_id"]): float(node.attributes.get("battery_pct") or 0.0)
+            for node in eligible_robot_nodes
+        }
+        included_robot_ids, reserved_robot_ids = _apply_emergency_reserve(
+            candidate_robot_ids=candidate_robot_ids,
+            battery_by_robot=battery_by_robot,
+            request=normalized_request,
+        )
+        relevant_robot_ids = set(included_robot_ids) | set(reserved_robot_ids) | explicit_exclusions
         robot_evidence = list(
             dict.fromkeys(
                 evidence_id
@@ -363,11 +421,13 @@ class RuleCuOptFormulator:
             graph_version=graph.graph_version,
             formulation_source="rule",
             objective_profile=normalized_request.constraints.objective_profile,
+            objective_terms=_objective_terms(normalized_request),
             tasks=tasks,
             deferred_order_ids=sorted(set(deferred)),
             fleet=CuOptFleetDraft(
                 included_robot_ids=included_robot_ids,
                 excluded_robot_ids=sorted(explicit_exclusions),
+                reserved_robot_ids=reserved_robot_ids,
                 evidence_ids=robot_evidence,
             ),
             map_constraints=CuOptMapConstraintDraft(
@@ -379,7 +439,8 @@ class RuleCuOptFormulator:
             time_limit_seconds=time_limit_seconds,
             formulation_summary=(
                 f"Rule formulation created {len(tasks)} task(s), deferred {len(deferred)} order(s), "
-                f"and included {len(included_robot_ids)} robot(s)."
+                f"included {len(included_robot_ids)} robot(s), and reserved "
+                f"{len(reserved_robot_ids)} robot(s)."
             ),
         )
 
@@ -409,12 +470,21 @@ class RuleCuOptFormulator:
             if node.node_type == "robot" and bool(node.attributes.get("baseline_eligible"))
         ]
         explicit_exclusions = set(normalized_request.constraints.excluded_robot_ids)
-        included_robot_ids = sorted(
+        candidate_robot_ids = sorted(
             str(node.attributes["robot_id"])
             for node in eligible_robot_nodes
             if str(node.attributes["robot_id"]) not in explicit_exclusions
         )
-        relevant_robot_ids = set(included_robot_ids) | explicit_exclusions
+        battery_by_robot = {
+            str(node.attributes["robot_id"]): float(node.attributes.get("battery_pct") or 0.0)
+            for node in eligible_robot_nodes
+        }
+        included_robot_ids, reserved_robot_ids = _apply_emergency_reserve(
+            candidate_robot_ids=candidate_robot_ids,
+            battery_by_robot=battery_by_robot,
+            request=normalized_request,
+        )
+        relevant_robot_ids = set(included_robot_ids) | set(reserved_robot_ids) | explicit_exclusions
         robot_evidence = list(
             dict.fromkeys(
                 evidence_id
@@ -475,11 +545,13 @@ class RuleCuOptFormulator:
             graph_version=graph.graph_version,
             formulation_source="rule",
             objective_profile=normalized_request.constraints.objective_profile,
+            objective_terms=_objective_terms(normalized_request),
             tasks=[],
             deferred_order_ids=[],
             fleet=CuOptFleetDraft(
                 included_robot_ids=included_robot_ids,
                 excluded_robot_ids=sorted(explicit_exclusions),
+                reserved_robot_ids=reserved_robot_ids,
                 evidence_ids=robot_evidence,
             ),
             map_constraints=CuOptMapConstraintDraft(
@@ -491,7 +563,8 @@ class RuleCuOptFormulator:
             time_limit_seconds=time_limit_seconds,
             formulation_summary=(
                 f"G2P wave formulation preserved {len(requested_orders)} order(s), "
-                f"included {len(included_robot_ids)} robot(s), and deferred physical "
+                f"included {len(included_robot_ids)} robot(s), reserved "
+                f"{len(reserved_robot_ids)} robot(s), and deferred physical "
                 "handling-unit task creation to the deterministic compiler."
             ),
         )
@@ -522,7 +595,15 @@ class RuleCuOptFormulator:
         remaining_by_stock = {value.stock_id: value.available_qty for value in inventory.candidate_stocks}
         robot_by_id = {value.robot_id: value for value in robots.robots}
         explicit_exclusions = set(normalized_request.constraints.excluded_robot_ids)
-        included_robot_ids = sorted(set(robots.candidate_robot_ids) - explicit_exclusions)
+        candidate_robot_ids = sorted(set(robots.candidate_robot_ids) - explicit_exclusions)
+        included_robot_ids, reserved_robot_ids = _apply_emergency_reserve(
+            candidate_robot_ids=candidate_robot_ids,
+            battery_by_robot={
+                value.robot_id: float(value.battery_pct)
+                for value in robots.robots
+            },
+            request=normalized_request,
+        )
 
         tasks: list[CuOptTaskDraft] = []
         deferred: list[str] = []
@@ -697,11 +778,13 @@ class RuleCuOptFormulator:
             graph_version=snapshot.graph_version,
             formulation_source="rule",
             objective_profile=normalized_request.constraints.objective_profile,
+            objective_terms=_objective_terms(normalized_request),
             tasks=tasks,
             deferred_order_ids=sorted(set(deferred)),
             fleet=CuOptFleetDraft(
                 included_robot_ids=included_robot_ids,
                 excluded_robot_ids=sorted(explicit_exclusions),
+                reserved_robot_ids=reserved_robot_ids,
                 evidence_ids=[],
             ),
             map_constraints=CuOptMapConstraintDraft(
@@ -761,16 +844,35 @@ class CuOptDraftEvidenceEnricher:
 
         for task in draft.tasks:
             additions: list[str] = []
-            order_node = node_by_id.get(f"order:{task.order_id}")
-            stock_node = node_by_id.get(f"stock:{task.stock_id}")
-            if order_node is not None:
-                additions.extend(order_node.evidence_ids)
+            if task.operation_type == "OUTBOUND_ORDER":
+                source_node = node_by_id.get(f"order:{task.order_id}")
+                resource_node = node_by_id.get(f"stock:{task.stock_id}")
+                source_label = "order"
+                resource_label = "stock"
+            elif task.operation_type == "INBOUND_ITEM":
+                source_node = node_by_id.get(f"inbound:{task.order_id}")
+                resource_node = node_by_id.get(f"handling_unit:{task.stock_id}")
+                source_label = "inbound"
+                resource_label = "handling unit"
             else:
-                warnings.append(f"No order node was available for {task.order_id}.")
-            if stock_node is not None:
-                additions.extend(stock_node.evidence_ids)
+                source_node = node_by_id.get(f"active_task:{task.order_id}")
+                resource_node = None
+                source_label = "recovery operation"
+                resource_label = "resource"
+
+            if source_node is not None:
+                additions.extend(source_node.evidence_ids)
             else:
-                warnings.append(f"No stock node was available for {task.stock_id}.")
+                warnings.append(f"No {source_label} node was available for {task.order_id}.")
+            if resource_node is not None:
+                additions.extend(resource_node.evidence_ids)
+            elif task.operation_type != "RECOVERY":
+                warnings.append(f"No {resource_label} node was available for {task.stock_id}.")
+
+            if task.rack_id and task.rack_level:
+                slot_node = node_by_id.get(f"rack_slot:{task.rack_id}:L{task.rack_level}")
+                if slot_node is not None:
+                    additions.extend(slot_node.evidence_ids)
 
             for path in graph.path_evidence:
                 include = False
@@ -781,9 +883,8 @@ class CuOptDraftEvidenceEnricher:
                 ):
                     include = True
                 elif path.purpose == "ROBOT_TO_PICKUP" and path.target_node_id == task.pickup_node:
-                    # The path ID encodes the authoritative robot and selected stock.
                     include = any(
-                        path.path_id.startswith(f"path:robot:{robot_id}:to:{task.stock_id}")
+                        path.path_id.startswith(f"path:robot:{robot_id}:")
                         for robot_id in draft.fleet.included_robot_ids
                     )
                 if include:
@@ -802,7 +903,11 @@ class CuOptDraftEvidenceEnricher:
 
         fleet_additions: list[str] = []
         for robot_id in dict.fromkeys(
-            [*draft.fleet.included_robot_ids, *draft.fleet.excluded_robot_ids]
+            [
+                *draft.fleet.included_robot_ids,
+                *draft.fleet.excluded_robot_ids,
+                *draft.fleet.reserved_robot_ids,
+            ]
         ):
             node = node_by_id.get(f"robot:{robot_id}")
             if node is not None:
@@ -851,6 +956,58 @@ class CuOptDraftEvidenceEnricher:
         return enriched, result
 
 
+def _operation_coverage_errors(
+    *,
+    draft: CuOptDynamicInputDraft,
+    normalized_request: NormalizedWarehouseRequest,
+) -> list[str]:
+    """Return exact-once coverage errors for every actionable operation."""
+
+    actionable_types = {"OUTBOUND_ORDER", "INBOUND_ITEM", "RECOVERY"}
+    requested_type_by_id = {
+        value.operation_id: value.operation_type
+        for value in normalized_request.operations
+        if value.operation_type in actionable_types
+    }
+    requested_ids = set(requested_type_by_id)
+    errors: list[str] = []
+    representations: dict[str, list[str]] = defaultdict(list)
+
+    for operation_id in draft.g2p_order_ids:
+        representations[operation_id].append("g2p_order_ids")
+        expected_type = requested_type_by_id.get(operation_id)
+        if expected_type is not None and expected_type != "OUTBOUND_ORDER":
+            errors.append(f"G2P_NON_OUTBOUND_OPERATION:{operation_id}")
+    for task in draft.tasks:
+        representations[task.order_id].append(f"task:{task.task_id}")
+        expected_type = requested_type_by_id.get(task.order_id)
+        if expected_type is not None and expected_type != task.operation_type:
+            errors.append(
+                f"OPERATION_TYPE_MISMATCH:{task.order_id}:"
+                f"expected={expected_type};actual={task.operation_type}"
+            )
+    for operation_id in draft.deferred_order_ids:
+        representations[operation_id].append("deferred_order_ids")
+
+    represented_ids = set(representations)
+    missing = requested_ids - represented_ids
+    unexpected = represented_ids - requested_ids
+    if missing:
+        errors.append("OPERATION_COVERAGE_MISMATCH:" + ",".join(sorted(missing)))
+    if unexpected:
+        errors.append("UNKNOWN_OPERATION_COVERAGE:" + ",".join(sorted(unexpected)))
+    for operation_id, locations in sorted(representations.items()):
+        if len(locations) != 1:
+            errors.append(
+                f"OPERATION_MULTIPLE_REPRESENTATIONS:{operation_id}:"
+                + ",".join(locations)
+            )
+    task_ids = [value.task_id for value in draft.tasks]
+    if len(task_ids) != len(set(task_ids)):
+        errors.append("DUPLICATE_TASK_ID")
+    return errors
+
+
 class CuOptDynamicInputValidator:
     """Validate that a dynamic draft is complete, factual, grounded, and feasible."""
 
@@ -883,12 +1040,28 @@ class CuOptDynamicInputValidator:
             for operation in normalized_request.operations
             if operation.operation_type == "OUTBOUND_ORDER"
         }
+        requested_inbounds = {
+            operation.operation_id
+            for operation in normalized_request.operations
+            if operation.operation_type == "INBOUND_ITEM"
+        }
+        outbound_tasks = [
+            task for task in draft.tasks if task.operation_type == "OUTBOUND_ORDER"
+        ]
+        inbound_tasks = [
+            task for task in draft.tasks if task.operation_type == "INBOUND_ITEM"
+        ]
+        errors.extend(
+            _operation_coverage_errors(
+                draft=draft, normalized_request=normalized_request
+            )
+        )
         g2p_mode = graph.fulfillment_mode == "goods_to_person"
 
         if g2p_mode:
             if draft.formulation_mode != "GOODS_TO_PERSON":
                 errors.append("G2P_FORMULATION_MODE_REQUIRED")
-            if draft.tasks:
+            if outbound_tasks:
                 errors.append("G2P_ORDER_LEVEL_TASKS_FORBIDDEN")
             actual_g2p_orders = list(draft.g2p_order_ids)
             if len(actual_g2p_orders) != len(set(actual_g2p_orders)):
@@ -902,8 +1075,6 @@ class CuOptDynamicInputValidator:
                 )
             if set(graph.g2p_order_ids) != requested_orders:
                 errors.append("SITUATION_GRAPH_G2P_ORDER_WAVE_MISMATCH")
-            if draft.deferred_order_ids:
-                errors.append("G2P_DEFERRED_ORDER_FORBIDDEN")
             if not requested_orders:
                 errors.append("G2P_ORDER_WAVE_EMPTY")
         else:
@@ -911,15 +1082,15 @@ class CuOptDynamicInputValidator:
                 errors.append("LEGACY_FORMULATION_MODE_REQUIRED")
             if draft.g2p_order_ids:
                 errors.append("LEGACY_G2P_ORDER_IDS_FORBIDDEN")
-            task_order_ids = [task.order_id for task in draft.tasks]
+            task_order_ids = [task.order_id for task in outbound_tasks]
             deferred = set(draft.deferred_order_ids)
             if len(task_order_ids) != len(set(task_order_ids)):
                 errors.append("DUPLICATE_ORDER_TASK")
             if set(task_order_ids) & deferred:
                 errors.append("EXECUTE_DEFER_OVERLAP")
-            covered = set(task_order_ids) | deferred
+            covered = set(task_order_ids) | (deferred & requested_orders)
             missing = requested_orders - covered
-            unknown = covered - requested_orders
+            unknown = set(task_order_ids) - requested_orders
             if missing:
                 errors.append("ORDER_COVERAGE_MISSING:" + ",".join(sorted(missing)))
             if unknown:
@@ -936,7 +1107,7 @@ class CuOptDynamicInputValidator:
                 if relation.relation_type == "OF_ITEM"
             }
             stock_used: dict[str, int] = defaultdict(int)
-            for task in draft.tasks:
+            for task in outbound_tasks:
                 order_node = node_by_id.get(f"order:{task.order_id}")
                 stock_node = node_by_id.get(f"stock:{task.stock_id}")
                 if order_node is None:
@@ -1018,6 +1189,80 @@ class CuOptDynamicInputValidator:
                 if stock_node and used > int(stock_node.attributes["available_qty"]):
                     errors.append(f"STOCK_OVERALLOCATED:{stock_id}:{used}")
 
+        # Graph-grounded direct inbound validation.  The typed-context
+        # validator runs as an independent second pass in the graph node.
+        for task in inbound_tasks:
+            inbound_node = node_by_id.get(f"inbound:{task.order_id}")
+            hu_node = node_by_id.get(f"handling_unit:{task.stock_id}")
+            if inbound_node is None:
+                errors.append(f"UNKNOWN_INBOUND_TASK:{task.order_id}")
+                continue
+            expected_item = str(inbound_node.attributes.get("item_id", ""))
+            expected_quantity = int(inbound_node.attributes.get("quantity", 0))
+            expected_hu = str(inbound_node.attributes.get("handling_unit_id", ""))
+            if task.item_id != expected_item or task.demand != expected_quantity:
+                errors.append(f"INBOUND_ITEM_OR_QTY_MISMATCH:{task.order_id}")
+            if task.stock_id != expected_hu or hu_node is None:
+                errors.append(f"INBOUND_HANDLING_UNIT_MISMATCH:{task.order_id}")
+
+            pickup_nodes = {
+                relation.target_node_id.removeprefix("map:")
+                for relation in relations
+                if relation.source_node_id == f"inbound:{task.order_id}"
+                and relation.relation_type == "PICKUP_FROM"
+            }
+            slot_nodes = {
+                relation.target_node_id
+                for relation in relations
+                if relation.source_node_id == f"inbound:{task.order_id}"
+                and relation.relation_type == "PUTAWAY_TO"
+            }
+            selected_slot = (
+                f"rack_slot:{task.rack_id}:L{task.rack_level}"
+                if task.rack_id and task.rack_level
+                else None
+            )
+            delivery_nodes = {
+                relation.target_node_id.removeprefix("map:")
+                for relation in relations
+                if selected_slot is not None
+                and relation.relation_type == "HAS_ACCESS_POINT"
+                and relation.target_node_id.startswith("map:")
+                and (
+                    relation.source_node_id == selected_slot
+                    or relation.source_node_id == f"rack:{task.rack_id}"
+                )
+            }
+            if task.pickup_node not in pickup_nodes:
+                errors.append(f"INBOUND_PICKUP_MISMATCH:{task.order_id}")
+            if selected_slot not in slot_nodes:
+                errors.append(f"UNKNOWN_PUTAWAY_SLOT:{task.order_id}")
+            if task.delivery_node not in delivery_nodes:
+                errors.append(f"INBOUND_DELIVERY_MISMATCH:{task.order_id}")
+
+            has_delivery_path = any(
+                path.purpose == "PICKUP_TO_DELIVERY"
+                and path.source_node_id == task.pickup_node
+                and path.target_node_id == task.delivery_node
+                for path in graph.path_evidence
+            )
+            has_robot_path = any(
+                path.purpose == "ROBOT_TO_PICKUP"
+                and path.target_node_id == task.pickup_node
+                for path in graph.path_evidence
+            )
+            if not has_delivery_path or not has_robot_path:
+                errors.append(f"INBOUND_PATH_EVIDENCE_MISSING:{task.order_id}")
+            unknown_evidence = set(task.evidence_ids) - evidence_ids
+            if unknown_evidence:
+                errors.append(
+                    f"UNKNOWN_TASK_EVIDENCE:{task.order_id}:{sorted(unknown_evidence)}"
+                )
+            if not set(inbound_node.evidence_ids).intersection(task.evidence_ids):
+                errors.append(f"INBOUND_EVIDENCE_MISSING:{task.order_id}")
+            if hu_node is not None and not set(hu_node.evidence_ids).intersection(task.evidence_ids):
+                errors.append(f"HANDLING_UNIT_EVIDENCE_MISSING:{task.order_id}")
+
         robot_nodes = {
             str(node.attributes["robot_id"]): node
             for node in graph.nodes
@@ -1029,9 +1274,27 @@ class CuOptDynamicInputValidator:
             if bool(node.attributes.get("baseline_eligible"))
         }
         explicit_exclusions = set(normalized_request.constraints.excluded_robot_ids)
-        expected_included = eligible - explicit_exclusions
+        expected_included_list, expected_reserved_list = _apply_emergency_reserve(
+            candidate_robot_ids=sorted(eligible - explicit_exclusions),
+            battery_by_robot={
+                robot_id: float(node.attributes.get("battery_pct") or 0.0)
+                for robot_id, node in robot_nodes.items()
+            },
+            request=normalized_request,
+        )
+        expected_included = set(expected_included_list)
+        expected_reserved = set(expected_reserved_list)
+        requested_reserve_count = int(normalized_request.constraints.reserve_robot_count or 0)
+        if len(expected_reserved) != requested_reserve_count:
+            errors.append(
+                "FLEET_RESERVE_REQUIREMENT_UNSATISFIED:requested="
+                + str(requested_reserve_count)
+                + ";available="
+                + str(len(expected_reserved))
+            )
         included = set(draft.fleet.included_robot_ids)
         excluded = set(draft.fleet.excluded_robot_ids)
+        reserved = set(draft.fleet.reserved_robot_ids)
         if included != expected_included:
             errors.append(
                 "FLEET_CANDIDATE_SPACE_MISMATCH:expected="
@@ -1041,13 +1304,20 @@ class CuOptDynamicInputValidator:
             )
         if excluded != explicit_exclusions:
             errors.append("FLEET_EXCLUSION_MISMATCH")
-        if included & excluded:
-            errors.append("FLEET_INCLUDE_EXCLUDE_OVERLAP")
-        if included - set(robot_nodes) or excluded - set(robot_nodes):
+        if reserved != expected_reserved:
+            errors.append(
+                "FLEET_RESERVE_MISMATCH:expected="
+                + ",".join(sorted(expected_reserved))
+                + ";actual="
+                + ",".join(sorted(reserved))
+            )
+        if included & (excluded | reserved) or excluded & reserved:
+            errors.append("FLEET_PARTITION_OVERLAP")
+        if (included | excluded | reserved) - set(robot_nodes):
             errors.append("UNKNOWN_FLEET_IDENTIFIER")
         if set(draft.fleet.evidence_ids) - evidence_ids:
             errors.append("UNKNOWN_FLEET_EVIDENCE")
-        for robot_id in sorted(included | excluded):
+        for robot_id in sorted(included | excluded | reserved):
             node = robot_nodes.get(robot_id)
             if node is not None and not set(node.evidence_ids).intersection(draft.fleet.evidence_ids):
                 errors.append(f"ROBOT_EVIDENCE_MISSING:{robot_id}")
@@ -1110,6 +1380,9 @@ class CuOptDynamicInputValidator:
                 errors.append(f"MAP_CONSTRAINT_EVIDENCE_MISSING:{edge_id}")
         if draft.objective_profile != normalized_request.constraints.objective_profile:
             errors.append("OBJECTIVE_PROFILE_MISMATCH")
+        if normalized_request.constraints.objective_terms:
+            if set(draft.objective_terms) != set(_objective_terms(normalized_request)):
+                errors.append("OBJECTIVE_TERMS_MISMATCH")
         if draft.map_constraints.max_edge_wait_ms != normalized_request.constraints.max_edge_wait_ms:
             errors.append("MAX_WAIT_MISMATCH")
         if not graph.completeness.ready_for_formulation:
@@ -1145,6 +1418,11 @@ class CuOptDynamicInputValidator:
             errors.append("DRAFT_GRAPH_VERSION_MISMATCH")
         if draft.formulation_source != expected_source:
             errors.append(f"FORMULATION_SOURCE_MISMATCH:expected={expected_source}")
+        errors.extend(
+            _operation_coverage_errors(
+                draft=draft, normalized_request=normalized_request
+            )
+        )
 
         requested_orders = {
             value.operation_id
@@ -1287,9 +1565,27 @@ class CuOptDynamicInputValidator:
         all_robot_ids = {value.robot_id for value in robots.robots}
         eligible = set(robots.candidate_robot_ids)
         explicit_exclusions = set(normalized_request.constraints.excluded_robot_ids)
-        expected_included = eligible - explicit_exclusions
+        expected_included_list, expected_reserved_list = _apply_emergency_reserve(
+            candidate_robot_ids=sorted(eligible - explicit_exclusions),
+            battery_by_robot={
+                value.robot_id: float(value.battery_pct)
+                for value in robots.robots
+            },
+            request=normalized_request,
+        )
+        expected_included = set(expected_included_list)
+        expected_reserved = set(expected_reserved_list)
+        requested_reserve_count = int(normalized_request.constraints.reserve_robot_count or 0)
+        if len(expected_reserved) != requested_reserve_count:
+            errors.append(
+                "FLEET_RESERVE_REQUIREMENT_UNSATISFIED:requested="
+                + str(requested_reserve_count)
+                + ";available="
+                + str(len(expected_reserved))
+            )
         included = set(draft.fleet.included_robot_ids)
         excluded = set(draft.fleet.excluded_robot_ids)
+        reserved = set(draft.fleet.reserved_robot_ids)
         if included != expected_included:
             errors.append(
                 "FLEET_CANDIDATE_SPACE_MISMATCH:expected="
@@ -1299,9 +1595,16 @@ class CuOptDynamicInputValidator:
             )
         if excluded != explicit_exclusions:
             errors.append("FLEET_EXCLUSION_MISMATCH")
-        if included & excluded:
-            errors.append("FLEET_INCLUDE_EXCLUDE_OVERLAP")
-        if (included | excluded) - all_robot_ids:
+        if reserved != expected_reserved:
+            errors.append(
+                "FLEET_RESERVE_MISMATCH:expected="
+                + ",".join(sorted(expected_reserved))
+                + ";actual="
+                + ",".join(sorted(reserved))
+            )
+        if included & (excluded | reserved) or excluded & reserved:
+            errors.append("FLEET_PARTITION_OVERLAP")
+        if (included | excluded | reserved) - all_robot_ids:
             errors.append("UNKNOWN_FLEET_IDENTIFIER")
         if (draft.tasks or (g2p_mode and requested_orders)) and not included:
             errors.append("NO_INCLUDED_ROBOT")
@@ -1332,6 +1635,9 @@ class CuOptDynamicInputValidator:
         )
         if draft.objective_profile != normalized_request.constraints.objective_profile:
             errors.append("OBJECTIVE_PROFILE_MISMATCH")
+        if normalized_request.constraints.objective_terms:
+            if set(draft.objective_terms) != set(_objective_terms(normalized_request)):
+                errors.append("OBJECTIVE_TERMS_MISMATCH")
         if draft.map_constraints.max_edge_wait_ms != normalized_request.constraints.max_edge_wait_ms:
             errors.append("MAX_WAIT_MISMATCH")
 

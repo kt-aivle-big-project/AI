@@ -25,7 +25,7 @@ def main() -> int:
         runtime = BeSpringRuntimeRepository(settings).snapshot(args.simulation_run_id)
 
     result = {
-        "version": "13.24.0",
+        "version": "13.25.1",
         "status": "PASS" if status["ready"] else "FAIL",
         "warehouse_id": args.warehouse_id,
         "contract": status,

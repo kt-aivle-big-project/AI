@@ -31,7 +31,8 @@ def context_snapshot_finalize_node(state: LaroGraphState) -> dict:
         missing = [name for name in required_context_names if state.get(state_key[name]) is None]
         if missing:
             raise ValueError(f"Required context tools did not produce state: {missing}")
-        versions = get_repository().versions
+        repository = get_repository()
+        versions = repository.versions
         warehouse_id = str(state.get("warehouse_id") or "WH-001")
         simulation_id = str(state["simulation_id"])
         seed = (
@@ -46,6 +47,8 @@ def context_snapshot_finalize_node(state: LaroGraphState) -> dict:
             graph_version=versions["graph_version"],
             inventory_version=versions["inventory_version"],
             runtime_version=versions["runtime_version"],
+            repository_type=type(repository).__name__,
+            source_manifest=dict(getattr(repository, "source_manifest", {})),
         )
         return {"context_snapshot": snapshot, **trace_update("context_snapshot_finalize")}
     except Exception as exc:

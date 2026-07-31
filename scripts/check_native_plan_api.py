@@ -25,6 +25,16 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warehouse-id", default="WH-001")
     parser.add_argument("--simulation-id", default="SIM-V18-MIXED")
     parser.add_argument("--backend", choices=("ortools", "cuopt", "cuopt_payload_only"), default="ortools")
+    parser.add_argument(
+        "--input-mode",
+        choices=("structured", "natural"),
+        default="structured",
+        help="structured uses canonical events; natural exercises the OpenAI router/formulator path.",
+    )
+    parser.add_argument(
+        "--user-command",
+        default="ORD-001을 출고하고 IN-001도 입고해. 전체 완료시간을 최소화해.",
+    )
     parser.add_argument("--repeat", type=int, default=1)
     parser.add_argument(
         "--output-dir",
@@ -110,7 +120,7 @@ def main() -> int:
         print(
             json.dumps(
                 {
-                    "version": "13.24.0",
+                    "version": "13.25.1",
                     "status": "FAIL",
                     "stage": "preflight",
                     "http_status": preflight_status,
@@ -123,15 +133,18 @@ def main() -> int:
         )
         return 1
 
-    body = {
+    body: dict[str, Any] = {
         "warehouse_id": args.warehouse_id,
         "simulation_id": args.simulation_id,
         "optimization_backend": args.backend,
-        "events": [
+    }
+    if args.input_mode == "natural":
+        body.update({"events": [], "user_command": args.user_command})
+    else:
+        body["events"] = [
             {"type": "new_order", "order_id": "ORD-001"},
             {"type": "inbound_item_arrived", "inbound_id": "IN-001"},
-        ],
-    }
+        ]
     (run_dir / "request.json").write_text(
         json.dumps(body, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -166,12 +179,29 @@ def main() -> int:
             results.append({"http_status": http_status, "response": response})
             continue
         robots = plan.get("robots") or []
+        if args.input_mode == "natural" and response.get("router_llm_executed") is not True:
+            errors.append(f"run {index}: natural input did not execute the LLM router")
         if not robots:
             errors.append(f"run {index}: plan contains no robot routes")
         if not any(step.get("step_type") == "MOVE" for robot in robots for step in robot.get("steps", [])):
             errors.append(f"run {index}: plan contains no MOVE step")
         if not any(step.get("step_type") == "SERVICE" for robot in robots for step in robot.get("steps", [])):
             errors.append(f"run {index}: plan contains no SERVICE step")
+
+        logical_operations = plan.get("logical_operations") or []
+        logical_by_id = {str(value.get("operation_id")): value for value in logical_operations}
+        expected_operation_ids = {"ORD-001", "IN-001"}
+        if set(logical_by_id) != expected_operation_ids:
+            errors.append(
+                f"run {index}: logical operation coverage expected={sorted(expected_operation_ids)!r} "
+                f"actual={sorted(logical_by_id)!r}"
+            )
+        for operation_id in sorted(expected_operation_ids & set(logical_by_id)):
+            logical = logical_by_id[operation_id]
+            if not logical.get("task_ids"):
+                errors.append(f"run {index}: {operation_id} has no task_ids")
+            if not logical.get("assigned_robot_id"):
+                errors.append(f"run {index}: {operation_id} has no assigned_robot_id")
 
         plan_id = str(plan.get("plan_id") or "")
         if not plan_id:
@@ -198,9 +228,29 @@ def main() -> int:
             "assignment_valid",
             "route_valid",
             "mapf_valid",
+            "logical_operation_coverage_valid",
         ):
             if checks.get(key) is not True:
                 errors.append(f"run {index}: trace check {key}={checks.get(key)!r}")
+
+        repository = trace.get("repository") or {}
+        source_manifest = repository.get("source_manifest") or {}
+        expected_sources = {
+            "route_nodes": "neo4j_snapshot",
+            "route_edges": "neo4j_snapshot",
+            "racks": "postgres_snapshot",
+            "robots": "redis_live",
+        }
+        if repository.get("repository_type") != "LiveWarehouseRepository":
+            errors.append(
+                f"run {index}: repository_type={repository.get('repository_type')!r}"
+            )
+        for key, expected in expected_sources.items():
+            if source_manifest.get(key) != expected:
+                errors.append(
+                    f"run {index}: repository source {key}={source_manifest.get(key)!r}; "
+                    f"expected {expected!r}"
+                )
 
         signature = plan_signature(plan)
         signatures.append(signature)
@@ -216,6 +266,7 @@ def main() -> int:
                 "step_count": sum(len(robot.get("steps", [])) for robot in robots),
                 "makespan_ms": plan.get("makespan_ms"),
                 "trace_checks": checks,
+                "repository": repository,
             }
         )
 
@@ -224,12 +275,13 @@ def main() -> int:
         errors.append("Repeated plan signatures differ.")
 
     summary = {
-        "version": "13.24.0",
+        "version": "13.25.1",
         "status": "PASS" if not errors else "FAIL",
         "endpoint": endpoint,
         "warehouse_id": args.warehouse_id,
         "simulation_id": args.simulation_id,
         "backend": args.backend,
+        "input_mode": args.input_mode,
         "repeat": args.repeat,
         "preflight": {
             "postgres": preflight.get("postgres"),

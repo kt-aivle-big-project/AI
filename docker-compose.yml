@@ -1,4 +1,4 @@
-name: laro-be-plan-bridge-v3
+name: laro-be-plan-bridge-v4
 
 # This stack owns the DB servers used by both the unmodified Spring BE and LARO.
 # Run BE-main locally with its existing "local" profile; it will connect to the
@@ -6,7 +6,7 @@ name: laro-be-plan-bridge-v3
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: laro-be-plan-bridge-v3-postgres
+    container_name: laro-be-plan-bridge-v4-postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
@@ -15,7 +15,7 @@ services:
     ports:
       - "${POSTGRES_HOST_PORT:-5432}:5432"
     volumes:
-      - laro_be_plan_v3_postgres_data:/var/lib/postgresql/data
+      - laro_be_plan_v4_postgres_data:/var/lib/postgresql/data
       - ./db/postgres/001_schema.sql:/docker-entrypoint-initdb.d/001_laro_native_schema.sql:ro
       - ./db/postgres/003_be_shared_contract.sql:/docker-entrypoint-initdb.d/003_be_shared_contract.sql:ro
     healthcheck:
@@ -27,7 +27,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: laro-be-plan-bridge-v3-redis
+    container_name: laro-be-plan-bridge-v4-redis
     restart: unless-stopped
     command:
       - redis-server
@@ -38,7 +38,7 @@ services:
     ports:
       - "${REDIS_HOST_PORT:-6379}:6379"
     volumes:
-      - laro_be_plan_v3_redis_data:/data
+      - laro_be_plan_v4_redis_data:/data
     healthcheck:
       test:
         - CMD-SHELL
@@ -52,7 +52,7 @@ services:
 
   neo4j:
     image: neo4j:5.26-community
-    container_name: laro-be-plan-bridge-v3-neo4j
+    container_name: laro-be-plan-bridge-v4-neo4j
     restart: unless-stopped
     environment:
       NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-laro-password}
@@ -63,8 +63,8 @@ services:
       - "${NEO4J_HTTP_HOST_PORT:-7474}:7474"
       - "${NEO4J_BOLT_HOST_PORT:-7687}:7687"
     volumes:
-      - laro_be_plan_v3_neo4j_data:/data
-      - laro_be_plan_v3_neo4j_logs:/logs
+      - laro_be_plan_v4_neo4j_data:/data
+      - laro_be_plan_v4_neo4j_logs:/logs
     healthcheck:
       test:
         - CMD-SHELL
@@ -82,7 +82,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: laro-be-plan-bridge-v3-api
+    container_name: laro-be-plan-bridge-v4-api
     restart: unless-stopped
     depends_on:
       postgres:
@@ -143,7 +143,7 @@ services:
     ports:
       - "${LARO_API_HOST_PORT:-8000}:8000"
     volumes:
-      - laro_be_plan_v3_runtime_outputs:/app/runtime_outputs
+      - laro_be_plan_v4_runtime_outputs:/app/runtime_outputs
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
       interval: 5s
@@ -152,8 +152,8 @@ services:
       start_period: 20s
 
 volumes:
-  laro_be_plan_v3_postgres_data:
-  laro_be_plan_v3_redis_data:
-  laro_be_plan_v3_neo4j_data:
-  laro_be_plan_v3_neo4j_logs:
-  laro_be_plan_v3_runtime_outputs:
+  laro_be_plan_v4_postgres_data:
+  laro_be_plan_v4_redis_data:
+  laro_be_plan_v4_neo4j_data:
+  laro_be_plan_v4_neo4j_logs:
+  laro_be_plan_v4_runtime_outputs:

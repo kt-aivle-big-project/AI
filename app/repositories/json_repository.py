@@ -16,7 +16,11 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.domain.schemas import normalize_warehouse_id
-from app.repositories.context import current_simulation_id, current_warehouse_id
+from app.repositories.context import (
+    current_repository,
+    current_simulation_id,
+    current_warehouse_id,
+)
 
 
 class DataContractError(RuntimeError):
@@ -334,6 +338,23 @@ class JsonWarehouseRepository:
                 if self.facility_path.exists()
                 else "legacy"
             ),
+        }
+
+    @property
+    def source_manifest(self) -> dict[str, str]:
+        """Describe the authoritative source used by each repository domain."""
+
+        return {
+            "route_nodes": "json_snapshot",
+            "route_edges": "json_snapshot",
+            "racks": "json_snapshot",
+            "handling_units": "json_snapshot",
+            "orders": "json_snapshot",
+            "inbound_receipts": "json_snapshot",
+            "facilities": "json_snapshot",
+            "robots": "json_snapshot",
+            "edge_runtime": "json_snapshot",
+            "reservations": "json_snapshot",
         }
 
     def scenario_events(self) -> list[dict[str, Any]]:
@@ -884,6 +905,16 @@ def _get_repository_cached(
     simulation_id: str,
     data_override: str | None,
 ) -> JsonWarehouseRepository:
+    return _create_repository(warehouse_id, simulation_id, data_override)
+
+
+def _create_repository(
+    warehouse_id: str,
+    simulation_id: str,
+    data_override: str | None,
+) -> JsonWarehouseRepository:
+    """Create one repository instance without process-level caching."""
+
     settings = get_settings()
     override = Path(data_override) if data_override else None
     if settings.warehouse_repository_backend in {"embedded", "live"} and override is None:
@@ -911,6 +942,9 @@ def get_repository(
     :class:`OrchestrationService` supplies them.
     """
 
+    scoped = current_repository()
+    if scoped is not None:
+        return scoped
     settings = get_settings()
     resolved_warehouse = normalize_warehouse_id(
         warehouse_id or current_warehouse_id(settings.default_warehouse_id)
@@ -920,6 +954,23 @@ def get_repository(
     )
     override = str(_data_dir_override) if _data_dir_override is not None else None
     return _get_repository_cached(resolved_warehouse, resolved_simulation, override)
+
+
+def create_request_repository(
+    warehouse_id: str,
+    simulation_id: str,
+) -> JsonWarehouseRepository:
+    """Create a fresh repository snapshot for one orchestration request.
+
+    JSON fixtures remain deterministic, while live mode performs exactly one
+    PostgreSQL/Redis/Neo4j snapshot load that is then shared by every graph node
+    in the request.
+    """
+
+    resolved_warehouse = normalize_warehouse_id(warehouse_id)
+    resolved_simulation = str(simulation_id)
+    override = str(_data_dir_override) if _data_dir_override is not None else None
+    return _create_repository(resolved_warehouse, resolved_simulation, override)
 
 
 def _clear_repository_cache() -> None:
