@@ -2669,6 +2669,9 @@ class SimulationLogicalOperation(StrictModel):
     logical_destination_id: str | None = None
     source_port_id: str | None = None
     handling_unit_id: str | None = None
+    target_rack_id: str | None = None
+    target_rack_level: int | None = Field(default=None, ge=1, le=3)
+    delivery_node: str | None = None
     assigned_robot_id: str | None = None
     task_ids: list[str] = Field(default_factory=list)
 

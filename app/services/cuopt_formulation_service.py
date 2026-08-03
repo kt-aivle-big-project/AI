@@ -684,6 +684,7 @@ class RuleCuOptFormulator:
         inbound_by_id = {value.inbound_id: value for value in inventory.inbound_needs}
         repository = get_repository()
         next_task_index = len(tasks) + 1
+        planned_putaway_quantity: dict[tuple[str, int], int] = {}
         for operation in inbound_operations:
             need = inbound_by_id.get(operation.operation_id)
             if need is None:
@@ -693,7 +694,12 @@ class RuleCuOptFormulator:
             if not handoff:
                 deferred.append(operation.operation_id)
                 continue
-            slots = list(inventory.candidate_putaway_slots)
+            slots = [
+                value for value in inventory.candidate_putaway_slots
+                if value.capacity - planned_putaway_quantity.get(
+                    (value.rack_id, value.rack_level), 0
+                ) >= need.quantity
+            ]
             if need.target_rack_id:
                 slots = [value for value in slots if value.rack_id == need.target_rack_id]
             if need.target_rack_level:
@@ -731,6 +737,10 @@ class RuleCuOptFormulator:
                 continue
             _, _, rack_id, rack_level, pickup_node, delivery_node = min(
                 choices, key=lambda value: (value[0], value[1], value[2], value[3], value[4], value[5])
+            )
+            slot_key = (rack_id, rack_level)
+            planned_putaway_quantity[slot_key] = (
+                planned_putaway_quantity.get(slot_key, 0) + need.quantity
             )
             tasks.append(
                 CuOptTaskDraft(

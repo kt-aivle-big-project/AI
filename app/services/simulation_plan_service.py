@@ -139,6 +139,17 @@ class SimulationPlanBuilder:
                         (value for value in result.inventory_context.task_needs if value.order_id == operation.operation_id),
                         None,
                     )
+                selected_inbound_task = None
+                if operation.operation_type == "INBOUND_ITEM" and result.optimization_request:
+                    selected_inbound_task = next(
+                        (
+                            task
+                            for task in result.optimization_request.tasks
+                            if task.operation_type == "INBOUND_ITEM"
+                            and task.order_id == operation.operation_id
+                        ),
+                        None,
+                    )
                 logical.append(
                     SimulationLogicalOperation(
                         operation_id=operation.operation_id,
@@ -151,6 +162,21 @@ class SimulationPlanBuilder:
                         ),
                         source_port_id=inbound_need.source_port_id if inbound_need else None,
                         handling_unit_id=batch.handling_unit_id if batch else inbound_need.handling_unit_id if inbound_need else None,
+                        target_rack_id=(
+                            selected_inbound_task.rack_id
+                            if selected_inbound_task is not None
+                            else inbound_need.target_rack_id if inbound_need else None
+                        ),
+                        target_rack_level=(
+                            selected_inbound_task.rack_level
+                            if selected_inbound_task is not None
+                            else inbound_need.target_rack_level if inbound_need else None
+                        ),
+                        delivery_node=(
+                            selected_inbound_task.delivery_node
+                            if selected_inbound_task is not None
+                            else None
+                        ),
                         assigned_robot_id=assigned,
                         task_ids=matching_tasks,
                     )

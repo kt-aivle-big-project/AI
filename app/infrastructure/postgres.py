@@ -296,8 +296,16 @@ class PostgresWarehouseAdapter:
                         str(receipt["item_id"]),
                         int(receipt["quantity"]),
                         str(receipt["source_port_id"]),
-                        str(receipt["target_rack_id"]),
-                        int(receipt["target_rack_level"]),
+                        (
+                            str(receipt["target_rack_id"])
+                            if receipt.get("target_rack_id") is not None
+                            else None
+                        ),
+                        (
+                            int(receipt["target_rack_level"])
+                            if receipt.get("target_rack_level") is not None
+                            else None
+                        ),
                         str(receipt.get("status", "pending")),
                         str(receipt.get("priority", "medium")),
                     ),
@@ -379,7 +387,22 @@ class PostgresWarehouseAdapter:
 
     @staticmethod
     def _inbound_record(row: dict[str,Any]) -> dict[str,Any]:
-        return {**dict(row),"quantity":int(row["quantity"]),"target_rack_level":int(row["target_rack_level"]),"created_at":str(row["created_at"]),"updated_at":str(row["updated_at"])}
+        return {
+            **dict(row),
+            "quantity": int(row["quantity"]),
+            "target_rack_id": (
+                str(row["target_rack_id"])
+                if row.get("target_rack_id") is not None
+                else None
+            ),
+            "target_rack_level": (
+                int(row["target_rack_level"])
+                if row.get("target_rack_level") is not None
+                else None
+            ),
+            "created_at": str(row["created_at"]),
+            "updated_at": str(row["updated_at"]),
+        }
 
     def load_inbound_receipts(self, warehouse_id: str | None = None) -> list[dict[str,Any]]:
         wid=self._warehouse(warehouse_id)
@@ -574,13 +597,19 @@ class PostgresWarehouseAdapter:
         wid=self._warehouse(warehouse_id)
         with self._connection() as conn:
             racks=conn.execute("SELECT * FROM racks WHERE warehouse_id=%s ORDER BY rack_id",(wid,)).fetchall(); slots=conn.execute("SELECT * FROM rack_slots WHERE warehouse_id=%s ORDER BY rack_id,level",(wid,)).fetchall()
-        units={(v["home_rack_id"],v["home_rack_level"]):v for v in self.handling_units(wid)}; slots_by={(r["rack_id"],int(r["level"])):dict(r) for r in slots}; records=[]
+        units={}; used_quantity={}
+        for value in self.handling_units(wid):
+            key=(value["home_rack_id"],value["home_rack_level"])
+            units.setdefault(key,value)
+            used_quantity[key]=used_quantity.get(key,0)+int(value["quantity"])
+        slots_by={(r["rack_id"],int(r["level"])):dict(r) for r in slots}; records=[]
         for rack in racks:
             levels=[]
-            for level in (1,2,3):
-                slot=slots_by.get((rack["rack_id"],level)); unit=units.get((rack["rack_id"],level)); item=None
+            rack_levels=sorted(level for rack_id,level in slots_by if rack_id == rack["rack_id"])
+            for level in rack_levels:
+                slot=slots_by[(rack["rack_id"],level)]; unit=units.get((rack["rack_id"],level)); item=None
                 if unit: item={"handling_unit_id":unit["handling_unit_id"],"item_id":unit["item_id"],"item_name":unit.get("item_name"),"category":unit.get("category"),"quantity":unit["quantity"],"capacity":unit["capacity"],"unit":unit["unit"],"handling_unit_status":unit["status"],"version":unit["version"]}
-                levels.append({"level":level,"status":slot["status"] if slot else "EMPTY","item":item})
+                levels.append({"level":level,"status":slot["status"],"capacity":int(slot["capacity"]),"used_quantity":used_quantity.get((rack["rack_id"],level),0),"item":item})
             records.append({"rack_id":rack["rack_id"],"access_node_ids":list(rack["access_node_ids"] or []),"levels":levels})
         return {"warehouse_id":wid,"version":self.versions(wid).get("inventory_version","live"),"racks":records}
 

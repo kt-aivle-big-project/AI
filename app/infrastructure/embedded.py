@@ -167,8 +167,8 @@ class EmbeddedPostgresWarehouseAdapter:
                 CREATE TABLE IF NOT EXISTS {p}inbound_receipts(
                   warehouse_id TEXT NOT NULL, inbound_id TEXT NOT NULL,
                   handling_unit_id TEXT NOT NULL, item_id TEXT NOT NULL, quantity INTEGER NOT NULL,
-                  source_port_id TEXT NOT NULL, target_rack_id TEXT NOT NULL,
-                  target_rack_level INTEGER NOT NULL, status TEXT NOT NULL,
+                  source_port_id TEXT NOT NULL, target_rack_id TEXT,
+                  target_rack_level INTEGER, status TEXT NOT NULL,
                   priority TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
                   PRIMARY KEY(warehouse_id,inbound_id),
                   UNIQUE(warehouse_id,handling_unit_id),
@@ -341,8 +341,18 @@ class EmbeddedPostgresWarehouseAdapter:
                     (
                         wid, str(receipt["inbound_id"]), str(receipt["handling_unit_id"]),
                         str(receipt["item_id"]), int(receipt["quantity"]),
-                        str(receipt["source_port_id"]), str(receipt["target_rack_id"]),
-                        int(receipt["target_rack_level"]), str(receipt.get("status", "pending")),
+                        str(receipt["source_port_id"]),
+                        (
+                            str(receipt["target_rack_id"])
+                            if receipt.get("target_rack_id") is not None
+                            else None
+                        ),
+                        (
+                            int(receipt["target_rack_level"])
+                            if receipt.get("target_rack_level") is not None
+                            else None
+                        ),
+                        str(receipt.get("status", "pending")),
                         str(receipt.get("priority", "medium")), now, now,
                     ),
                 )
@@ -399,7 +409,11 @@ class EmbeddedPostgresWarehouseAdapter:
             "quantity": int(row["quantity"]),
             "source_port_id": row["source_port_id"],
             "target_rack_id": row["target_rack_id"],
-            "target_rack_level": int(row["target_rack_level"]),
+            "target_rack_level": (
+                int(row["target_rack_level"])
+                if row["target_rack_level"] is not None
+                else None
+            ),
             "status": row["status"],
             "priority": row["priority"],
         }
@@ -562,7 +576,12 @@ class EmbeddedPostgresWarehouseAdapter:
                     "handling_unit_status": row["hu_status"], "version": int(row["version"]),
                 }
             by_rack.setdefault(str(row["rack_id"]), []).append(
-                {"level": int(row["level"]), "status": row["status"], "item": item}
+                {
+                    "level": int(row["level"]),
+                    "status": row["status"],
+                    "capacity": int(row["capacity"]),
+                    "item": item,
+                }
             )
         records = [
             {"rack_id": row["rack_id"], "access_node_ids": _loads(row["access_node_ids"], []), "levels": by_rack.get(str(row["rack_id"]), [])}

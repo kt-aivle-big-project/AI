@@ -380,20 +380,30 @@ class JsonWarehouseRepository:
         return [dict(value) for _, value in sorted(self.inbound_receipts.items())]
 
     def empty_putaway_slots(self) -> list[dict[str, Any]]:
-        """Return empty rack levels and their route access nodes."""
+        """Return rack levels with enough metadata to calculate free capacity."""
 
         values: list[dict[str, Any]] = []
         for rack in self.inventory.get("racks", []):
             rack_id = str(rack["rack_id"])
             access_node_ids = [str(value) for value in rack.get("access_node_ids", [])]
             for level in rack.get("levels", []):
-                if level.get("item") is not None or str(level.get("status", "EMPTY")) != "EMPTY":
+                if str(level.get("status", "EMPTY")) not in {"EMPTY", "PARTIAL"}:
+                    continue
+                capacity = int(level.get("capacity", 100))
+                stored_quantity = int(
+                    level.get(
+                        "used_quantity",
+                        (level.get("item") or {}).get("quantity", 0),
+                    )
+                )
+                remaining_capacity = max(0, capacity - stored_quantity)
+                if remaining_capacity == 0:
                     continue
                 values.append({
                     "rack_id": rack_id,
                     "rack_level": int(level["level"]),
                     "access_node_ids": access_node_ids,
-                    "capacity": int(level.get("capacity", 100)),
+                    "capacity": remaining_capacity,
                 })
         return values
 
