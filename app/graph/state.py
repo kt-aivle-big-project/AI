@@ -80,6 +80,7 @@ class LaroInputState(TypedDict):
 
     warehouse_id: str
     simulation_id: str
+    simulation_run_id: int | None
     request_mode: str
     optimization_backend: str
     planning_mode: PlanningMode
@@ -211,6 +212,7 @@ class LaroOutputState(TypedDict, total=False):
 
     warehouse_id: str
     simulation_id: str
+    simulation_run_id: int | None
     request_mode: str
     optimization_backend: str
     planning_mode: PlanningMode

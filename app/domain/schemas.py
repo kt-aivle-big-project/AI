@@ -548,6 +548,11 @@ class AutoMissionRequest(StrictModel):
 
     warehouse_id: WarehouseId = "WH-001"
     simulation_id: str = "SIM001"
+    simulation_run_id: int | None = Field(
+        default=None,
+        ge=1,
+        validation_alias=AliasChoices("simulation_run_id", "simulationRunId"),
+    )
     request_mode: RequestMode = "event_driven"
     optimization_backend: OptimizationBackend | None = None
     events: list[EventInput] = Field(default_factory=list)
@@ -600,6 +605,11 @@ class PublicMissionRequest(StrictModel):
 
     warehouse_id: WarehouseId
     simulation_id: str = Field(min_length=1, max_length=128)
+    simulation_run_id: int | None = Field(
+        default=None,
+        ge=1,
+        validation_alias=AliasChoices("simulation_run_id", "simulationRunId"),
+    )
     optimization_backend: OptimizationBackend | None = None
     events: list[EventInput] = Field(default_factory=list)
     user_command: str | None = None
@@ -619,6 +629,7 @@ class PublicMissionRequest(StrictModel):
         return AutoMissionRequest(
             warehouse_id=self.warehouse_id,
             simulation_id=self.simulation_id,
+            simulation_run_id=self.simulation_run_id,
             request_mode=infer_request_mode(
                 events=list(self.events), user_command=self.user_command
             ),
@@ -1688,12 +1699,19 @@ class RobotRuntime(StrictModel):
     state_version: int = Field(default=1, ge=0)
     sim_tick: int | None = Field(default=None, ge=0)
     sim_time_ms: int = Field(default=0, ge=0)
+    available_at_ms: int = Field(default=0, ge=0)
     x: float | None = None
     y: float | None = None
     theta: float | None = None
     from_node: str | None = None
     to_node: str | None = None
     edge_progress: float | None = Field(default=None, ge=0, le=1)
+
+    @property
+    def effective_available_at_ms(self) -> int:
+        """Earliest absolute simulation time at which new work may start."""
+
+        return max(self.sim_time_ms, self.available_at_ms)
 
 
 class RobotRuntimeContext(StrictModel):
@@ -2749,6 +2767,7 @@ class SimulationPlanResponse(StrictModel):
     status: WorkflowStatus
     warehouse_id: WarehouseId = "WH-001"
     simulation_id: str
+    simulation_run_id: int | None = None
     request_mode: RequestMode | None = None
     final_route: RequestFinalRoute | None = None
     effective_planning_mode: PlanningMode | None = None
@@ -2809,6 +2828,7 @@ class OrchestrationResult(StrictModel):
 
     warehouse_id: WarehouseId = "WH-001"
     simulation_id: str
+    simulation_run_id: int | None = None
     request_mode: RequestMode
     optimization_backend: OptimizationBackend
     planning_mode: PlanningMode

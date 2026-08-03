@@ -1697,7 +1697,10 @@ class DynamicInputOptimizationRequestAdapter:
                     start_node=str(node.attributes["current_node"]),
                     capacity_units=int(node.attributes["capacity_units"]),
                     battery_pct=float(node.attributes["battery_pct"]),
-                    available_at_ms=int(node.attributes.get("sim_time_ms", 0)),
+                    available_at_ms=max(
+                        int(node.attributes.get("sim_time_ms", 0)),
+                        int(node.attributes.get("available_at_ms", 0)),
+                    ),
                 )
             )
         canonical_penalties = {
@@ -1769,7 +1772,9 @@ class DynamicInputOptimizationRequestAdapter:
                 start_node=robot_by_id[robot_id].current_node,
                 capacity_units=robot_by_id[robot_id].capacity_units,
                 battery_pct=robot_by_id[robot_id].battery_pct,
-                available_at_ms=robot_by_id[robot_id].sim_time_ms,
+                available_at_ms=robot_by_id[
+                    robot_id
+                ].effective_available_at_ms,
             )
             for robot_id in draft.fleet.included_robot_ids
         ]

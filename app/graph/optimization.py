@@ -123,7 +123,11 @@ def waypoint_route_expander_node(state: LaroGraphState) -> dict:
     try:
         payload = model_from_state(state, "cuopt_payload", CuOptPayload)
         result = model_from_state(state, "optimizer_result", OptimizerResult)
-        expansion = WaypointRouteExpander().expand(payload=payload, result=result)
+        expansion = WaypointRouteExpander().expand(
+            payload=payload,
+            result=result,
+            node_types=dict(state.get("graph_node_types", {})),
+        )
         return {"waypoint_route_expansion": expansion, **trace_update("waypoint_route_expander")}
     except Exception as exc:
         return error_update(stage="waypoint_route_expander", code="route_expansion_failed", message=str(exc))

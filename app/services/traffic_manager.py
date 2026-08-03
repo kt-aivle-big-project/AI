@@ -38,7 +38,6 @@ class TrafficManagerService:
         "inbound",
         "outbound",
         "charging_slot",
-        "rack_access",
         "inbound_handoff_access",
         "outbound_station_access",
         "empty_tote_buffer_access",

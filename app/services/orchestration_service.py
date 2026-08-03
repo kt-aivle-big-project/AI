@@ -137,6 +137,7 @@ class OrchestrationService:
         state = {
             "warehouse_id": request.warehouse_id,
             "simulation_id": request.simulation_id,
+            "simulation_run_id": request.simulation_run_id,
             "request_mode": request.request_mode,
             "optimization_backend": backend,
             "planning_mode": planning_mode,
@@ -209,6 +210,7 @@ class OrchestrationService:
             request_repository = create_request_repository(
                 request.warehouse_id,
                 request.simulation_id,
+                request.simulation_run_id,
             )
             with repository_instance_scope(request_repository):
                 final = get_laro_graph().invoke(
@@ -226,6 +228,7 @@ class OrchestrationService:
                 "metadata": {
                     "warehouse_id": request.warehouse_id,
                     "simulation_id": request.simulation_id,
+                    "simulation_run_id": request.simulation_run_id,
                     "request_mode": request.request_mode,
                     "optimization_backend": backend,
                     "planning_mode": planning_mode,
@@ -279,6 +282,7 @@ class OrchestrationService:
         result = OrchestrationResult(
             warehouse_id=request.warehouse_id,
             simulation_id=request.simulation_id,
+            simulation_run_id=request.simulation_run_id,
             request_mode=request.request_mode,
             optimization_backend=backend,
             planning_mode=plan.planning_mode if plan is not None else planning_mode,

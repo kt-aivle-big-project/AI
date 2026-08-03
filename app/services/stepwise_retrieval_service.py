@@ -1130,9 +1130,16 @@ class WarehouseReadToolExecutor:
             ]
             if request.robot_ids:
                 robots = [value for value in robots if str(value.get("robot_id")) in request.robot_ids]
-            data = {"active_robots": robots}
-            canonical_ids = [str(value["robot_id"]) for value in robots]
-            summary = f"Loaded {len(robots)} active or loaded robot operation(s)."
+            tasks = self.repository.active_operations()
+            data = {"active_robots": robots, "active_tasks": tasks}
+            canonical_ids = [
+                *[str(value["robot_id"]) for value in robots],
+                *[str(value["task_id"]) for value in tasks],
+            ]
+            summary = (
+                f"Loaded {len(robots)} active or loaded robot operation(s) and "
+                f"{len(tasks)} Spring task(s)."
+            )
         else:  # pragma: no cover
             raise ValueError(f"Unsupported retrieval tool {tool}")
 

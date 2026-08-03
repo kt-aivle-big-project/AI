@@ -407,6 +407,75 @@ class PostgresWarehouseAdapter:
         with self._connection() as conn: rows=conn.execute(sql,args).fetchall()
         return [self._order_record(dict(r)) for r in rows]
 
+    def load_spring_tasks(self, simulation_run_id: int) -> list[dict[str, Any]]:
+        """Read active task facts owned by the Spring BE for one simulation run.
+
+        ``public.task`` is a Spring-managed table and is intentionally not part
+        of the native LARO bootstrap schema.  It is queried only when a public
+        Native Plan request supplies ``simulation_run_id``.
+        """
+
+        with self._connection() as conn:
+            exists = conn.execute(
+                "SELECT to_regclass('public.task') AS relation"
+            ).fetchone()
+            relation = exists.get("relation") if isinstance(exists, dict) else exists[0]
+            if relation is None:
+                raise PostgresInfrastructureError(
+                    "Spring table public.task is unavailable for simulation_run_id planning."
+                )
+            rows = conn.execute(
+                """
+                SELECT
+                    t.id AS task_id,
+                    t.simulation_run_id,
+                    t.warehouse_id,
+                    t.robot_id,
+                    t.task_type,
+                    t.status,
+                    t.item_id,
+                    t.warehouse_item_id,
+                    t.quantity,
+                    t.start_node_id,
+                    COALESCE(start_node.node_code, t.start_node_id::text) AS start_node,
+                    t.end_node_id,
+                    COALESCE(end_node.node_code, t.end_node_id::text) AS end_node,
+                    t.release_at_seconds,
+                    t.requested_at,
+                    t.assigned_at,
+                    t.started_at,
+                    t.completed_at
+                FROM public.task t
+                LEFT JOIN public.warehouse_node start_node
+                  ON start_node.warehouse_id = t.warehouse_id
+                 AND start_node.node_id = t.start_node_id
+                LEFT JOIN public.warehouse_node end_node
+                  ON end_node.warehouse_id = t.warehouse_id
+                 AND end_node.node_id = t.end_node_id
+                WHERE t.simulation_run_id = %s
+                ORDER BY t.id
+                """,
+                (int(simulation_run_id),),
+            ).fetchall()
+        return [
+            {
+                **dict(row),
+                "task_id": str(row["task_id"]),
+                "simulation_run_id": int(row["simulation_run_id"]),
+                "warehouse_id": int(row["warehouse_id"]),
+                "robot_id": (
+                    str(row["robot_id"]) if row.get("robot_id") is not None else None
+                ),
+                "item_id": (
+                    str(row["item_id"]) if row.get("item_id") is not None else None
+                ),
+                "quantity": int(row.get("quantity") or 1),
+                "start_node": str(row["start_node"]),
+                "end_node": str(row["end_node"]),
+            }
+            for row in rows
+        ]
+
     def handling_units(
         self,
         warehouse_or_item: str | None = None,

@@ -93,6 +93,32 @@ The native plan demo uses a separate namespace:
 laro:warehouse:WH-001:sim:SIM-V18-MIXED:*
 ```
 
+Public Native Plan requests may now select the live Spring run explicitly:
+
+```json
+{
+  "warehouse_id": "WH-001",
+  "simulation_id": "PLAN-SESSION-001",
+  "simulationRunId": 42,
+  "events": [
+    {"type": "new_order", "order_id": "ORD-001"}
+  ]
+}
+```
+
+`simulation_id` remains the LARO plan/session identifier.
+`simulationRunId` identifies the Spring execution and selects:
+
+```text
+simulation:run:{simulationRunId}:*
+public.task WHERE simulation_run_id = {simulationRunId}
+```
+
+When `simulationRunId` is omitted, the native planner keeps using the
+warehouse-scoped `laro:*` runtime namespace for backwards-compatible demos.
+The response `context_snapshot.source_manifest` reports `spring_redis` and
+`public.task` when the Spring bridge is active.
+
 ### Neo4j
 
 Spring graph projection may use:

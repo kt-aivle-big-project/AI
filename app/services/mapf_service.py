@@ -609,6 +609,15 @@ class PrioritizedSIPPPlanner:
                             )
 
             for arc in graph.by_source.get(node, []):
+                # Rack access spurs are service locations, not corridors or
+                # collision-avoidance pockets.  A robot may leave one when it
+                # starts there, but may enter only the access node of the task
+                # it is currently about to service.
+                if (
+                    node_types.get(arc.target) == "rack_access"
+                    and arc.target != goal_node
+                ):
+                    continue
                 for depart, next_arrival, target_interval_index in cls._feasible_transitions(
                     arc=arc,
                     earliest_departure_ms=arrival,

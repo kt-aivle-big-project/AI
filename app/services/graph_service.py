@@ -41,7 +41,14 @@ class DirectedGraphService:
             self.by_source[arc.source].append(arc)
             self.by_edge_id[arc.edge_id] = arc
 
-    def shortest_path(self, start: str, target: str, *, metric: str = "cost") -> tuple[float, list[Arc]]:
+    def shortest_path(
+        self,
+        start: str,
+        target: str,
+        *,
+        metric: str = "cost",
+        forbidden_transit_nodes: set[str] | None = None,
+    ) -> tuple[float, list[Arc]]:
         """Return shortest path value and arcs using cost or travel time."""
 
         if start == target:
@@ -56,6 +63,12 @@ class DirectedGraphService:
             if node == target:
                 break
             for arc in self.by_source.get(node, []):
+                if (
+                    forbidden_transit_nodes
+                    and arc.target in forbidden_transit_nodes
+                    and arc.target != target
+                ):
+                    continue
                 weight = arc.cost if metric == "cost" else float(arc.travel_time_ms)
                 candidate = value + weight
                 if candidate < best.get(arc.target, inf):

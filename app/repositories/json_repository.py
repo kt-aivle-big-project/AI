@@ -705,6 +705,11 @@ class JsonWarehouseRepository:
             )
         return values
 
+    def active_operations(self) -> list[dict[str, Any]]:
+        """Return externally owned active work when the backend exposes it."""
+
+        return []
+
     def empty_tote_buffer_candidates(self) -> list[dict[str, Any]]:
         """Return configured physical buffers for depleted handling units."""
 
@@ -912,6 +917,7 @@ def _create_repository(
     warehouse_id: str,
     simulation_id: str,
     data_override: str | None,
+    simulation_run_id: int | None = None,
 ) -> JsonWarehouseRepository:
     """Create one repository instance without process-level caching."""
 
@@ -921,7 +927,9 @@ def _create_repository(
         from app.repositories.live_repository import LiveWarehouseRepository
 
         return LiveWarehouseRepository(
-            warehouse_id=warehouse_id, simulation_id=simulation_id
+            warehouse_id=warehouse_id,
+            simulation_id=simulation_id,
+            simulation_run_id=simulation_run_id,
         )
     if settings.map_repository_backend == "neo4j" and override is None:
         return Neo4jWarehouseRepository(
@@ -959,6 +967,7 @@ def get_repository(
 def create_request_repository(
     warehouse_id: str,
     simulation_id: str,
+    simulation_run_id: int | None = None,
 ) -> JsonWarehouseRepository:
     """Create a fresh repository snapshot for one orchestration request.
 
@@ -970,7 +979,12 @@ def create_request_repository(
     resolved_warehouse = normalize_warehouse_id(warehouse_id)
     resolved_simulation = str(simulation_id)
     override = str(_data_dir_override) if _data_dir_override is not None else None
-    return _create_repository(resolved_warehouse, resolved_simulation, override)
+    return _create_repository(
+        resolved_warehouse,
+        resolved_simulation,
+        override,
+        simulation_run_id,
+    )
 
 
 def _clear_repository_cache() -> None:

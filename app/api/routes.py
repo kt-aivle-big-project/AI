@@ -290,6 +290,7 @@ def create_simulation_plan(request: PublicMissionRequest) -> SimulationPlanRespo
         status=result.status,
         warehouse_id=result.warehouse_id,
         simulation_id=result.simulation_id,
+        simulation_run_id=result.simulation_run_id,
         request_mode=result.request_mode,
         final_route=(
             result.orchestration_plan.formulation_route
@@ -327,6 +328,7 @@ def create_simulation_plan_legacy(request: AutoMissionRequest) -> SimulationPlan
         status=result.status,
         warehouse_id=result.warehouse_id,
         simulation_id=result.simulation_id,
+        simulation_run_id=result.simulation_run_id,
         request_mode=result.request_mode,
         final_route=(result.orchestration_plan.formulation_route if result.orchestration_plan else None),
         effective_planning_mode=result.effective_planning_mode,

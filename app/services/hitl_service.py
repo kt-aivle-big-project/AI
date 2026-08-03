@@ -76,6 +76,7 @@ class HumanInteractionService:
         return {
             "warehouse_id": state.get("warehouse_id", get_settings().default_warehouse_id),
             "simulation_id": state["simulation_id"],
+            "simulation_run_id": state.get("simulation_run_id"),
             "request_mode": state["request_mode"],
             "optimization_backend": state.get("optimization_backend"),
             "events": [

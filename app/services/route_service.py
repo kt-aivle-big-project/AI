@@ -17,7 +17,13 @@ from app.services.graph_service import DirectedGraphService
 class WaypointRouteExpander:
     """Expand each robot task sequence over the adjusted directed graph."""
 
-    def expand(self, *, payload: CuOptPayload, result: OptimizerResult) -> WaypointRouteExpansionResult:
+    def expand(
+        self,
+        *,
+        payload: CuOptPayload,
+        result: OptimizerResult,
+        node_types: dict[str, str] | None = None,
+    ) -> WaypointRouteExpansionResult:
         """Return node and edge sequences for every optimizer route."""
 
         reverse_index = {index: node_id for node_id, index in payload.location_index_map.items()}
@@ -39,6 +45,11 @@ class WaypointRouteExpander:
             )
         ]
         graph = DirectedGraphService(arcs)
+        forbidden_transit_nodes = {
+            node_id
+            for node_id, node_type in (node_types or {}).items()
+            if node_type == "rack_access"
+        }
         vehicle_starts = {
             robot_id: reverse_index[start]
             for robot_id, start in zip(
@@ -65,7 +76,11 @@ class WaypointRouteExpander:
             total_time = 0
             for task_id in route.task_sequence:
                 target = task_locations[task_id]
-                cost, path = graph.shortest_path(current, target)
+                cost, path = graph.shortest_path(
+                    current,
+                    target,
+                    forbidden_transit_nodes=forbidden_transit_nodes,
+                )
                 if not path and current != target:
                     errors.append(f"No directed path from {current} to {target} for {task_id}.")
                     break

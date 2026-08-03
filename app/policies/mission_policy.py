@@ -233,7 +233,7 @@ class MissionPolicyService:
                     start_node=robot.current_node,
                     capacity_units=robot.capacity_units,
                     battery_pct=robot.battery_pct,
-                    available_at_ms=robot.sim_time_ms,
+                    available_at_ms=robot.effective_available_at_ms,
                 )
             )
         if (fulfillment_candidates or validated_tasks) and not candidate_robots:
