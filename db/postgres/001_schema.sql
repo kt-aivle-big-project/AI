@@ -151,8 +151,8 @@ CREATE TABLE IF NOT EXISTS inbound_receipts (
     item_id text NOT NULL,
     quantity integer NOT NULL CHECK (quantity > 0),
     source_port_id text NOT NULL,
-    target_rack_id text NOT NULL,
-    target_rack_level integer NOT NULL CHECK (target_rack_level BETWEEN 1 AND 3),
+    target_rack_id text,
+    target_rack_level integer CHECK (target_rack_level BETWEEN 1 AND 3),
     status text NOT NULL CHECK (status IN ('pending','planned','in_transit','stored','held','cancelled')),
     priority text NOT NULL CHECK (priority IN ('low','medium','high')),
     created_at timestamptz NOT NULL DEFAULT now(),
@@ -166,6 +166,12 @@ CREATE TABLE IF NOT EXISTS inbound_receipts (
 );
 CREATE INDEX IF NOT EXISTS idx_inbound_receipts_warehouse_status
     ON inbound_receipts(warehouse_id, status, priority);
+
+-- Existing installations originally required BE-selected putaway targets.
+-- LARO may select the destination, so keep this migration idempotent when the
+-- schema is reapplied to an existing database.
+ALTER TABLE inbound_receipts ALTER COLUMN target_rack_id DROP NOT NULL;
+ALTER TABLE inbound_receipts ALTER COLUMN target_rack_level DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS outbound_batches (
     warehouse_id text NOT NULL REFERENCES warehouses(warehouse_id) ON DELETE CASCADE,

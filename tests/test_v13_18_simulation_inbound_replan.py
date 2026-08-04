@@ -81,8 +81,8 @@ def _inbound_result_view() -> SimpleNamespace:
                 item_id="ITEM_SENSOR",
                 quantity=3,
                 source_port_id="I_a",
-                target_rack_id="K3_3",
-                target_rack_level=1,
+                target_rack_id=None,
+                target_rack_level=None,
             )
         ],
     )
@@ -98,6 +98,8 @@ def _inbound_result_view() -> SimpleNamespace:
                 operation_type="INBOUND_ITEM",
                 order_id="IN-001",
                 handling_unit_id="HU-IN-001",
+                rack_id="K3_3",
+                rack_level=1,
             )
         ],
         vehicles=[
@@ -193,6 +195,9 @@ def test_simulation_plan_builder_projects_real_steps_and_absolute_time() -> None
     assert plan.logical_operations[0].operation_id == "IN-001"
     assert plan.logical_operations[0].source_port_id == "I_a"
     assert plan.logical_operations[0].handling_unit_id == "HU-IN-001"
+    assert plan.logical_operations[0].target_rack_id == "K3_3"
+    assert plan.logical_operations[0].target_rack_level == 1
+    assert plan.logical_operations[0].delivery_node == "K3_3_ACCESS_A"
 
 
 def test_runtime_snapshot_finishes_current_edge_and_started_commitment() -> None:
@@ -261,6 +266,29 @@ def test_embedded_postgres_persists_inbound_receipts(tmp_path: Path) -> None:
     assert counts["inbound_receipts"] == 3
     assert adapter.get_inbound_receipt("IN-002")["item_id"] == "ITEM_BATTERY"
     assert len(adapter.load_inbound_receipts()) == 3
+
+
+def test_embedded_postgres_accepts_inbound_without_putaway_target(tmp_path: Path) -> None:
+    inventory = json.loads((INBOUND_FIXTURE / "rack_inventory.json").read_text(encoding="utf-8"))
+    scenario = json.loads((INBOUND_FIXTURE / "scenario_state.json").read_text(encoding="utf-8"))
+    facility = json.loads((INBOUND_FIXTURE / "facility_resources.json").read_text(encoding="utf-8"))
+    scenario["inbound_receipts"][0]["target_rack_id"] = None
+    scenario["inbound_receipts"][0]["target_rack_level"] = None
+
+    adapter = EmbeddedPostgresWarehouseAdapter(path=tmp_path / "postgres.sqlite3")
+    adapter.seed_from_documents(
+        inventory=inventory,
+        scenario=scenario,
+        facility=facility,
+        replace=True,
+    )
+
+    receipt = adapter.get_inbound_receipt(
+        scenario["inbound_receipts"][0]["inbound_id"]
+    )
+    assert receipt is not None
+    assert receipt["target_rack_id"] is None
+    assert receipt["target_rack_level"] is None
 
 
 def test_inbound_rule_path_exports_three_solver_tasks() -> None:

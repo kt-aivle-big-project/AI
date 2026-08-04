@@ -1,6 +1,7 @@
 """Code-first mission input and exception-only HITL contracts."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.domain.schemas import (
@@ -10,6 +11,7 @@ from app.domain.schemas import (
     EntityResolutionCandidate,
     EntityResolutionResult,
     FormulationRecommendation,
+    HumanInteractionRequest,
     HumanInteractionResumeRequest,
     HumanInteractionResponse,
     NormalizedOperation,
@@ -378,6 +380,43 @@ def test_hitl_store_persists_exception_and_rejects_without_resuming(tmp_path: Pa
     )
     assert result.interaction_status == "REJECTED"
     assert result.orchestration_result is None
+
+
+def test_hitl_checkpoint_preserves_simulation_run_id_for_resume(tmp_path: Path) -> None:
+    store = HumanInteractionStore(tmp_path)
+    service = HumanInteractionService(store)
+    interaction = HumanInteractionRequest(
+        interaction_id="HITL-RUN-19",
+        kind="APPROVAL",
+        stage="PRE_ROUTE",
+        reason_code="TEST_APPROVAL",
+        headline="Test approval",
+        prompt="Approve the test workflow.",
+        route_locked=True,
+        resume_route="AGENT_FORMULATION",
+        created_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+    record = service.create_pending(
+        interaction=interaction,
+        state={
+            "warehouse_id": "WH-001",
+            "simulation_id": "SIM-HITL-RUN",
+            "simulation_run_id": 19,
+            "request_mode": "human_command",
+            "optimization_backend": "cuopt_payload_only",
+            "events": [],
+            "user_command": "process ORD-001",
+            "requested_planning_mode": None,
+            "max_agent_steps": 8,
+            "max_planner_retries": 1,
+            "human_responses": [],
+            "parent_interaction_id": None,
+        },
+    )
+
+    restored = service.get(record.interaction.interaction_id)
+    assert restored.original_request["simulation_run_id"] == 19
 
 
 def test_llm_scenario_suite_is_code_first_and_exception_oriented() -> None:
