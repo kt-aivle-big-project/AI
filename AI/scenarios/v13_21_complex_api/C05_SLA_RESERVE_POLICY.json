@@ -1,0 +1,38 @@
+{
+  "scenario_id": "C05_SLA_RESERVE_POLICY",
+  "title": "SLA와 비상 로봇 보존",
+  "category": "MULTI_OBJECTIVE",
+  "difficulty": 5,
+  "description": "ORD-001 지연 위험에 따라 비상 로봇 한 대 보존 여부를 조건부로 판단한다.",
+  "requires_openai": true,
+  "recommended_server_mode": "llm_router",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C05",
+    "optimization_backend": "ortools",
+    "user_command": "ORD-001, ORD-002, IN-001을 같은 배치에서 처리해. 가능하면 로봇 한 대를 비상용으로 남기되 ORD-001 SLA 초과가 예상되면 SLA를 우선해."
+  },
+  "replan": null,
+  "expected": {
+    "allowed_status": [
+      "plan_validated",
+      "ready_for_cuopt",
+      "awaiting_human_approval",
+      "human_review"
+    ],
+    "preserve_ids": [
+      "ORD-001",
+      "ORD-002",
+      "IN-001"
+    ]
+  },
+  "evaluation_focus": [
+    "agent_applicability",
+    "conditional_reserve",
+    "sla_policy",
+    "robot_utilization"
+  ],
+  "tags": [],
+  "baseline_test_mode": "llm_router",
+  "input_requires_openai": true
+}

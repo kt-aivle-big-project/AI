@@ -1,0 +1,80 @@
+{
+  "scenario_id": "P17_FORCED_STATION_NODE_CONTENTION",
+  "title": "Station 접근점 예약으로 강제 WAIT",
+  "category": "RESOURCE_CONTENTION",
+  "difficulty": 5,
+  "requires_openai": false,
+  "input_kind": "structured",
+  "description": "두 출고 Station의 모든 접근점을 0~60000ms 동안 선점해 MAPF가 실제 WAIT를 삽입하는지 검증한다.",
+  "request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-V18-MIXED",
+    "optimization_backend": "ortools",
+    "events": [
+      {"type": "new_order", "order_id": "ORD-001"},
+      {"type": "new_order", "order_id": "ORD-002"},
+      {"type": "new_order", "order_id": "ORD-003"}
+    ],
+    "runtime_snapshot": {
+      "mode": "OVERLAY",
+      "captured_at_sim_time_ms": 0,
+      "robot_states": [],
+      "preserved_node_reservations": [
+        {
+          "reservation_id": "TEST-STATION-1-A",
+          "node_id": "OUT_STATION_1_ACCESS_A",
+          "robot_id": "STATION-MAINT",
+          "start_at_ms": 0,
+          "end_at_ms": 60000,
+          "reason": "Integration test forces station access contention."
+        },
+        {
+          "reservation_id": "TEST-STATION-1-B",
+          "node_id": "OUT_STATION_1_ACCESS_B",
+          "robot_id": "STATION-MAINT",
+          "start_at_ms": 0,
+          "end_at_ms": 60000,
+          "reason": "Integration test forces station access contention."
+        },
+        {
+          "reservation_id": "TEST-STATION-2-A",
+          "node_id": "OUT_STATION_2_ACCESS_A",
+          "robot_id": "STATION-MAINT",
+          "start_at_ms": 0,
+          "end_at_ms": 60000,
+          "reason": "Integration test forces station access contention."
+        },
+        {
+          "reservation_id": "TEST-STATION-2-B",
+          "node_id": "OUT_STATION_2_ACCESS_B",
+          "robot_id": "STATION-MAINT",
+          "start_at_ms": 0,
+          "end_at_ms": 60000,
+          "reason": "Integration test forces station access contention."
+        }
+      ]
+    }
+  },
+  "expected": {
+    "require_live_repository": true,
+    "allowed_status": ["plan_validated"],
+    "expected_operations": ["ORD-001", "ORD-002", "ORD-003"],
+    "require_plan": true,
+    "require_all_trace_checks": true,
+    "min_station_reservations": 1,
+    "min_wait_steps": 1,
+    "min_total_wait_ms": 1,
+    "require_positive_mapf_delay": true,
+    "required_trace_nodes": [
+      "optimizer",
+      "prioritized_mapf_planner",
+      "mapf_plan_validator",
+      "simulation_plan_builder",
+      "logical_operation_coverage_validator"
+    ],
+    "require_stage_contract": true
+  },
+  "tags": ["structured", "bottleneck", "station", "mapf", "wait"],
+  "input_requires_openai": false,
+  "requires_openai_if_llm_router": true
+}

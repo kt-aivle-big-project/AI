@@ -1,0 +1,40 @@
+{
+  "simulationRunId": 77,
+  "warehouseId": 1,
+  "reason": "NEW_TASK_ADDED",
+  "triggerRobotId": null,
+  "blockedEdgeIds": [],
+  "description": "새 작업 추가로 재배정",
+  "robots": [
+    {
+      "robotId": 101,
+      "currentNodeId": 1,
+      "batteryLevel": 82.0,
+      "status": "IDLE"
+    },
+    {
+      "robotId": 102,
+      "currentNodeId": 4,
+      "batteryLevel": 25.0,
+      "status": "IDLE"
+    }
+  ],
+  "remainingTasks": [
+    {
+      "taskId": 5001,
+      "assignedRobotId": null,
+      "startNodeId": 2,
+      "endNodeId": 4,
+      "taskType": "OUTBOUND",
+      "status": "PENDING"
+    },
+    {
+      "taskId": 5002,
+      "assignedRobotId": 101,
+      "startNodeId": 1,
+      "endNodeId": 3,
+      "taskType": "INBOUND",
+      "status": "IN_PROGRESS"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "scenario_id": "C16_AMBIGUOUS_NATURAL_ORDER",
+  "title": "모호한 자연어 주문",
+  "category": "CLARIFICATION",
+  "difficulty": 4,
+  "description": "정확한 주문 ID가 없는 요청은 Rule 비적용으로 기록하고 Agent가 질문 또는 거절한다.",
+  "requires_openai": true,
+  "recommended_server_mode": "llm_router",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C16",
+    "optimization_backend": "ortools",
+    "user_command": "지금 가장 급한 주문이랑 센서 관련 입고를 먼저 처리해."
+  },
+  "replan": null,
+  "expected": {
+    "allowed_status": [
+      "clarification_required",
+      "awaiting_clarification",
+      "input_rejected",
+      "human_review"
+    ]
+  },
+  "evaluation_focus": [
+    "rule_not_applicable",
+    "clarification_quality",
+    "no_hallucinated_id"
+  ],
+  "tags": [],
+  "baseline_test_mode": "llm_router",
+  "input_requires_openai": true
+}

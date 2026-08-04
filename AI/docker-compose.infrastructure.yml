@@ -1,0 +1,71 @@
+name: laro-v13-21
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: laro-v13-21-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-laro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-laro}
+      POSTGRES_DB: ${POSTGRES_DB:-laro}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - laro_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-laro} -d ${POSTGRES_DB:-laro}"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: laro-v13-21-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - laro_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+      start_period: 3s
+
+  neo4j:
+    image: neo4j:5.26-community
+    container_name: laro-v13-21-neo4j
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-laro-password}
+      NEO4J_server_memory_heap_initial__size: 256m
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    volumes:
+      - laro_neo4j_data:/data
+      - laro_neo4j_logs:/logs
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          AUTH="$${NEO4J_AUTH:-neo4j/laro-password}";
+          USER="$${AUTH%%/*}";
+          PASS="$${AUTH#*/}";
+          cypher-shell -a bolt://localhost:7687 -u "$${USER}" -p "$${PASS}" "RETURN 1;" >/dev/null 2>&1
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 15s
+
+volumes:
+  laro_postgres_data:
+  laro_redis_data:
+  laro_neo4j_data:
+  laro_neo4j_logs:

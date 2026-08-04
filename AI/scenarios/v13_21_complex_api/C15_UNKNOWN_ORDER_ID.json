@@ -1,0 +1,46 @@
+{
+  "scenario_id": "C15_UNKNOWN_ORDER_ID",
+  "title": "존재하지 않는 주문 코드",
+  "category": "INPUT_REJECTION",
+  "difficulty": 3,
+  "description": "ORD-999를 추측해서 다른 주문으로 바꾸지 않고 명확히 거절하거나 확인 요청한다.",
+  "requires_openai": false,
+  "recommended_server_mode": "force_rule",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C15",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-999"
+      }
+    ]
+  },
+  "replan": null,
+  "expected": {
+    "allowed_status": [
+      "input_rejected",
+      "clarification_required",
+      "awaiting_clarification"
+    ],
+    "preserve_ids": [
+      "ORD-999"
+    ],
+    "expected_reason_codes": [
+      "STRUCTURED_IDENTIFIER_REJECTED"
+    ],
+    "forbidden_reason_codes": [
+      "MISSING_SIMULATION_RUNTIME",
+      "missing_simulation_runtime"
+    ]
+  },
+  "evaluation_focus": [
+    "unknown_id_handling",
+    "no_fuzzy_execution",
+    "input_rejection"
+  ],
+  "tags": [],
+  "baseline_test_mode": "force_rule",
+  "input_requires_openai": false
+}

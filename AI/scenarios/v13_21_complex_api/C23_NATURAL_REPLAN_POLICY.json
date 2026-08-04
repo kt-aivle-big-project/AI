@@ -1,0 +1,58 @@
+{
+  "scenario_id": "C23_NATURAL_REPLAN_POLICY",
+  "title": "자연어 Rolling Horizon 정책",
+  "category": "NATURAL_REPLAN",
+  "difficulty": 5,
+  "description": "실행 중 ORD-005를 추가하고 적재 작업은 유지하되 미착수 작업과만 재계획하라는 자연어를 해석한다.",
+  "requires_openai": true,
+  "recommended_server_mode": "llm_router",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C23",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "inbound_item_arrived",
+        "inbound_id": "IN-001"
+      }
+    ]
+  },
+  "replan": {
+    "time": {
+      "mode": "fraction",
+      "value": 0.3
+    },
+    "reason": "NEW_ORDER",
+    "mission": {
+      "warehouse_id": "WH-001",
+      "simulation_id": "SIM-C23",
+      "optimization_backend": "ortools",
+      "user_command": "ORD-005를 추가해. 이미 물건을 든 로봇은 현재 Cycle을 끝내고 아직 시작하지 않은 일만 다시 배정해."
+    }
+  },
+  "expected": {
+    "allowed_status": [
+      "plan_validated",
+      "human_review",
+      "awaiting_human_approval"
+    ],
+    "plan_version": 2,
+    "preserve_ids": [
+      "ORD-001",
+      "IN-001",
+      "ORD-005"
+    ]
+  },
+  "evaluation_focus": [
+    "natural_replan_normalization",
+    "committed_cycle_lock",
+    "unstarted_work_merge"
+  ],
+  "tags": [],
+  "baseline_test_mode": "llm_router",
+  "input_requires_openai": true
+}

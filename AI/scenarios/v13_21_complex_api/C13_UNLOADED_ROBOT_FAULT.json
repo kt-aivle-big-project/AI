@@ -1,0 +1,44 @@
+{
+  "scenario_id": "C13_UNLOADED_ROBOT_FAULT",
+  "title": "비적재 로봇 고장 자동 제외",
+  "category": "INCIDENT",
+  "difficulty": 4,
+  "description": "비적재 R002 고장을 Hold·후보 제외·정비 알림으로 자동 처리한다.",
+  "requires_openai": true,
+  "recommended_server_mode": "llm_router",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C13",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "operational_incident",
+        "robot_id": "R002",
+        "payload": {
+          "incident_id": "INC-C13-R002",
+          "description": "R002 비적재 상태 모터 오류",
+          "scope": "ROBOT",
+          "robot_operability": "FAULTED",
+          "load_state": "EMPTY",
+          "physical_intervention_required": true
+        }
+      }
+    ]
+  },
+  "replan": null,
+  "expected": {
+    "allowed_status": [
+      "incident_handled",
+      "awaiting_human_approval"
+    ],
+    "must_not_plan_business_tasks": true
+  },
+  "evaluation_focus": [
+    "incident_mode",
+    "hold_action",
+    "candidate_exclusion"
+  ],
+  "tags": [],
+  "baseline_test_mode": "llm_router",
+  "input_requires_openai": false
+}

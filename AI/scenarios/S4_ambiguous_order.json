@@ -1,0 +1,27 @@
+{
+  "scenario_id": "S4_ambiguous_order",
+  "title": "코드 없는 주문 지시 거부 — HITL 아님",
+  "argument": "선행 문맥 없는 설명형 주문은 품목명 검색이나 HITL로 보정하지 않고 Canonical operation ID를 요구한다.",
+  "data_dir": "data",
+  "repetitions": 3,
+  "request": {
+    "simulation_id": "VAL-S4",
+    "request_mode": "human_command",
+    "planning_mode": "llm_router",
+    "optimization_backend": "ortools",
+    "user_command": "그 주문 처리해.",
+    "events": [],
+    "max_agent_steps": 6
+  },
+  "expectations": {
+    "expected_intent_types": [
+      "INPUT_REJECTION"
+    ],
+    "expected_statuses": [
+      "input_rejected"
+    ],
+    "expected_reason_code": "CANONICAL_OPERATION_ID_REQUIRED",
+    "forbid_unknown_identifiers": true,
+    "forbid_hitl": true
+  }
+}

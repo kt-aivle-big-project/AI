@@ -1,0 +1,53 @@
+{
+  "scenario_id": "P01_STRUCTURED_MIXED_BASELINE",
+  "title": "구조화 입고·출고 기준선",
+  "category": "BASELINE",
+  "difficulty": 2,
+  "requires_openai": false,
+  "input_kind": "structured",
+  "description": "ORD-001 출고와 IN-001 입고를 같은 Solver/MAPF 문제로 처리한다.",
+  "request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-V18-MIXED",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "inbound_item_arrived",
+        "inbound_id": "IN-001"
+      }
+    ]
+  },
+  "expected": {
+    "require_live_repository": true,
+    "required_repository_sources": {
+      "route_nodes": "neo4j_snapshot",
+      "route_edges": "neo4j_snapshot",
+      "racks": "postgres_snapshot",
+      "robots": "redis_live"
+    },
+    "allowed_status": [
+      "plan_validated"
+    ],
+    "allowed_final_routes": [
+      "RULE_FORMULATION"
+    ],
+    "expected_operations": [
+      "ORD-001",
+      "IN-001"
+    ],
+    "require_plan": true,
+    "require_all_trace_checks": true,
+    "min_service_steps": 5
+  },
+  "tags": [
+    "structured",
+    "mixed",
+    "baseline"
+  ],
+  "input_requires_openai": false,
+  "requires_openai_if_llm_router": true
+}

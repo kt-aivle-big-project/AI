@@ -1,0 +1,80 @@
+{
+  "scenario_id": "C19_TERMINAL_CHARGE_PARK",
+  "title": "재계획 후 충전·대기 위치 복귀",
+  "category": "TERMINAL_RELOCATION",
+  "difficulty": 5,
+  "description": "기존 계획 로봇 중 신규 업무를 받지 못한 로봇을 배터리에 따라 CHARGE/PARK로 이동시킨다.",
+  "requires_openai": false,
+  "recommended_server_mode": "force_rule",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C19",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "inbound_item_arrived",
+        "inbound_id": "IN-001"
+      }
+    ]
+  },
+  "replan": {
+    "time": {
+      "mode": "fixed_ms",
+      "value": 3000
+    },
+    "reason": "NEW_ORDER",
+    "mission": {
+      "warehouse_id": "WH-001",
+      "simulation_id": "SIM-C19",
+      "optimization_backend": "ortools",
+      "events": [
+        {
+          "type": "inbound_item_arrived",
+          "inbound_id": "IN-002"
+        }
+      ],
+      "runtime_snapshot": {
+        "captured_at_sim_time_ms": 3000,
+        "robot_states": [
+          {
+            "robot_id": "R002",
+            "current_node": "R1_5",
+            "status": "idle",
+            "battery_pct": 20,
+            "capacity_units": 8,
+            "current_load_units": 0
+          },
+          {
+            "robot_id": "R003",
+            "current_node": "R2_7",
+            "status": "idle",
+            "battery_pct": 90,
+            "capacity_units": 6,
+            "current_load_units": 0
+          }
+        ],
+        "mode": "OVERLAY"
+      }
+    }
+  },
+  "expected": {
+    "allowed_status": [
+      "plan_validated"
+    ],
+    "plan_version": 2
+  },
+  "evaluation_focus": [
+    "terminal_policy",
+    "charge_vs_park",
+    "terminal_distance_cost",
+    "execution_only_relocation",
+    "mapf_collision"
+  ],
+  "tags": [],
+  "baseline_test_mode": "force_rule",
+  "input_requires_openai": false
+}

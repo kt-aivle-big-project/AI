@@ -1,0 +1,48 @@
+{
+  "scenario_id": "A03_CODED_MIXED_DEFERRAL_POLICY",
+  "title": "코드 기반 긴급 출고와 입고 유예",
+  "category": "ROUTER_AGENT",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 5,
+  "argument": "작업 ID는 확정됐지만 유예 가능성과 긴급성을 종합해야 한다.",
+  "why_rule_is_or_is_not_enough": "ORD-001·ORD-002는 유지하고 IN-003 유예안을 만들 수 있다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ORD-001과 ORD-002는 이번 배치에서 유지하고, SLA가 부족하면 IN-003만 다음 배치 유예 후보로 만들어.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "ROUTE_AGENT",
+    "final_route": "AGENT_FORMULATION",
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": null,
+    "final_status": [
+      "ready_for_cuopt",
+      "plan_validated",
+      "awaiting_human_approval"
+    ],
+    "preserve_operation_ids": [
+      "ORD-001",
+      "ORD-002",
+      "IN-003"
+    ],
+    "must_call_nodes": [
+      "llm_retrieval_agent"
+    ],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

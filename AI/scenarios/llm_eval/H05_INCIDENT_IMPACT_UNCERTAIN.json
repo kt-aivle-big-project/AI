@@ -1,0 +1,72 @@
+{
+  "scenario_id": "H05_INCIDENT_IMPACT_UNCERTAIN",
+  "title": "정확한 Edge의 통행 여부 미확인",
+  "category": "HITL_EXCEPTION",
+  "evaluation_stage": "HITL_RESUME",
+  "difficulty": 4,
+  "argument": "H3_7은 확정됐지만 통행 안전성이 불명확하다.",
+  "why_rule_is_or_is_not_enough": "임시 차단을 먼저 적용하고 현장 판단을 기다린다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "event_driven",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [
+      {
+        "type": "operational_incident",
+        "edge_id": "H3_7",
+        "payload": {
+          "incident_id": "INC-H3-UNKNOWN",
+          "description": "H3_7 장애물 통행 가능 여부 미확인",
+          "scope": "MAP_RESOURCE",
+          "observed_effect": "UNKNOWN",
+          "physical_intervention_required": true
+        }
+      }
+    ],
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REQUIRE_HUMAN_APPROVAL",
+    "final_route": null,
+    "hitl_stage": "PRE_ROUTE",
+    "reason_code": "INCIDENT_IMPACT_UNCERTAIN::INC-H3-UNKNOWN",
+    "input_rejection_reason_code": null,
+    "final_status": [
+      "awaiting_human_approval"
+    ],
+    "preserve_operation_ids": [],
+    "must_call_nodes": [
+      "incident_immediate_action_executor",
+      "human_interaction_pause"
+    ],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [
+      "REQUIRE_HUMAN_DECISION"
+    ],
+    "expected_immediate_actions": [
+      "TEMPORARILY_BLOCK_RESOURCE"
+    ],
+    "expected_notification_types": [
+      "HUMAN_WORK_REQUIRED",
+      "HUMAN_DECISION_REQUIRED"
+    ]
+  },
+  "auto_response": {
+    "action": "SELECT",
+    "selected_option_id": "KEEP_SAFETY_HOLD",
+    "selected_entity_ids": [
+      "H3_7"
+    ],
+    "actor_id": "safety-manager",
+    "comment": "차단 유지"
+  },
+  "tags": [
+    "hitl",
+    "incident"
+  ],
+  "notes": []
+}

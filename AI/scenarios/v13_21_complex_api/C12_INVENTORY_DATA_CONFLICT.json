@@ -1,0 +1,34 @@
+{
+  "scenario_id": "C12_INVENTORY_DATA_CONFLICT",
+  "title": "DB·센서 재고 충돌",
+  "category": "HITL",
+  "difficulty": 5,
+  "description": "권위 데이터 충돌을 자동 수정하지 않고 재실사 또는 Hold 대상으로 분리한다.",
+  "requires_openai": true,
+  "recommended_server_mode": "llm_router",
+  "initial_request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-C12",
+    "optimization_backend": "ortools",
+    "user_command": "ORD-001 처리 전 K1_7-L1 시스템 재고와 센서 수량이 불일치해. 자동으로 숫자를 덮어쓰지 마."
+  },
+  "replan": null,
+  "expected": {
+    "allowed_status": [
+      "awaiting_human_approval",
+      "human_review",
+      "held_for_human_action"
+    ],
+    "preserve_ids": [
+      "ORD-001"
+    ]
+  },
+  "evaluation_focus": [
+    "authoritative_data_conflict",
+    "hitl",
+    "no_physical_edge_block"
+  ],
+  "tags": [],
+  "baseline_test_mode": "llm_router",
+  "input_requires_openai": true
+}

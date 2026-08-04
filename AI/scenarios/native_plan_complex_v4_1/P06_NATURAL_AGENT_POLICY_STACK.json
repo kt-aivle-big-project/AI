@@ -1,0 +1,63 @@
+{
+  "scenario_id": "P06_NATURAL_AGENT_POLICY_STACK",
+  "title": "복합 정책 Agent 경로",
+  "category": "AGENT_POLICY",
+  "difficulty": 5,
+  "requires_openai": true,
+  "input_kind": "natural",
+  "description": "조건부 Edge 정책, 비상 로봇 보존, 완료시간·배터리 위험 목적을 Typed Constraint로 보존하고 Agent 조회·정식화·Coverage Guard까지 검증한다.",
+  "request": {
+    "warehouse_id": "WH-001",
+    "simulation_id": "SIM-V18-MIXED",
+    "optimization_backend": "ortools",
+    "events": [],
+    "user_command": "ORD-001과 ORD-002를 출고하고 IN-001도 입고해. H3_7 예상 대기가 8초를 넘으면 hard avoid, 아니면 soft avoid로 적용해. 전체 완료시간과 배터리 위험을 함께 최소화하고 로봇 1대는 비상 예비로 남겨."
+  },
+  "expected": {
+    "require_live_repository": true,
+    "required_repository_sources": {
+      "route_nodes": "neo4j_snapshot",
+      "route_edges": "neo4j_snapshot",
+      "racks": "postgres_snapshot",
+      "robots": "redis_live"
+    },
+    "allowed_status": ["plan_validated"],
+    "expected_operations": ["ORD-001", "ORD-002", "IN-001"],
+    "require_plan": true,
+    "require_router_llm": true,
+    "allowed_final_routes": ["AGENT_FORMULATION"],
+    "required_trace_nodes": [
+      "request_router_llm",
+      "canonical_retrieval_key_builder",
+      "parallel_retrieval_executor",
+      "warehouse_situation_graph_builder",
+      "llm_cuopt_formulator",
+      "cuopt_dynamic_input_validator",
+      "optimizer",
+      "mapf_plan_validator",
+      "logical_operation_coverage_validator"
+    ],
+    "forbidden_trace_nodes": ["rule_cuopt_formulator_direct"],
+    "expected_constraints": {
+      "objective_profile": "BALANCED",
+      "objective_terms": ["MIN_COMPLETION_TIME", "MIN_BATTERY_RISK"],
+      "reserve_robot_count": 1,
+      "conditional_edge_policy": {
+        "edge_id": "H3_7",
+        "metric": "EXPECTED_WAIT_MS",
+        "operator": "GT",
+        "threshold_ms": 8000,
+        "when_true": "HARD_AVOID",
+        "when_false": "SOFT_AVOID"
+      }
+    },
+    "expected_reserved_robot_count": 1,
+    "expected_reserved_robot_ids": ["R003"],
+    "max_robot_count": 1,
+    "require_all_trace_checks": true,
+    "require_stage_contract": true
+  },
+  "tags": ["natural", "agent", "multi-objective", "reserve-policy", "typed-constraint"],
+  "input_requires_openai": true,
+  "requires_openai_if_llm_router": true
+}

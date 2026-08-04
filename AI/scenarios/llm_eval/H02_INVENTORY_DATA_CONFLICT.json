@@ -1,0 +1,55 @@
+{
+  "scenario_id": "H02_INVENTORY_DATA_CONFLICT",
+  "title": "DB와 센서 재고 불일치",
+  "category": "HITL_EXCEPTION",
+  "evaluation_stage": "HITL_RESUME",
+  "difficulty": 5,
+  "argument": "두 권위 데이터가 충돌한다.",
+  "why_rule_is_or_is_not_enough": "자동으로 수량을 고치지 않고 재실사·현장 수량·대체 재고를 선택한다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ORD-001 처리 전 K1_7-L1 시스템 재고와 센서 수량이 불일치해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REQUIRE_HUMAN_APPROVAL",
+    "final_route": null,
+    "hitl_stage": "PRE_ROUTE",
+    "reason_code": "AUTHORITATIVE_DATA_CONFLICT",
+    "input_rejection_reason_code": null,
+    "final_status": [],
+    "preserve_operation_ids": [
+      "ORD-001"
+    ],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": false,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": [],
+    "initial_status": [
+      "awaiting_human_approval"
+    ],
+    "resume_status": [
+      "held_for_human_action"
+    ]
+  },
+  "auto_response": {
+    "action": "SELECT",
+    "selected_option_id": "HOLD_AND_RECOUNT",
+    "selected_entity_ids": [],
+    "actor_id": "inventory-manager",
+    "comment": "재실사"
+  },
+  "tags": [
+    "hitl",
+    "data-conflict"
+  ],
+  "notes": []
+}

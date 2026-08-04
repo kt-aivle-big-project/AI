@@ -1,0 +1,42 @@
+{
+  "scenario_id": "E07_CONFLICTING_ROBOT_CONSTRAINT",
+  "title": "상충 Robot 제약 거부",
+  "category": "INPUT_REJECTION",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 3,
+  "argument": "R003을 제외하면서 단독 사용하도록 요구한다.",
+  "why_rule_is_or_is_not_enough": "사람 승인 문제가 아니라 수정해야 할 잘못된 요청이다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "R003은 제외하고 R003만 사용해서 ORD-001을 처리해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REJECT_INPUT",
+    "final_route": null,
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": "CONFLICTING_ROBOT_CONSTRAINT",
+    "final_status": [
+      "input_rejected"
+    ],
+    "preserve_operation_ids": [
+      "ORD-001"
+    ],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}
