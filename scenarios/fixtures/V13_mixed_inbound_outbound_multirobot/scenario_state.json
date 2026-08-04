@@ -1,0 +1,331 @@
+{
+  "simulation_id": "SIM-V13-MIXED-BATCH",
+  "warehouse_id": "WH-001",
+  "layout_version": "WAREHOUSE_GRAPH_V1",
+  "captured_at": "2026-07-24T03:00:00Z",
+  "orders": [
+    {
+      "order_id": "ORD-001",
+      "item_id": "ITEM_BEARING",
+      "required_qty": 2,
+      "delivery_node": "O_D",
+      "priority": "high",
+      "status": "pending",
+      "outbound_chute_id": "O_D",
+      "preferred_station_ids": [],
+      "logical_destination_id": "O_D"
+    },
+    {
+      "order_id": "ORD-002",
+      "item_id": "ITEM_BEARING",
+      "required_qty": 2,
+      "delivery_node": "O_E",
+      "priority": "medium",
+      "status": "pending",
+      "outbound_chute_id": "O_E",
+      "preferred_station_ids": [],
+      "logical_destination_id": "O_E"
+    },
+    {
+      "order_id": "ORD-003",
+      "item_id": "ITEM_SENSOR",
+      "required_qty": 3,
+      "delivery_node": "O_F",
+      "priority": "high",
+      "status": "pending",
+      "outbound_chute_id": "O_F",
+      "preferred_station_ids": [],
+      "logical_destination_id": "O_F"
+    },
+    {
+      "order_id": "ORD-004",
+      "item_id": "ITEM_BATTERY",
+      "required_qty": 4,
+      "delivery_node": "O_G",
+      "priority": "low",
+      "status": "pending",
+      "outbound_chute_id": "O_G",
+      "preferred_station_ids": [],
+      "logical_destination_id": "O_G"
+    }
+  ],
+  "robots": [
+    {
+      "robot_id": "R001",
+      "robot_code": "AMR-01",
+      "status": "working",
+      "battery_pct": 84.0,
+      "capacity_units": 10,
+      "current_node": "R3_8",
+      "current_edge": "H3_8",
+      "active_task_id": "TASK-MAINT-001",
+      "load_state": "EMPTY"
+    },
+    {
+      "robot_id": "R002",
+      "robot_code": "AMR-02",
+      "status": "idle",
+      "battery_pct": 72.0,
+      "capacity_units": 8,
+      "current_node": "R0_6",
+      "current_edge": null,
+      "active_task_id": null,
+      "load_state": "EMPTY"
+    },
+    {
+      "robot_id": "R003",
+      "robot_code": "AMR-03",
+      "status": "idle",
+      "battery_pct": 91.0,
+      "capacity_units": 6,
+      "current_node": "R2_5",
+      "current_edge": null,
+      "active_task_id": null,
+      "load_state": "EMPTY"
+    },
+    {
+      "robot_id": "R004",
+      "robot_code": "AMR-04",
+      "status": "idle",
+      "battery_pct": 85.0,
+      "capacity_units": 7,
+      "current_node": "R0_2",
+      "current_edge": null,
+      "active_task_id": null,
+      "load_state": "EMPTY"
+    },
+    {
+      "robot_id": "R005",
+      "robot_code": "AMR-05",
+      "status": "idle",
+      "battery_pct": 64.0,
+      "capacity_units": 8,
+      "current_node": "R2_0",
+      "current_edge": null,
+      "active_task_id": null,
+      "load_state": "EMPTY"
+    },
+    {
+      "robot_id": "R006",
+      "robot_code": "AMR-06",
+      "status": "idle",
+      "battery_pct": 78.0,
+      "capacity_units": 6,
+      "current_node": "R3_0",
+      "current_edge": null,
+      "active_task_id": null,
+      "load_state": "EMPTY"
+    }
+  ],
+  "edge_runtime": [
+    {
+      "edge_id": "H3_7",
+      "status": "congested",
+      "congestion_level": 0.5,
+      "cost_multiplier": 1.5,
+      "travel_time_multiplier": 1.5,
+      "reason": "출고 방향 통로의 평균 이동 속도가 일시적으로 낮아졌습니다."
+    },
+    {
+      "edge_id": "H3_8",
+      "status": "occupied",
+      "occupying_robot_id": "R001",
+      "direction": "R3_8_TO_R3_9",
+      "occupied_from_ms": 0,
+      "occupied_until_ms": 30000,
+      "capacity": 1,
+      "reason": "R001이 유지보수 이동 중 통로를 사용하고 있습니다."
+    }
+  ],
+  "edge_reservations": [],
+  "buffer_nodes": [
+    "R3_5",
+    "R3_10"
+  ],
+  "events": [
+    {
+      "type": "new_order",
+      "order_id": "ORD-001",
+      "payload": {}
+    },
+    {
+      "type": "new_order",
+      "order_id": "ORD-002",
+      "payload": {}
+    },
+    {
+      "type": "new_order",
+      "order_id": "ORD-003",
+      "payload": {}
+    },
+    {
+      "type": "new_order",
+      "order_id": "ORD-004",
+      "payload": {}
+    },
+    {
+      "type": "inbound_item_arrived",
+      "node_id": "I_a",
+      "payload": {
+        "handling_unit_id": "IN-001",
+        "item_id": "ITEM_SENSOR",
+        "quantity": 3,
+        "target_rack_node": "K3_3"
+      }
+    },
+    {
+      "type": "inbound_item_arrived",
+      "node_id": "I_d",
+      "payload": {
+        "handling_unit_id": "IN-002",
+        "item_id": "ITEM_BATTERY",
+        "quantity": 2,
+        "target_rack_node": "K4_4"
+      }
+    },
+    {
+      "type": "inbound_item_arrived",
+      "node_id": "I_c",
+      "payload": {
+        "handling_unit_id": "IN-003",
+        "item_id": "ITEM_CABLE",
+        "quantity": 4,
+        "target_rack_node": "K5_7"
+      }
+    }
+  ],
+  "mixed_operations": [
+    {
+      "operation_id": "ORD-001",
+      "operation_type": "OUTBOUND",
+      "pickup_node": "K1_7",
+      "delivery_node": "O_D",
+      "demand": 2,
+      "priority": "high",
+      "pickup_service_time_ms": 1500,
+      "drop_service_time_ms": 1400
+    },
+    {
+      "operation_id": "ORD-002",
+      "operation_type": "OUTBOUND",
+      "pickup_node": "K2_7",
+      "delivery_node": "O_E",
+      "demand": 2,
+      "priority": "medium",
+      "pickup_service_time_ms": 1500,
+      "drop_service_time_ms": 1400
+    },
+    {
+      "operation_id": "ORD-003",
+      "operation_type": "OUTBOUND",
+      "pickup_node": "K0_3",
+      "delivery_node": "O_F",
+      "demand": 3,
+      "priority": "high",
+      "pickup_service_time_ms": 1750,
+      "drop_service_time_ms": 1600
+    },
+    {
+      "operation_id": "ORD-004",
+      "operation_type": "OUTBOUND",
+      "pickup_node": "K0_8",
+      "delivery_node": "O_G",
+      "demand": 4,
+      "priority": "low",
+      "pickup_service_time_ms": 2000,
+      "drop_service_time_ms": 1800
+    },
+    {
+      "operation_id": "IN-001",
+      "operation_type": "INBOUND",
+      "pickup_node": "R3_0",
+      "delivery_node": "K3_3",
+      "demand": 3,
+      "priority": "medium",
+      "item_id": "ITEM_SENSOR",
+      "source_node": "I_a",
+      "handoff_reason": "Inbound elevator/conveyor delivers the handling unit to the robot-accessible R3_0 handoff node.",
+      "pickup_service_time_ms": 1750,
+      "drop_service_time_ms": 1600
+    },
+    {
+      "operation_id": "IN-002",
+      "operation_type": "INBOUND",
+      "pickup_node": "R3_0",
+      "delivery_node": "K4_4",
+      "demand": 2,
+      "priority": "high",
+      "item_id": "ITEM_BATTERY",
+      "source_node": "I_d",
+      "handoff_reason": "Inbound elevator/conveyor delivers the handling unit to the robot-accessible R3_0 handoff node.",
+      "pickup_service_time_ms": 1500,
+      "drop_service_time_ms": 1400
+    },
+    {
+      "operation_id": "IN-003",
+      "operation_type": "INBOUND",
+      "pickup_node": "R3_0",
+      "delivery_node": "K5_7",
+      "demand": 4,
+      "priority": "medium",
+      "item_id": "ITEM_CABLE",
+      "source_node": "I_c",
+      "handoff_reason": "Inbound elevator/conveyor delivers the handling unit to the robot-accessible R3_0 handoff node.",
+      "pickup_service_time_ms": 2000,
+      "drop_service_time_ms": 1800
+    }
+  ],
+  "reference_routes": [
+    {
+      "vehicle_id": "R004",
+      "task_sequence": [
+        "ORD-003_PICK",
+        "ORD-001_PICK",
+        "ORD-002_PICK",
+        "ORD-001_DROP",
+        "ORD-002_DROP",
+        "ORD-003_DROP"
+      ],
+      "purpose": "Three outbound pairs share a monotone directed route and capacity 7."
+    },
+    {
+      "vehicle_id": "R002",
+      "task_sequence": [
+        "ORD-004_PICK",
+        "ORD-004_DROP"
+      ],
+      "purpose": "A second row-0 robot serves the independent K0_8 outbound pair."
+    },
+    {
+      "vehicle_id": "R006",
+      "task_sequence": [
+        "IN-001_PICK",
+        "IN-002_PICK",
+        "IN-001_DROP",
+        "IN-002_DROP"
+      ],
+      "purpose": "Two inbound handling units are picked at R3_0 before sequential rack placement."
+    },
+    {
+      "vehicle_id": "R005",
+      "task_sequence": [
+        "IN-003_PICK",
+        "IN-003_DROP"
+      ],
+      "purpose": "The second R3_0-reachable robot serves the remaining inbound pair."
+    }
+  ],
+  "fixture_design_notes": [
+    "R002 starts at R0_6 so both row-0 outbound racks are not dependent on R004 alone.",
+    "R005 starts at R2_0 and can reach the R3_0 inbound handoff.",
+    "At least two routes contain multiple pickup-delivery pairs, so the fixture exercises real multi-task routing."
+  ],
+  "handling_time_policy": {
+    "pickup_base_ms": 1000,
+    "pickup_per_unit_ms": 250,
+    "drop_base_ms": 1000,
+    "drop_per_unit_ms": 200,
+    "formula": "base_ms + per_unit_ms * demand",
+    "source": "scenario_explicit"
+  }
+}

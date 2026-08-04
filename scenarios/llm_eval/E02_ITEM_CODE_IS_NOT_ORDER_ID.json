@@ -1,0 +1,40 @@
+{
+  "scenario_id": "E02_ITEM_CODE_IS_NOT_ORDER_ID",
+  "title": "ITEM 코드만으로 출고 요청 거부",
+  "category": "INPUT_REJECTION",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 3,
+  "argument": "ITEM 코드는 주문 식별자가 아니다.",
+  "why_rule_is_or_is_not_enough": "출고는 ORD 코드가 필요하다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ITEM_BATTERY 주문을 처리해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REJECT_INPUT",
+    "final_route": null,
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": "CANONICAL_OPERATION_ID_REQUIRED",
+    "final_status": [
+      "input_rejected"
+    ],
+    "preserve_operation_ids": [],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

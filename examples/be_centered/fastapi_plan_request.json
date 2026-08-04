@@ -1,0 +1,31 @@
+{
+  "structured_input": {
+    "request_id": "REQ-SIM-1-MIXED-001",
+    "operations": [
+      {
+        "operation_id": "OUT-REQ-001",
+        "operation_type": "OUTBOUND",
+        "product_code": "ITEM-001",
+        "quantity": 5,
+        "priority": "high",
+        "destination_facility_code": "O_D",
+        "pickup_service_time_ms": 1200,
+        "drop_service_time_ms": 1200
+      },
+      {
+        "operation_id": "IN-REQ-001",
+        "operation_type": "INBOUND",
+        "product_code": "ITEM-002",
+        "quantity": 3,
+        "priority": "medium",
+        "source_facility_code": "I_a",
+        "destination_node_code": "K3_3_ACCESS_A",
+        "target_rack_level": 3,
+        "pickup_service_time_ms": 1200,
+        "drop_service_time_ms": 1200
+      }
+    ]
+  },
+  "user_command": "전체 완료시간을 최소화하고 배터리가 낮은 로봇은 제외해.",
+  "optimization_backend": "ortools"
+}

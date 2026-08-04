@@ -1,0 +1,69 @@
+{
+  "scenario_id": "S12_mixed_inbound_outbound_multirobot",
+  "title": "다중 로봇 혼합 배치 — 입고 3건과 출고 4건",
+  "argument": "한 로봇이 여러 pickup-delivery 작업을 수행할 수 있는 공통 최적화 계약에서 입고 3건과 출고 4건을 함께 표현하고, 수량 기반 Pickup/Drop 처리시간까지 포함해 OR-Tools 또는 실제 cuOpt가 로봇 배정과 작업 순서를 계산할 수 있는지 검증한다.",
+  "data_dir": "scenarios/fixtures/V13_mixed_inbound_outbound_multirobot",
+  "repetitions": 1,
+  "request": {
+    "simulation_id": "VAL-S12-MIXED",
+    "request_mode": "event_driven",
+    "planning_mode": "force_rule",
+    "optimization_backend": "ortools",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-002"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-003"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-004"
+      },
+      {
+        "type": "inbound_item_arrived",
+        "node_id": "I_a",
+        "payload": {
+          "handling_unit_id": "IN-001",
+          "target_rack_node": "K3_3"
+        }
+      },
+      {
+        "type": "inbound_item_arrived",
+        "node_id": "I_d",
+        "payload": {
+          "handling_unit_id": "IN-002",
+          "target_rack_node": "K4_4"
+        }
+      },
+      {
+        "type": "inbound_item_arrived",
+        "node_id": "I_c",
+        "payload": {
+          "handling_unit_id": "IN-003",
+          "target_rack_node": "K5_7"
+        }
+      }
+    ],
+    "max_agent_steps": 8
+  },
+  "expectations": {
+    "outbound_task_count": 4,
+    "inbound_task_count": 3,
+    "pickup_delivery_pair_count": 7,
+    "eligible_robot_count": 5,
+    "require_full_coverage": true,
+    "require_assignment_validation": true,
+    "require_mapf_validation": true,
+    "require_multi_task_route": true,
+    "minimum_multi_task_route_count": 1,
+    "require_service_time_validation": true,
+    "require_fixture_reference_feasibility": true
+  }
+}

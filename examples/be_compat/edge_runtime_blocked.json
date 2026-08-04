@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "edgeId": 11,
+  "edgeCode": "H3_8",
+  "status": "BLOCKED",
+  "costMultiplier": 1.0,
+  "travelTimeMultiplier": 1.0,
+  "occupiedByRobotId": null,
+  "blockedUntilMs": null,
+  "stateVersion": 1
+}

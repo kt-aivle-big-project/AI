@@ -1,0 +1,57 @@
+{
+  "scenario_id": "S8_resource_shortage_triage",
+  "title": "코드 기반 자원 부족 Triage — ORD-001~003와 H3_7",
+  "argument": "정확한 주문 코드와 exact incident resource를 기준으로 처리/유예 정책을 종합한다.",
+  "data_dir": "scenarios/fixtures/V9_three_orders",
+  "repetitions": 3,
+  "request": {
+    "simulation_id": "VAL-S8",
+    "request_mode": "human_command",
+    "planning_mode": "llm_router",
+    "optimization_backend": "ortools",
+    "user_command": "ORD-001, ORD-002, ORD-003을 처리해. H3_7 운영 사고로 통행이 불가하면 차단하고, 가용 로봇이 부족하면 priority가 낮은 작업만 유예해.",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-002"
+      },
+      {
+        "type": "new_order",
+        "order_id": "ORD-003"
+      },
+      {
+        "type": "operational_incident",
+        "edge_id": "H3_7",
+        "payload": {
+          "incident_id": "INC-H3_7-002",
+          "observed_effect": "NOT_TRAVERSABLE",
+          "physical_intervention_required": true
+        }
+      }
+    ],
+    "max_agent_steps": 8
+  },
+  "expectations": {
+    "expected_intent_types": [
+      "MISSION"
+    ],
+    "expected_statuses": [
+      "plan_validated"
+    ],
+    "require_full_coverage": true,
+    "require_assigned_orders": [
+      "ORD-001",
+      "ORD-002"
+    ],
+    "require_deferred_orders": [
+      "ORD-003"
+    ],
+    "require_schedule_valid": true,
+    "forbid_unknown_identifiers": true,
+    "require_valid_evidence": true
+  }
+}

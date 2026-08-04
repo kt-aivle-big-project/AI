@@ -1,0 +1,46 @@
+{
+  "warehouseId": 1,
+  "robots": [
+    {
+      "robotId": 101,
+      "currentNodeId": 1,
+      "targetNodeId": 4,
+      "batteryLevel": 82.0
+    },
+    {
+      "robotId": 102,
+      "currentNodeId": 4,
+      "targetNodeId": 1,
+      "batteryLevel": 67.0
+    }
+  ],
+  "nodes": [
+    {"nodeId": 1, "x": 0.0, "y": 0.0},
+    {"nodeId": 2, "x": 1.0, "y": 0.0},
+    {"nodeId": 3, "x": 2.0, "y": 0.0},
+    {"nodeId": 4, "x": 3.0, "y": 0.0}
+  ],
+  "edges": [
+    {
+      "edgeId": 11,
+      "fromNodeId": 1,
+      "toNodeId": 2,
+      "distance": 1.0,
+      "directionType": "BOTH"
+    },
+    {
+      "edgeId": 12,
+      "fromNodeId": 2,
+      "toNodeId": 3,
+      "distance": 1.0,
+      "directionType": "BOTH"
+    },
+    {
+      "edgeId": 13,
+      "fromNodeId": 3,
+      "toNodeId": 4,
+      "distance": 1.0,
+      "directionType": "BOTH"
+    }
+  ]
+}

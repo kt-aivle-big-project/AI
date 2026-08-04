@@ -1,0 +1,500 @@
+> **Legacy 문서:** 이 문서는 과거 Native `orders`/`handling_units` Fixture 경로를 설명합니다. v13.27 공유 BE 운영 경로는 `BE_CENTERED_STRUCTURED_INPUT_ARCHITECTURE.md`를 기준으로 하며, 이 문서의 Native Schema 실행 절차를 사용하지 않습니다.
+
+# Native LARO Plan API Bridge v13.25
+
+## 1. Purpose
+
+This build keeps the current Spring BE compatibility endpoint exactly as-is:
+
+```text
+POST /optimize
+POST /reoptimize
+```
+
+At the same time it enables the LARO-native planning endpoint that is intended to replace `/optimize` later:
+
+```text
+POST /api/v1/warehouses/{warehouse_id}/missions/plan
+```
+
+The current goal is **communication and planning-pipeline verification**, not BE migration. `BE-main` source code is unchanged. v13.25 also enforces exact mixed-operation coverage so an Agent plan cannot silently drop an inbound operation while preserving only an outbound G2P order.
+
+```text
+Existing Spring path
+Spring OptimizationClient -> POST /optimize -> legacy nodePath response
+
+Future native path under test
+caller -> POST /api/v1/warehouses/WH-001/missions/plan
+       -> PostgreSQL orders/inventory/facilities
+       -> Redis robot/runtime state
+       -> Neo4j RouteNode/TRAVERSES graph
+       -> Rule or Agent formulation
+       -> OR-Tools or NVIDIA cuOpt
+       -> MAPF
+       -> MOVE / WAIT / SERVICE SimulationPlan
+```
+
+`replan` remains in the codebase but is not part of this bridge verification.
+
+---
+
+## 2. Shared Docker DB layout
+
+The same PostgreSQL, Redis, and Neo4j servers can contain the current Spring data and the native LARO demo without namespace collisions.
+
+### PostgreSQL
+
+Spring continues to use its public tables, for example:
+
+```text
+public.warehouse_layout
+public.warehouse_node
+public.warehouse_edge
+public.robot
+public.task
+```
+
+The existing compatibility layer uses:
+
+```text
+laro_contract.*
+```
+
+The native plan API uses the existing LARO tables:
+
+```text
+warehouses
+warehouse_meta
+racks
+rack_slots
+handling_units
+orders
+order_lines
+inbound_receipts
+inbound_handoffs
+inbound_ports
+outbound_chutes
+outbound_stations
+station_robots
+empty_tote_buffers
+```
+
+The data represents different API contracts; no Spring source file is changed.
+
+### Redis
+
+Spring runtime keys remain:
+
+```text
+simulation:run:{runId}:*
+```
+
+The native plan demo uses a separate namespace:
+
+```text
+laro:warehouse:WH-001:sim:SIM-V18-MIXED:*
+```
+
+### Neo4j
+
+Spring graph projection may use:
+
+```text
+(:WarehouseNode)-[:CONNECTED_TO]->(:WarehouseNode)
+```
+
+The native plan API uses:
+
+```text
+(:RouteNode)-[:TRAVERSES]->(:RouteNode)
+```
+
+The native demo is the 220-node / 356-directed-edge Access-Node graph. Rack entities such as `K1_7` are not traversable nodes; robots use `K1_7_ACCESS_A` or `K1_7_ACCESS_B`.
+
+---
+
+## 3. First execution
+
+From `LARO-fastapi`:
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+
+.\scripts\start_be_compat_docker.ps1 `
+  -ResetData `
+  -StopLegacy
+```
+
+The script performs the following steps:
+
+```text
+1. Start PostgreSQL, Redis, Neo4j, and FastAPI.
+2. Apply db/postgres/001_schema.sql for the native planner.
+3. Apply db/postgres/003_be_shared_contract.sql for /optimize compatibility.
+4. Seed scenarios/fixtures/V18_mixed_inbound_outbound.
+5. Load native robot runtime into Redis SIM-V18-MIXED.
+6. Load the 220/356 RouteNode/TRAVERSES graph into Neo4j.
+7. Run the read-only native-plan preflight.
+```
+
+The Spring seed is optional and independent. The native plan check does not require Spring to be running.
+
+---
+
+## 4. Preflight
+
+```powershell
+Invoke-RestMethod `
+  "http://localhost:8000/api/v1/warehouses/WH-001/missions/plan/preflight?simulation_id=SIM-V18-MIXED" |
+  ConvertTo-Json -Depth 20
+```
+
+Expected core values:
+
+```json
+{
+  "status": "READY",
+  "ready": true,
+  "warehouse_id": "WH-001",
+  "simulation_id": "SIM-V18-MIXED",
+  "postgres": {
+    "ok": true,
+    "counts": {
+      "racks": 48,
+      "handling_units": 8,
+      "orders": 5,
+      "inbound_receipts": 2,
+      "outbound_stations": 2,
+      "empty_tote_buffers": 1
+    }
+  },
+  "redis": {
+    "ok": true,
+    "robot_count": 3
+  },
+  "neo4j": {
+    "ok": true,
+    "node_count": 220,
+    "edge_count": 356,
+    "node_label": "RouteNode",
+    "relationship_type": "TRAVERSES"
+  },
+  "problems": []
+}
+```
+
+`READY` means the plan endpoint has all three required data sources. It does not create a plan.
+
+---
+
+## 5. One-command request/response inspection
+
+```powershell
+.\examples\powershell\call_native_plan.ps1 -Backend ortools
+```
+
+This calls preflight, POSTs the plan request, prints the full response, calls the compact trace endpoint, and prints a final status/plan/step summary.
+
+---
+
+## 6. Structured plan request
+
+The initial communication check uses `force_rule + ortools`, so no OpenAI or NVIDIA key is required.
+
+```powershell
+$body = @{
+  warehouse_id = "WH-001"
+  simulation_id = "SIM-V18-MIXED"
+  optimization_backend = "ortools"
+  events = @(
+    @{
+      type = "new_order"
+      order_id = "ORD-001"
+    },
+    @{
+      type = "inbound_item_arrived"
+      inbound_id = "IN-001"
+    }
+  )
+} | ConvertTo-Json -Depth 20
+
+$response = Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://localhost:8000/api/v1/warehouses/WH-001/missions/plan" `
+  -ContentType "application/json; charset=utf-8" `
+  -Body $body
+```
+
+Check the compact response:
+
+```powershell
+$response.status
+$response.final_route
+$response.effective_planning_mode
+$response.router_llm_executed
+$response.plan.plan_id
+$response.plan.plan_version
+$response.plan.makespan_ms
+$response.plan.robots | ConvertTo-Json -Depth 30
+```
+
+Expected values for the keyless communication check:
+
+```text
+status                    plan_validated
+final_route               RULE_FORMULATION
+effective_planning_mode   force_rule
+router_llm_executed       False
+plan.plan_version         1
+plan.robots               one or more robot plans
+```
+
+The response schema is:
+
+```json
+{
+  "api_version": "v1",
+  "status": "plan_validated",
+  "warehouse_id": "WH-001",
+  "simulation_id": "SIM-V18-MIXED",
+  "request_mode": "event_driven",
+  "final_route": "RULE_FORMULATION",
+  "effective_planning_mode": "force_rule",
+  "planning_mode_source": "environment",
+  "router_llm_executed": false,
+  "plan": {
+    "plan_id": "PLAN-WH-001-SIM-V18-MIXED-1-...",
+    "plan_version": 1,
+    "map_version": "...",
+    "sim_tick_ms": 100,
+    "makespan_ms": 64670,
+    "robots": [
+      {
+        "robot_id": "R002",
+        "initial_node": "R1_5",
+        "available_at_ms": 0,
+        "finish_at_ms": 64670,
+        "steps": [
+          {
+            "step_id": "R002-0001",
+            "sequence": 1,
+            "step_type": "MOVE",
+            "start_at_ms": 0,
+            "end_at_ms": 1925,
+            "edge_id": "...",
+            "from_node": "...",
+            "to_node": "..."
+          },
+          {
+            "step_id": "R002-0002",
+            "sequence": 2,
+            "step_type": "SERVICE",
+            "start_at_ms": 1925,
+            "end_at_ms": 3125,
+            "node_id": "...",
+            "task_id": "...",
+            "service_kind": "PICKUP"
+          }
+        ]
+      }
+    ],
+    "station_reservations": [],
+    "logical_operations": [],
+    "handover_points": []
+  },
+  "errors": []
+}
+```
+
+Times and assignments depend on the solver result; the field structure is stable.
+
+---
+
+## 7. Plan-stage trace
+
+After creating a plan:
+
+```powershell
+$planId = $response.plan.plan_id
+
+$trace = Invoke-RestMethod `
+  "http://localhost:8000/api/v1/warehouses/WH-001/missions/plans/$planId/trace"
+
+$trace.workflow_trace
+$trace.checks | ConvertTo-Json -Depth 10
+$trace.nodes | Format-Table node_name, status, duration_ms, llm_used, error_code
+```
+
+Expected checks:
+
+```json
+{
+  "structured_keys_valid": true,
+  "dynamic_input_valid": true,
+  "payload_valid": true,
+  "candidate_space_valid": true,
+  "assignment_valid": true,
+  "route_valid": true,
+  "mapf_valid": true,
+  "logical_operation_coverage_valid": true
+}
+```
+
+The full persisted orchestration result is still available at:
+
+```text
+GET /api/v1/warehouses/WH-001/missions/plans/{plan_id}/debug
+```
+
+The compact trace endpoint is recommended for BE integration checks because it avoids returning the full cuOpt payload and context snapshot. It also returns a `repository` block proving the request-scoped data sources:
+
+```json
+{
+  "repository_type": "LiveWarehouseRepository",
+  "source_manifest": {
+    "route_nodes": "neo4j_snapshot",
+    "route_edges": "neo4j_snapshot",
+    "racks": "postgres_snapshot",
+    "handling_units": "postgres_live",
+    "orders": "postgres_live",
+    "inbound_receipts": "postgres_live",
+    "robots": "redis_live"
+  }
+}
+```
+
+---
+
+## 8. Automated native plan check
+
+```powershell
+.\scripts\run_native_plan_api_check.ps1 `
+  -Backend ortools `
+  -Repeat 3
+```
+
+The script verifies:
+
+```text
+preflight READY
+PostgreSQL native data present
+Redis native robot runtime present
+Neo4j RouteNode/TRAVERSES = 220/356
+HTTP 200
+status = plan_validated
+MOVE step exists
+SERVICE step exists
+payload/candidate/assignment/route/MAPF checks are true
+logical_operation_coverage_valid is true
+ORD-001 and IN-001 both have task_ids and assigned_robot_id
+repository source manifest proves Neo4j/PostgreSQL/Redis authority
+repeated structural signatures match
+```
+
+Artifacts are stored under:
+
+```text
+runtime_outputs/native_plan_api_checks/{UTC_TIMESTAMP}/
+├─ request.json
+├─ preflight.json
+├─ response_1.json
+├─ trace_1.json
+└─ summary.json
+```
+
+---
+
+## 9. Natural-language plan request
+
+After structured transport succeeds, edit `.env.docker`:
+
+```dotenv
+DEFAULT_PLANNING_MODE=llm_router
+OPENAI_API_KEY=actual_key
+OPENAI_MODEL=gpt-5-mini
+```
+
+Recreate only the API container; do not reset the DB:
+
+```powershell
+docker compose --env-file .env.docker up -d --build --force-recreate laro-api
+```
+
+Request:
+
+```powershell
+$body = @{
+  warehouse_id = "WH-001"
+  simulation_id = "SIM-V18-MIXED"
+  optimization_backend = "ortools"
+  events = @()
+  user_command = "ORD-001을 출고하고 IN-001도 입고해. 전체 완료시간을 최소화해."
+} | ConvertTo-Json -Depth 20
+```
+
+Now `router_llm_executed` should be `True`. The Router may select Rule or Agent; `final_route` records the locked branch. Either branch must preserve `ORD-001` and `IN-001` exactly once. If an Agent draft omits `IN-001`, validation emits `OPERATION_COVERAGE_MISMATCH:IN-001`, performs at most one repair call, and does not persist a plan unless the final coverage guard passes.
+
+One-command natural-language check:
+
+```powershell
+.\scripts\run_native_plan_api_check.ps1 `
+  -Backend cuopt `
+  -InputMode natural `
+  -Repeat 1
+```
+
+Or:
+
+```powershell
+.\examples\powershell\call_native_llm_cuopt_plan.ps1
+```
+
+---
+
+## 10. NVIDIA cuOpt later
+
+After OR-Tools transport works:
+
+```dotenv
+OPTIMIZATION_BACKEND=cuopt
+NVIDIA_API_KEY=actual_key
+CUOPT_TRANSPORT=nvidia_api
+CUOPT_PAYLOAD_FORMAT=native
+```
+
+The request can omit `optimization_backend` to use the server default, or explicitly send `"optimization_backend": "cuopt"`.
+
+---
+
+## 11. Mixed-operation fail-closed contract
+
+For an actionable request, every canonical operation must appear exactly once in one of these locations:
+
+```text
+g2p_order_ids
+direct tasks
+explicit deferred operation IDs
+```
+
+The mixed request `ORD-001 + IN-001` therefore requires:
+
+```text
+ORD-001 → g2p_order_ids (in goods-to-person mode)
+IN-001  → direct INBOUND_ITEM task
+```
+
+The final SimulationPlan is independently checked after MAPF. An executable logical operation must have both `task_ids` and `assigned_robot_id`, and the logical task must appear in a SERVICE step. Failed coverage clears the plan and terminates the workflow; it is never stored as `plan_validated`. See [v13.25 Mixed Operation Hardening](V13_25_MIXED_OPERATION_HARDENING.md).
+
+---
+
+## 12. What is not changed
+
+```text
+BE-main source code                         unchanged
+POST /optimize request/response             unchanged
+POST /reoptimize request/response           unchanged
+Spring authentication and public APIs       unchanged
+Replan migration to native API              deferred
+```
+
+The native plan API is tested directly at port 8000 first. When the team decides to replace `/optimize`, the Spring client can be changed separately to call this endpoint and consume `plan.robots[].steps[]`.

@@ -1,0 +1,43 @@
+{
+  "scenario_id": "E01_ITEM_NAME_ORDER_UNSUPPORTED",
+  "title": "품목명 기반 주문 요청 거부",
+  "category": "INPUT_REJECTION",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 2,
+  "argument": "정상 입력 계약에 없는 품목명 주문 검색이다.",
+  "why_rule_is_or_is_not_enough": "order_id 없이 품목명으로 실행 주문을 추측하지 않는다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "산업용 베어링 주문을 처리해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "REJECT_INPUT",
+    "final_route": null,
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": "CANONICAL_OPERATION_ID_REQUIRED",
+    "final_status": [
+      "input_rejected"
+    ],
+    "preserve_operation_ids": [],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [
+      "llm_retrieval_agent",
+      "human_interaction_pause"
+    ],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

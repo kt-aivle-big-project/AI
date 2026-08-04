@@ -1,0 +1,54 @@
+{
+  "scenario_id": "S1_simple_command",
+  "title": "단순 자연어 명령 — Rule baseline 일치성",
+  "argument": "논거1(인터페이스): 가장 단순한 자연어 입력에서 agent 경로가 rule 경로와 동일한 물리 계획에 도달해야 한다.",
+  "data_dir": "data",
+  "repetitions": 3,
+  "request": {
+    "simulation_id": "VAL-S1",
+    "request_mode": "human_command",
+    "planning_mode": "llm_router",
+    "optimization_backend": "ortools",
+    "user_command": "창고 상태를 도구로 확인하고 대기 중인 ORD-001을 처리할 미션을 만들어.",
+    "events": [
+      {
+        "type": "new_order",
+        "order_id": "ORD-001"
+      },
+      {
+        "type": "edge_congested",
+        "edge_id": "H3_7",
+        "payload": {
+          "congestion_level": 0.5,
+          "cost_multiplier": 1.5,
+          "travel_time_multiplier": 1.5
+        }
+      },
+      {
+        "type": "edge_occupied",
+        "robot_id": "R001",
+        "edge_id": "H3_8",
+        "payload": {
+          "occupied_until_ms": 30000,
+          "capacity": 1,
+          "direction": "R3_8_TO_R3_9"
+        }
+      }
+    ],
+    "max_agent_steps": 6
+  },
+  "expectations": {
+    "expected_intent_types": [
+      "MISSION"
+    ],
+    "expected_statuses": [
+      "plan_validated"
+    ],
+    "must_target_orders": [
+      "ORD-001"
+    ],
+    "compare_with_rule_baseline": true,
+    "forbid_unknown_identifiers": true,
+    "require_valid_evidence": true
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "scenario_id": "R07_EXACT_ORDER_AND_OBJECTIVE",
+  "title": "정확한 주문과 목적 프로필",
+  "category": "ROUTER_RULE",
+  "evaluation_stage": "ROUTER",
+  "difficulty": 2,
+  "argument": "지원 목적함수 이름은 Rule로 전달한다.",
+  "why_rule_is_or_is_not_enough": "MIN_TOTAL_ROUTE_COST는 정의된 계약이다.",
+  "request": {
+    "simulation_id": "SIM-EVAL",
+    "request_mode": "human_command",
+    "optimization_backend": "cuopt_payload_only",
+    "events": [],
+    "user_command": "ORD-001을 MIN_TOTAL_ROUTE_COST로 처리해.",
+    "max_agent_steps": 8,
+    "max_planner_retries": 1
+  },
+  "data_dir": null,
+  "expected": {
+    "gate_action": "ROUTE_RULE",
+    "final_route": "RULE_FORMULATION",
+    "hitl_stage": null,
+    "reason_code": null,
+    "input_rejection_reason_code": null,
+    "final_status": [],
+    "preserve_operation_ids": [
+      "ORD-001"
+    ],
+    "must_call_nodes": [],
+    "must_not_call_nodes": [
+      "human_interaction_pause"
+    ],
+    "no_downstream_hallucinated_ids": true,
+    "route_must_remain_locked_after_resume": true,
+    "incident_handling_modes": [],
+    "expected_immediate_actions": [],
+    "expected_notification_types": []
+  },
+  "auto_response": null,
+  "tags": [],
+  "notes": []
+}

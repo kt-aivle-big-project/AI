@@ -1,0 +1,46 @@
+# Secrets
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.*.example
+
+# Python
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/runtime_outputs/*
+!**/runtime_outputs/.gitkeep
+**/.laro_local/
+
+# Java / Gradle
+**/.gradle/
+**/build/
+**/out/
+**/*.class
+
+# IDE / OS
+**/.idea/
+**/.vscode/
+**/.DS_Store
+**/Thumbs.db
+
+# Logs and local data
+**/*.log
+**/*.sqlite
+**/*.sqlite3
+**/neo4j-data/
+**/redis-data/
+**/postgres-data/
+**/*.dump
+
+# Local validation and packaged releases
+/validation/
+/*.zip
+/*.sha256
+
+
+/tests

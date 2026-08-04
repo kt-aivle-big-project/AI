@@ -1,0 +1,21 @@
+{
+  "warehouse_id": "WH-001",
+  "simulation_id": "SIM001",
+  "sequence": 1842,
+  "sim_tick": 605,
+  "sim_time_ms": 60500,
+  "x": 9.18,
+  "y": 3.03,
+  "theta": 0.0,
+  "current_node": null,
+  "current_edge": "H3_8",
+  "from_node": "R3_8",
+  "to_node": "R3_9",
+  "edge_progress": 0.42,
+  "status": "moving",
+  "battery_pct": 78.4,
+  "active_task_id": "ORD-001_DROP",
+  "active_mission_id": "PLAN-WH-001-SIM001-1-DEMO",
+  "current_load_units": 1,
+  "capacity_units": 1
+}
