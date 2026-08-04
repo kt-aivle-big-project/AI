@@ -201,10 +201,28 @@ class PrioritizedSIPPPlanner:
         station_reservations: list[StationServiceReservation] = list(
             preserved_station_reservations or []
         )
+        station_calendar = EdgeCalendar()
+        for reservation in station_reservations:
+            station_calendar.reserve(
+                edge_id=self._station_resource_id(reservation.station_id),
+                start=reservation.start_at_ms,
+                end=reservation.end_at_ms,
+                robot_id=reservation.mobile_robot_id,
+            )
         settings = get_settings()
         batches = list(g2p_batches or [])
         station_task_by_id = {
             f"{batch.batch_id}_DROP": batch for batch in batches
+        }
+        task_station_constraints = {
+            task_id: (
+                self._station_resource_id(batch.station_id),
+                min(
+                    max(1, task_service_time.get(task_id, batch.station_receive_time_ms)),
+                    max(1, batch.station_receive_time_ms),
+                ),
+            )
+            for task_id, batch in station_task_by_id.items()
         }
 
         for optimizer_route in ordered_routes:
@@ -224,6 +242,8 @@ class PrioritizedSIPPPlanner:
                 task_service_time=task_service_time,
                 edge_calendar=working_edges,
                 node_calendar=node_calendar,
+                station_calendar=station_calendar,
+                task_station_constraints=task_station_constraints,
                 node_types=node_types,
             )
             if planned is None:
@@ -265,6 +285,12 @@ class PrioritizedSIPPPlanner:
                         processed_quantity=batch.requested_quantity,
                         processing_ticks=batch.station_processing_ticks,
                     )
+                )
+                station_calendar.reserve(
+                    edge_id=self._station_resource_id(batch.station_id),
+                    start=step.start_at_ms,
+                    end=handoff_end_at_ms,
+                    robot_id=robot_id,
                 )
                 # Only the input handoff stage owns the fixed access resource.
                 # The outgoing conveyor stage deliberately does not block the
@@ -352,6 +378,8 @@ class PrioritizedSIPPPlanner:
         task_service_time: dict[str, int],
         edge_calendar: EdgeCalendar,
         node_calendar: EdgeCalendar,
+        station_calendar: EdgeCalendar,
+        task_station_constraints: dict[str, tuple[str, int]],
         node_types: dict[str, str],
         start_at_ms: int = 0,
     ) -> tuple[_PlannedRoute | None, str | None]:
@@ -379,6 +407,8 @@ class PrioritizedSIPPPlanner:
             goals=goals,
             edge_calendar=edge_calendar,
             node_calendar=node_calendar,
+            station_calendar=station_calendar,
+            task_station_constraints=task_station_constraints,
             node_types=node_types,
             robot_id=robot_id,
             start_at_ms=start_at_ms,
@@ -530,6 +560,12 @@ class PrioritizedSIPPPlanner:
         left, right = sorted((source, target))
         return f"CORRIDOR:{left}<->{right}"
 
+    @staticmethod
+    def _station_resource_id(station_id: str) -> str:
+        """Return the shared calendar key for one fixed station robot."""
+
+        return f"STATION:{station_id}"
+
     @classmethod
     def _plan_ordered_goals(
         cls,
@@ -539,6 +575,8 @@ class PrioritizedSIPPPlanner:
         goals: list[tuple[str, str, int]],
         edge_calendar: EdgeCalendar,
         node_calendar: EdgeCalendar,
+        station_calendar: EdgeCalendar,
+        task_station_constraints: dict[str, tuple[str, int]],
         node_types: dict[str, str],
         robot_id: str,
         start_at_ms: int,
@@ -583,11 +621,15 @@ class PrioritizedSIPPPlanner:
 
             task_id, goal_node, service_ms = goals[goal_index]
             if node == goal_node:
-                service_slot = node_calendar.earliest_slot(
-                    edge_id=f"NODE:{node}",
-                    earliest=arrival,
-                    duration=max(1, service_ms),
-                    ignore_robot_id=robot_id,
+                service_slot = cls._earliest_joint_service_slot(
+                    node_calendar=node_calendar,
+                    station_calendar=station_calendar,
+                    node_id=node,
+                    task_id=task_id,
+                    earliest_ms=arrival,
+                    service_ms=max(1, service_ms),
+                    station_constraint=task_station_constraints.get(task_id),
+                    robot_id=robot_id,
                 )
                 if (
                     service_slot + max(1, service_ms) <= safe_end
@@ -661,6 +703,51 @@ class PrioritizedSIPPPlanner:
             cursor = parent
         actions.reverse()
         return float(best[goal_state]), actions
+
+    @classmethod
+    def _earliest_joint_service_slot(
+        cls,
+        *,
+        node_calendar: EdgeCalendar,
+        station_calendar: EdgeCalendar,
+        node_id: str,
+        task_id: str,
+        earliest_ms: int,
+        service_ms: int,
+        station_constraint: tuple[str, int] | None,
+        robot_id: str,
+    ) -> int:
+        """Find the first service start where its node and fixed station are free.
+
+        A station can expose several AMR handoff nodes while still having only
+        one fixed robot.  Node calendars therefore cannot serialize station
+        handoffs by themselves.  The monotone loop alternates both calendars
+        until the complete node service and the exclusive receive window fit
+        at the same start time.
+        """
+
+        candidate = max(0, int(earliest_ms))
+        for _ in range(128):
+            node_slot = node_calendar.earliest_slot(
+                edge_id=f"NODE:{node_id}",
+                earliest=candidate,
+                duration=max(1, service_ms),
+                ignore_robot_id=robot_id,
+            )
+            if station_constraint is None:
+                return node_slot
+            station_resource_id, receive_ms = station_constraint
+            station_slot = station_calendar.earliest_slot(
+                edge_id=station_resource_id,
+                earliest=node_slot,
+                duration=max(1, receive_ms),
+            )
+            if station_slot == node_slot:
+                return node_slot
+            candidate = station_slot
+        raise RuntimeError(
+            f"Unable to converge on a joint node/station slot for {task_id}."
+        )
 
     @classmethod
     def _feasible_transitions(
