@@ -291,6 +291,7 @@ class BeCenteredPostgresAdapter:
                 LEFT JOIN public.warehouse_items wi
                        ON wi.storage_location_id = sl.storage_location_id
                       AND wi.rack_level = levels.rack_level
+                      AND COALESCE(wi.quantity, 0) > 0
                 WHERE sl.warehouse_id = %s
                   AND wi.warehouse_item_id IS NULL
                   AND upper(COALESCE(sl.status, 'AVAILABLE')) IN ('AVAILABLE', 'EMPTY')
@@ -321,6 +322,7 @@ class BeCenteredPostgresAdapter:
                 LEFT JOIN public.warehouse_items wi
                        ON wi.storage_location_id = sl.storage_location_id
                       AND wi.rack_level = levels.rack_level
+                      AND COALESCE(wi.quantity, 0) > 0
                 WHERE sl.warehouse_id = %s
                 """,
                 (warehouse_id,),
