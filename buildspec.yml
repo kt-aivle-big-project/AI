@@ -1,0 +1,37 @@
+version: 0.2
+
+env:
+  variables:
+    LARO_AWS_ACCOUNT_ID: "728330702954"
+    LARO_AWS_REGION: "ap-northeast-2"
+    LARO_ECR_REPOSITORY: "laro-dev-ai"
+    LARO_ECS_CONTAINER_NAME: "laro-dev-ai"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging in to Amazon ECR..."
+      - aws --version
+      - LARO_ECR_URI="${LARO_AWS_ACCOUNT_ID}.dkr.ecr.${LARO_AWS_REGION}.amazonaws.com/${LARO_ECR_REPOSITORY}"
+      - LARO_COMMIT_HASH="$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION} | cut -c 1-12)"
+      - LARO_IMAGE_TAG="${LARO_COMMIT_HASH:-latest}"
+      - echo "Image URI = ${LARO_ECR_URI}:${LARO_IMAGE_TAG}"
+      - aws ecr get-login-password --region "${LARO_AWS_REGION}" | docker login --username AWS --password-stdin "${LARO_AWS_ACCOUNT_ID}.dkr.ecr.${LARO_AWS_REGION}.amazonaws.com"
+
+  build:
+    commands:
+      - echo "Building AI Docker image..."
+      - docker build --pull -t "${LARO_ECR_URI}:${LARO_IMAGE_TAG}" -t "${LARO_ECR_URI}:dev-latest" .
+
+  post_build:
+    commands:
+      - echo "Pushing AI Docker images..."
+      - docker push "${LARO_ECR_URI}:${LARO_IMAGE_TAG}"
+      - docker push "${LARO_ECR_URI}:dev-latest"
+      - echo "Creating imagedefinitions.json..."
+      - printf '[{"name":"%s","imageUri":"%s"}]' "${LARO_ECS_CONTAINER_NAME}" "${LARO_ECR_URI}:${LARO_IMAGE_TAG}" > imagedefinitions.json
+      - cat imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
