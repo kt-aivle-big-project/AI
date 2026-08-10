@@ -15,6 +15,15 @@ from app.domain.schemas import (
 from app.services.graph_service import DirectedGraphService
 
 
+SERVICE_ACCESS_NODE_TYPES = frozenset(
+    {
+        "rack_access",
+        "inbound_handoff_access",
+        "outbound_station_access",
+    }
+)
+
+
 class WaypointRouteExpander:
     """Expand each robot task sequence over the adjusted directed graph."""
 
@@ -140,16 +149,30 @@ class StaticRouteValidator:
                 strict=True,
             )
         }
-        # ``_ACCESS_`` is no longer exclusive to rack spurs: fixed outbound
-        # stations also use that canonical naming pattern.  When authoritative
-        # node types are available, validate only actual rack-access nodes.
-        # The name-based fallback preserves compatibility for older callers.
+        normalized_node_types = {
+            node_id: str(node_type).casefold()
+            for node_id, node_type in (node_types or {}).items()
+        }
+        has_authoritative_node_types = bool(normalized_node_types)
+        # ``_ACCESS_`` is no longer exclusive to rack spurs: inbound handoffs
+        # and fixed outbound stations also use that canonical naming pattern.
+        # Use authoritative node types when available and retain the historical
+        # name-based fallback only for older callers that do not provide them.
         rack_access_node_ids = {
             node_id
             for node_id in index
             if (
-                str(node_types.get(node_id, "")) == "rack_access"
-                if node_types is not None
+                normalized_node_types.get(node_id) == "rack_access"
+                if has_authoritative_node_types
+                else "_ACCESS_" in node_id
+            )
+        }
+        service_access_node_ids = {
+            node_id
+            for node_id in index
+            if (
+                normalized_node_types.get(node_id) in SERVICE_ACCESS_NODE_TYPES
+                if has_authoritative_node_types
                 else "_ACCESS_" in node_id
             )
         }
@@ -184,12 +207,13 @@ class StaticRouteValidator:
             recomputed_cost = 0.0
             recomputed_time = 0
             previous = route.start_node
-            allowed_service_access_nodes = {
+            task_endpoint_nodes = {
                 task_locations[task_id]
                 for task_id in route.task_sequence
-                if task_id in task_locations and "_ACCESS_" in task_locations[task_id]
+                if task_id in task_locations
             }
-            for segment in route.segments:
+            reported_transit_nodes: set[str] = set()
+            for segment_index, segment in enumerate(route.segments):
                 if segment.from_node != previous:
                     errors.append(f"{route.vehicle_id}: discontinuity before {segment.edge_id}.")
                 key = (segment.edge_id, index[segment.from_node], index[segment.to_node])
@@ -201,11 +225,27 @@ class StaticRouteValidator:
                         errors.append(f"{route.vehicle_id}: cost mismatch on {segment.edge_id}.")
                     if expected[1] != segment.travel_time_ms:
                         errors.append(f"{route.vehicle_id}: travel time mismatch on {segment.edge_id}.")
-                for node_id in (segment.from_node, segment.to_node):
-                    if "_ACCESS_" in node_id and node_id not in allowed_service_access_nodes:
+                for position, node_id in (
+                    ("from", segment.from_node),
+                    ("to", segment.to_node),
+                ):
+                    if node_id not in service_access_node_ids:
+                        continue
+                    is_route_start = (
+                        segment_index == 0
+                        and position == "from"
+                        and node_id == route.start_node
+                    )
+                    is_task_endpoint = node_id in task_endpoint_nodes
+                    if (
+                        not is_route_start
+                        and not is_task_endpoint
+                        and node_id not in reported_transit_nodes
+                    ):
                         errors.append(
-                            f"{route.vehicle_id}: rack access node {node_id} was used as transit."
+                            f"{route.vehicle_id}: service access node {node_id} was used as transit."
                         )
+                        reported_transit_nodes.add(node_id)
                 if segment.edge_id in blocked_edges:
                     errors.append(f"{route.vehicle_id}: blocked edge {segment.edge_id} was used.")
                 if segment.from_node in blocked_nodes or segment.to_node in blocked_nodes:
