@@ -14,10 +14,13 @@ from app.domain.be_centered import (
 )
 from app.domain.schemas import (
     AutoMissionRequest,
+    EventInput,
     HumanInteractionResumeRequest,
     OrchestrationResult,
+    PlanningMode,
     RuntimePlanningOverrides,
     ReplanMissionRequest,
+    ReplanReason,
     SimulationPlan,
     SimulationPlanResponse,
     StructuredMissionInput,
@@ -48,6 +51,12 @@ def _router_llm_executed(result: Any) -> bool:
         value.node_name == "request_router_llm" and value.llm_used
         for value in result.node_execution_log
     )
+
+
+def _trusted_replan_planning_mode(reason: ReplanReason) -> PlanningMode | None:
+    """System battery recovery is deterministic and must not invoke the router."""
+
+    return "force_rule" if reason == "LOW_BATTERY" else None
 
 
 def _merge_replan_operation_overlay(
@@ -461,7 +470,16 @@ class BeCenteredPlanService:
                 "namespace is authoritative."
             )
         current_structured_input = request.structured_input
-        events = current_structured_input.to_events()
+        events = (
+            [
+                EventInput(
+                    type="low_battery",
+                    payload={"replan_reason": "LOW_BATTERY"},
+                )
+            ]
+            if request.reason == "LOW_BATTERY"
+            else current_structured_input.to_events()
+        )
         structured_input = _merge_replan_operation_overlay(
             current_structured_input,
             self.postgres.load_plan_request(
@@ -492,8 +510,19 @@ class BeCenteredPlanService:
             simulation_run_id=simulation_run_id,
             replanning_from_plan_id=active.plan_id,
         )
+        trusted_planning_mode = _trusted_replan_planning_mode(request.reason)
+
+        def run_replan(combined: AutoMissionRequest) -> OrchestrationResult:
+            return OrchestrationService().run(
+                combined,
+                trusted_planning_mode=trusted_planning_mode,
+                persist_simulation_plan=False,
+                repository=repository,
+            )
+
         compact = RollingHorizonReplanService(
             store=store,
+            runner=(run_replan if trusted_planning_mode is not None else None),
             repository=repository,
         ).replan(
             ReplanMissionRequest(

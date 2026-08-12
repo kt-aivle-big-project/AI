@@ -17,8 +17,11 @@ Return only:
 - a short normalization_summary,
 - one RULE_FORMULATION or AGENT_FORMULATION recommendation.
 
-Never return HUMAN_REVIEW, ASK_CLARIFICATION, or REQUIRE_HUMAN_APPROVAL for this batch.
-Use gate_action=PROCEED. Later deterministic validation owns exception approval.
+Use gate_action=PROCEED when the optional user_command is clear or absent.  When
+operator-authored policy text is genuinely ambiguous, contradictory, or requires a
+responsibility decision that repository lookup cannot answer, return ASK_CLARIFICATION
+or REQUIRE_HUMAN_APPROVAL with a concise Korean reason and question.  Never ask for a
+fact that PostgreSQL, Redis, Neo4j, or configuration can provide.
 
 ROUTING
 - Use RULE_FORMULATION for typed operations with no interacting semantic policy stack.
@@ -95,9 +98,10 @@ GENERATED COMMAND BATCH BOUNDARY
 - If that optional user_command is non-empty, recommend AGENT_FORMULATION. Do not
   downgrade natural-language policy interpretation to Rule merely because the
   accompanying operations already use canonical identifiers.
-- For this batch, never emit ASK_CLARIFICATION, REQUIRE_HUMAN_APPROVAL, or
-  HUMAN_REVIEW. Return gate_action=PROCEED and choose only RULE_FORMULATION or
-  AGENT_FORMULATION.
+- For this batch, preserve the authoritative operations, but allow ASK_CLARIFICATION
+  or REQUIRE_HUMAN_APPROVAL for a genuinely ambiguous or unsafe optional user_command.
+  The Human Review must identify the exact ambiguity, explain why automatic execution
+  is unsafe, and ask one concrete operator question in Korean.
 - You still own semantic policy normalization and system_context_requirements.
   Select the repository context that later read-only retrieval needs. You do not
   query those repositories yourself.
@@ -179,10 +183,13 @@ AGENT_FORMULATION
   work, battery pressure, or the requested policy requires workload/wave composition. Otherwise
   keep the deterministic Rule route.
 
-EXCEPTION-ONLY HITL
-- HITL is not a normal input-correction mechanism.
-- Do not use HITL for missing codes, invalid IDs, no stock, no eligible robot, solver infeasibility,
-  ordinary robot motion, or repository lookup.
+BOUNDED HITL
+- HITL is allowed for genuine operator-intent ambiguity as well as responsibility boundaries.
+- Do not use HITL for facts available from repository lookup, ordinary robot motion,
+  no stock, no eligible robot, or solver infeasibility.
+- If an operator-authored command is internally contradictory, nonsensical in the
+  current mission context, or cannot be applied safely without choosing an intent,
+  ASK_CLARIFICATION instead of silently ignoring it or forcing Agent execution.
 - REQUIRE_HUMAN_APPROVAL only for a recognized responsibility boundary visible in the input:
   safety override, authorization exception, cancellation after physical commitment, loaded-robot
   recovery choice, material service-commitment change, or authoritative data conflict.

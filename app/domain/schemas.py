@@ -57,7 +57,14 @@ def infer_request_mode(*, events: list[object], user_command: str | None) -> Req
     if has_command:
         return "human_command"
     raise ValueError("At least one event or user_command is required.")
-ReplanReason = Literal["NEW_ORDER", "URGENT_ORDER", "ROBOT_FAULT", "EDGE_BLOCKED", "POLICY_CHANGE"]
+ReplanReason = Literal[
+    "NEW_ORDER",
+    "URGENT_ORDER",
+    "ROBOT_FAULT",
+    "EDGE_BLOCKED",
+    "POLICY_CHANGE",
+    "LOW_BATTERY",
+]
 TerminalPolicy = Literal["STAY", "PARK", "CHARGE"]
 HandoverPolicy = Literal[
     "CURRENT_NODE",
@@ -245,14 +252,14 @@ class HumanInteractionOption(StrictModel):
     @model_validator(mode="after")
     def resolve_resume_contract(self) -> "HumanInteractionOption":
         expected = self.outcome == "RESUME"
-        if self.resumable is None:
-            self.resumable = expected
-        elif self.resumable != expected:
-            raise ValueError("resumable must be true only for RESUME options")
+        # resumable is a derived contract, not an LLM decision.  Normalize an
+        # inconsistent structured response instead of failing the whole plan
+        # before a useful Human Review can be shown to the operator.
+        object.__setattr__(self, "resumable", expected)
         if not expected and not self.unavailable_reason:
-            self.unavailable_reason = (
+            object.__setattr__(self, "unavailable_reason", (
                 "이 선택은 현재 자동 계획을 즉시 재개하지 않습니다."
-            )
+            ))
         return self
 
 

@@ -1,7 +1,7 @@
 """Deterministic terminal PARK/CHARGE policies for rolling-horizon replans."""
 from __future__ import annotations
 
-from math import inf
+from math import ceil, inf
 
 from app.core.config import get_settings
 from app.domain.schemas import (
@@ -20,6 +20,22 @@ from app.domain.schemas import (
     TerminalRelocationResult,
 )
 from app.services.graph_service import DirectedGraphService
+
+
+def charge_service_duration_ms(
+    *,
+    battery_pct: float,
+    charge_rate_pct_per_minute: float,
+    minimum_service_ms: int,
+) -> int:
+    """Reserve enough station time to reach 100% at the nominal charge rate."""
+
+    required_ms = ceil(
+        max(0.0, 100.0 - float(battery_pct))
+        / float(charge_rate_pct_per_minute)
+        * 60_000
+    )
+    return max(int(minimum_service_ms), required_ms)
 
 
 class RobotTerminalPolicyService:
@@ -283,7 +299,21 @@ class TerminalRelocationEnricher:
             task_locations.append(payload.location_index_map[target])
             demand.append(0)
             priorities.append(0)
-            service_times.append(settings.terminal_relocation_service_ms)
+            battery_pct = float(
+                runtime.battery_pct
+                if runtime is not None
+                else vehicle.battery_pct if vehicle is not None else 100.0
+            )
+            charge_service_ms = charge_service_duration_ms(
+                battery_pct=battery_pct,
+                charge_rate_pct_per_minute=(
+                    settings.robot_charge_rate_pct_per_minute
+                ),
+                minimum_service_ms=settings.terminal_relocation_service_ms,
+            ) if policy == "CHARGE" else 0
+            service_times.append(
+                max(settings.terminal_relocation_service_ms, charge_service_ms)
+            )
             fixed.append(robot_id)
             records.append(
                 TerminalRelocationRecord(

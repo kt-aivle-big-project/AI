@@ -845,7 +845,13 @@ def _structured_normalized_request(state: LaroGraphState) -> NormalizedWarehouse
                     source_event_type=event.type,
                 )
             )
-        elif event.type not in {"edge_congested", "edge_occupied", "edge_reserved", "edge_blocked"}:
+        elif event.type not in {
+            "edge_congested",
+            "edge_occupied",
+            "edge_reserved",
+            "edge_blocked",
+            "low_battery",
+        }:
             operation_id = event.order_id or event.robot_id or event.edge_id or f"UNKNOWN-{index:03d}"
             operations.append(
                 NormalizedOperation(
@@ -1450,26 +1456,15 @@ def request_router_llm_node(state: LaroGraphState) -> dict:
         recommendation = routed.recommendation
         if generated_command_batch:
             # Generated command batches already passed deterministic canonical
-            # syntax validation.  The Router may normalize policy and select
-            # repository context/Rule-vs-Agent, but it cannot open an input
-            # question or approval gate.  Exception approval belongs to the
-            # later deterministic plan-stage approval node.
+            # syntax validation.  Their operations stay immutable, while an
+            # operator-authored user_command may still require clarification or
+            # approval before the route is locked.
             request = request.model_copy(update={"user_clarification_questions": []})
             recommendation = recommendation.model_copy(
                 update={
-                    "route": (
-                        "AGENT_FORMULATION"
-                        if recommendation.route == "HUMAN_REVIEW"
-                        else recommendation.route
-                    ),
-                    "gate_action": "PROCEED",
-                    "reason_code": None,
-                    "prompt": None,
-                    "options": [],
-                    "recommended_option_id": None,
                     "reasons": [
                         *recommendation.reasons,
-                        "Generated command batches use deterministic canonical validation; Router clarification and approval are disabled.",
+                        "Generated command operations remain authoritative; only the optional operator intent may open Human Review.",
                     ],
                 }
             )

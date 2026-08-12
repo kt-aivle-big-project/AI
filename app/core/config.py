@@ -234,6 +234,16 @@ class Settings(BaseSettings):
     terminal_relocation_service_ms: int = Field(
         default=500, alias="TERMINAL_RELOCATION_SERVICE_MS", ge=1
     )
+    robot_charge_rate_pct_per_minute: float = Field(
+        default=50.0,
+        alias="ROBOT_CHARGE_RATE_PCT_PER_MINUTE",
+        gt=0,
+        le=100,
+        description=(
+            "Nominal charging rate used to reserve enough CHARGE service time. "
+            "Keep it aligned with Spring charging_station.charging_power."
+        ),
+    )
 
     hitl_execution_mode: str = Field(
         default="terminal",

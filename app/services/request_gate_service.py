@@ -849,37 +849,74 @@ def resolve_request_gate(
     context_only_router_question = _router_clarification_is_context_only(
         recommendation=recommendation,
     )
-    if complete_authoritative_operations and recommendation.gate_action == "ASK_CLARIFICATION":
-        reasons.append(
-            "The router requested clarification even though authoritative structured_input "
-            "already contains complete canonical operations; the model recommendation was ignored."
-        )
-    elif pure_structured and recommendation.gate_action == "ASK_CLARIFICATION":
+    router_reason_code = (recommendation.reason_code or "").upper()
+    router_review_suppressed = False
+    if pure_structured and recommendation.gate_action == "ASK_CLARIFICATION":
+        router_review_suppressed = True
         reasons.append(
             "The router requested clarification for a complete structured event envelope; the question was suppressed."
         )
     elif conditional_policy and recommendation.gate_action == "ASK_CLARIFICATION":
+        router_review_suppressed = True
         reasons.append(
             "The router rejected a fully typed conditional edge policy; the question was suppressed and the deterministic policy evaluator will resolve it from runtime evidence."
         )
     elif context_only_router_question:
+        router_review_suppressed = True
         reasons.append(
             "The router asked for repository-owned runtime context; the question was suppressed and the system will fetch it."
         )
-    elif explicit_canonical_natural and recommendation.gate_action == "ASK_CLARIFICATION":
+    elif (
+        recommendation.gate_action == "ASK_CLARIFICATION"
+        and explicit_canonical_natural
+        and router_reason_code in {
+            "UNREADABLE_COMMAND",
+            "CANONICAL_OPERATION_ID_REQUIRED",
+            "CANONICAL_RESOURCE_ID_REQUIRED",
+        }
+    ):
+        router_review_suppressed = True
         reasons.append(
-            "The router called an explicit canonical natural-language command unreadable; "
-            "the model-only clarification was suppressed because every actionable ID and verb is present."
+            "The router requested model-only clarification for an explicit canonical command; "
+            "the actionable identifiers and verbs are already complete."
+        )
+    elif (
+        recommendation.gate_action == "ASK_CLARIFICATION"
+        and complete_authoritative_operations
+        and router_reason_code in {
+            "CANONICAL_OPERATION_ID_REQUIRED",
+            "CANONICAL_RESOURCE_ID_REQUIRED",
+        }
+    ):
+        router_review_suppressed = True
+        reasons.append(
+            "The generated operations already carry authoritative canonical IDs; "
+            "the optional policy text does not need to repeat them."
         )
     elif recommendation.gate_action == "ASK_CLARIFICATION":
-        return _rejection(
-            reason_code=recommendation.reason_code or "INVALID_MISSION_INPUT",
-            message=(
-                recommendation.prompt
-                or "The mission request is incomplete or ambiguous. Submit a corrected code-based request."
+        reason_code = recommendation.reason_code or "OPERATOR_INTENT_CLARIFICATION"
+        prompt = (
+            recommendation.prompt
+            or "사용자 명령의 의도를 안전하게 확정할 수 없습니다. 원하는 처리 방식을 구체적으로 알려 주세요."
+        )
+        interaction = _interaction(
+            simulation_id=simulation_id,
+            kind="CLARIFICATION",
+            reason_code=reason_code,
+            headline="사용자 명령 확인이 필요합니다",
+            prompt=prompt,
+            options=list(recommendation.options),
+            recommended_option_id=recommendation.recommended_option_id,
+            default_action="HOLD",
+            context_summary=(
+                "자동 계획을 임의로 진행하지 않고 사용자의 의도를 확인할 때까지 안전하게 대기합니다."
             ),
-            required_identifier_types=["canonical operation and resource IDs"],
-            reasons=reasons,
+        )
+        return RequestGateDecision(
+            action="ASK_CLARIFICATION",
+            recommended_route="AGENT_FORMULATION",
+            reasons=[*reasons, "Operator-authored intent requires clarification before route locking."],
+            human_interaction=interaction,
         )
     elif (
         recommendation.gate_action == "REQUIRE_HUMAN_APPROVAL"
@@ -887,31 +924,73 @@ def resolve_request_gate(
         and _has_response(human_responses, recommendation.reason_code)
     ):
         reasons.append(f"Resolved exception approval: {recommendation.reason_code}.")
-    elif (
-        recommendation.gate_action == "REQUIRE_HUMAN_APPROVAL"
-        and complete_authoritative_operations
-    ):
+    elif recommendation.gate_action == "REQUIRE_HUMAN_APPROVAL" and pure_structured:
         reasons.append(
-            "The router requested approval without a deterministic exception boundary; "
-            "authoritative structured operations continue to formulation."
+            "The router requested approval for a complete structured envelope without operator intent; "
+            "authoritative operations continue to formulation."
         )
     elif recommendation.gate_action == "REQUIRE_HUMAN_APPROVAL" and conditional_policy:
         reasons.append(
             "The router requested approval for a typed conditional policy without a responsibility boundary; the Rule policy evaluator will resolve it without HITL."
         )
     elif recommendation.gate_action == "REQUIRE_HUMAN_APPROVAL":
-        # HITL is exception-only and must be opened by a deterministic policy
-        # boundary (incident recovery, safety override, deferral, SLA conflict).
-        return _rejection(
-            reason_code="UNSUPPORTED_HITL_REQUEST",
-            message="The router requested approval without a recognized deterministic exception boundary.",
-            reasons=reasons,
+        reason_code = recommendation.reason_code or "OPERATOR_APPROVAL_REQUIRED"
+        prompt = (
+            recommendation.prompt
+            or "사용자 명령을 그대로 실행하면 운영 정책에 영향을 줄 수 있습니다. 계속 진행할지 확인해 주세요."
+        )
+        interaction = _interaction(
+            simulation_id=simulation_id,
+            kind="APPROVAL",
+            reason_code=reason_code,
+            headline="사용자 승인이 필요합니다",
+            prompt=prompt,
+            options=list(recommendation.options),
+            recommended_option_id=recommendation.recommended_option_id,
+            default_action="HOLD",
+            context_summary=(
+                "현재 계획은 승인 전까지 적용되지 않으며 로봇은 안전한 상태를 유지합니다."
+            ),
+        )
+        return RequestGateDecision(
+            action="REQUIRE_HUMAN_APPROVAL",
+            recommended_route="AGENT_FORMULATION",
+            reasons=[*reasons, "Operator-authored policy requires approval before route locking."],
+            human_interaction=interaction,
         )
 
     route = recommendation.route
-    if route == "HUMAN_REVIEW":
-        route = "AGENT_FORMULATION"
-        reasons.append("Legacy HUMAN_REVIEW recommendation was normalized to Agent after gate clearance.")
+    if route == "HUMAN_REVIEW" and router_review_suppressed:
+        route = "AGENT_FORMULATION" if command else "RULE_FORMULATION"
+        reasons.append(
+            "The HUMAN_REVIEW route was normalized after deterministic gate suppression."
+        )
+    elif route == "HUMAN_REVIEW":
+        prompt = (
+            recommendation.prompt
+            or "사용자 판단이 필요한 명령입니다. 원하는 처리 방법을 확인해 주세요."
+        )
+        options = list(recommendation.options)
+        kind = "APPROVAL" if options else "CLARIFICATION"
+        interaction = _interaction(
+            simulation_id=simulation_id,
+            kind=kind,
+            reason_code=recommendation.reason_code or "OPERATOR_REVIEW_REQUIRED",
+            headline="사용자 검토가 필요합니다",
+            prompt=prompt,
+            options=options,
+            recommended_option_id=recommendation.recommended_option_id,
+            default_action="HOLD",
+            context_summary=(
+                "명령을 임의로 해석하지 않고 사용자 판단이 끝날 때까지 계획 적용을 보류합니다."
+            ),
+        )
+        return RequestGateDecision(
+            action="REQUIRE_HUMAN_APPROVAL" if kind == "APPROVAL" else "ASK_CLARIFICATION",
+            recommended_route="AGENT_FORMULATION",
+            reasons=[*reasons, "The router requested an explicit operator decision."],
+            human_interaction=interaction,
+        )
 
     # A trusted, complete structured event envelope is deterministic.  Free-text
     # payload metadata is not allowed to upgrade it to Agent, which prevents
