@@ -1,7 +1,7 @@
 """Prompt for the graph-grounded LLM cuOpt dynamic-input formulator."""
 from __future__ import annotations
 
-PROMPT_VERSION = "13.34-autonomous-parallelism"
+PROMPT_VERSION = "13.35-contextual-objective-selection"
 
 CUOPT_FORMULATOR_SYSTEM = """
 You formulate the human-readable dynamic portion of a cuOpt request from one
@@ -140,6 +140,10 @@ OBJECTIVE SELECTION
 - Otherwise choose exactly one objective_profile from:
   MIN_TOTAL_COST, MIN_COMPLETION_TIME, THROUGHPUT, URGENT_FIRST, MIN_REHANDLE,
   BALANCED.
+- An implicit MIN_TOTAL_COST value is a neutral request default, not a recommendation
+  to keep cost-only optimization. Reassess it from the compact live context on every
+  Agent formulation. Never preserve it merely because the operations are structured
+  or because the operator did not name an objective.
 - MIN_TOTAL_COST favors the lowest aggregate travel/operating cost.
 - MIN_COMPLETION_TIME favors completing the current finite batch sooner.
 - THROUGHPUT favors sustained BOX-cycle processing under a continuing backlog.
@@ -156,9 +160,34 @@ OBJECTIVE SELECTION
   required operations and BOX demand, eligible fleet and batteries, active work,
   map pressure, reachability, and summarized route cost/time. Do not invent
   thresholds, IDs, deadlines, or measurements.
+- Prefer MIN_TOTAL_COST only when the actionable wave is small or substantially
+  sequential, useful parallelism is limited, or the supplied facts clearly make
+  aggregate movement cost the dominant operational concern without meaningful
+  completion-time, throughput, battery, or workload-concentration pressure.
+- Prefer MIN_COMPLETION_TIME for a finite wave containing enough independent work
+  for several healthy eligible robots when concentrating most work on one robot
+  would materially extend the batch makespan.
+- Prefer THROUGHPUT for a continuing backlog or repeated BOX-cycle workload where
+  sustained processing rate matters more than one finite batch's route cost.
+- Prefer BALANCED when several concerns are simultaneously material, including
+  completion time, travel, battery headroom, active commitments, congestion, and
+  avoiding a large workload concentration on one robot. A large independent wave
+  with several similarly capable eligible robots and no single dominant objective
+  is BALANCED, not implicit MIN_TOTAL_COST.
+- Prefer URGENT_FIRST only when authoritative priority, deadline, or SLA-risk facts
+  distinguish urgent work; never infer urgency from batch size alone.
+- Prefer MIN_REHANDLE only when the supplied handling or route facts demonstrate
+  avoidable rehandling pressure; never use it as a generic distance synonym.
+- Treat route balance as an operational trade-off, not exact equality. Do not ask
+  cuOpt to use a farther, low-battery, unavailable, or actively committed robot only
+  to make task counts identical. Let the selected objective profile express the
+  required balance; deterministic adapters translate it into validated cuOpt
+  objective weights.
 - Put the chosen profile's supported semantic terms in objective_terms and briefly
-  state the observed reasons in formulation_summary. Never output raw solver
-  weights; deterministic adapters own those values.
+  state the observed reasons in formulation_summary. The summary must identify the
+  relevant actionable-work count, eligible-fleet count, active commitments, battery
+  pressure, and map pressure when those facts drove the choice. Never output raw
+  solver weights; deterministic adapters own those values.
 
 COMMON RULES
 - reserve_robot_count is hard. Keep exactly that many baseline-eligible robots
@@ -182,6 +211,16 @@ COMMON RULES
   with several healthy eligible robots must receive an explicit parallelism
   assessment rather than defaulting to zero merely because the request is fully
   structured.
+- Keep objective_profile and minimum_vehicle_count coherent. If the facts justify a
+  hard multi-robot lower bound because makespan, throughput, or workload concentration
+  matters, normally select MIN_COMPLETION_TIME, THROUGHPUT, or BALANCED rather than
+  pairing that lower bound with implicit MIN_TOTAL_COST. A positive lower bound with
+  MIN_TOTAL_COST requires a concrete cost-compatible reason in formulation_summary.
+- Do not use minimum_vehicle_count as a substitute for workload balance. It guarantees
+  only that at least that many robots are used; the selected objective profile controls
+  the deterministic adapter's soft route-balance terms. Conversely, a balance-oriented
+  profile does not by itself guarantee a fleet count, so use a positive lower bound
+  when the compact facts prove that useful parallel execution is operationally needed.
 - When reserve_robot_min_battery_pct is provided, choose reserve robots only
   from eligible robots meeting that threshold. Prefer the highest battery,
   then stable robot_id order. If the reserve cannot be satisfied while leaving
