@@ -91,6 +91,8 @@ def in_route_human_interaction_node(state: LaroGraphState) -> dict:
             label="작업 보류 후 데이터 정합성 확인",
             resolution_value="HOLD_AND_RECONCILE",
             impact_summary="자동 계획을 중단하고 원천 데이터 정합성 확인 작업을 생성합니다.",
+            outcome="HOLD",
+            unavailable_reason="원천 데이터 정합성 확인이 완료될 때까지 자동 계획을 재개할 수 없습니다.",
         )
     )
     prompt = (
@@ -206,6 +208,8 @@ def _pre_optimization_policy_interaction(
                     label="현장 수동 회수",
                     resolution_value="MANUAL_RECOVERY",
                     impact_summary="자동 실행을 보류하고 현장 작업자에게 인계합니다.",
+                    outcome="HOLD",
+                    unavailable_reason="현장 수동 회수가 완료된 후 새 계획을 요청해야 합니다.",
                 ),
             ],
             recommended_option_id="DIVERT_TO_BUFFER",

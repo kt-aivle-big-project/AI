@@ -11,6 +11,7 @@ from app.core.config import get_settings
 from app.domain.planning_evaluation import PlanningComparisonRequest
 from app.domain.be_centered import (
     BeCenteredPreflightResponse,
+    BeHumanInteractionResumeResponse,
     BeSimulationPlanRequest,
     BeSimulationReplanRequest,
     BeSimulationPlanResponse,
@@ -358,6 +359,37 @@ def create_be_centered_simulation_plan(
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
+
+
+@router.post(
+    "/api/v1/simulation-runs/{simulation_run_id}/hitl/{interaction_id}/respond",
+    response_model=BeHumanInteractionResumeResponse,
+)
+def respond_to_be_centered_human_interaction(
+    simulation_run_id: int,
+    interaction_id: str,
+    request: HumanInteractionResumeRequest,
+) -> BeHumanInteractionResumeResponse:
+    """Resolve a HITL card and resume through the same BE-shared run contract."""
+
+    try:
+        return BeCenteredPlanService().respond_to_human_interaction(
+            simulation_run_id,
+            interaction_id,
+            request,
+        )
+    except FileNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    except BeCenteredDataError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=str(exc)
         ) from exc
 
 

@@ -200,6 +200,14 @@ RecoveryAction = Literal[
     "EMERGENCY_STOP",
     "HUMAN_REVIEW",
 ]
+HumanInteractionOptionOutcome = Literal["RESUME", "HOLD", "TERMINATE"]
+HumanInteractionResumeOutcome = Literal[
+    "RESUMED",
+    "HELD",
+    "TERMINATED",
+    "PENDING_REVIEW",
+    "FAILED",
+]
 
 ACTIONABLE_EVENT_TYPES = {
     "new_order",
@@ -230,6 +238,22 @@ class HumanInteractionOption(StrictModel):
     selected_entity_ids: list[str] = Field(default_factory=list)
     resolution_value: str | None = None
     impact_summary: str | None = None
+    outcome: HumanInteractionOptionOutcome = "RESUME"
+    resumable: bool | None = None
+    unavailable_reason: str | None = None
+
+    @model_validator(mode="after")
+    def resolve_resume_contract(self) -> "HumanInteractionOption":
+        expected = self.outcome == "RESUME"
+        if self.resumable is None:
+            self.resumable = expected
+        elif self.resumable != expected:
+            raise ValueError("resumable must be true only for RESUME options")
+        if not expected and not self.unavailable_reason:
+            self.unavailable_reason = (
+                "이 선택은 현재 자동 계획을 즉시 재개하지 않습니다."
+            )
+        return self
 
 
 class OperationalIncidentImpact(StrictModel):
@@ -3136,6 +3160,7 @@ class HumanInteractionResumeResult(StrictModel):
 
     interaction_id: str
     interaction_status: HumanInteractionStatus
+    resume_outcome: HumanInteractionResumeOutcome
     orchestration_result: OrchestrationResult | None = None
     terminal_status: WorkflowStatus | None = None
     terminal_reason_code: str | None = None

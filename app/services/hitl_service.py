@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from app.core.config import get_settings
 from app.domain.schemas import (
@@ -14,6 +14,7 @@ from app.domain.schemas import (
     HumanInteractionResponse,
     HumanInteractionResumeRequest,
     HumanInteractionResumeResult,
+    OrchestrationResult,
     WorkflowHoldResult,
 )
 
@@ -83,6 +84,11 @@ class HumanInteractionService:
                 for value in state.get("events", [])
             ],
             "user_command": state.get("user_command"),
+            "structured_input": (
+                state["structured_input"].model_dump(mode="json")
+                if hasattr(state.get("structured_input"), "model_dump")
+                else state.get("structured_input")
+            ),
             "mission_spec": (
                 state["mission_spec"].model_dump(mode="json")
                 if hasattr(state.get("mission_spec"), "model_dump")
@@ -123,7 +129,14 @@ class HumanInteractionService:
     def list_pending(self) -> list[HumanInteractionRecord]:
         return self.store.list_pending()
 
-    def respond(self, interaction_id: str, payload: HumanInteractionResumeRequest) -> HumanInteractionResumeResult:
+    def respond(
+        self,
+        interaction_id: str,
+        payload: HumanInteractionResumeRequest,
+        *,
+        runner: Callable[[AutoMissionRequest, str | None], OrchestrationResult]
+        | None = None,
+    ) -> HumanInteractionResumeResult:
         record = self.store.load(interaction_id)
         if record.status != "PENDING":
             raise ValueError(f"Interaction {interaction_id} is already {record.status}.")
@@ -162,6 +175,7 @@ class HumanInteractionService:
             return HumanInteractionResumeResult(
                 interaction_id=interaction_id,
                 interaction_status="REJECTED",
+                resume_outcome="TERMINATED",
                 message="The operator rejected the proposed action; the workflow remains held.",
             )
         if payload.action == "CANCEL":
@@ -170,6 +184,7 @@ class HumanInteractionService:
             return HumanInteractionResumeResult(
                 interaction_id=interaction_id,
                 interaction_status="CANCELLED",
+                resume_outcome="TERMINATED",
                 message="The operator cancelled the workflow.",
             )
         if record.interaction.kind == "CLARIFICATION" and payload.action != "SELECT":
@@ -186,36 +201,60 @@ class HumanInteractionService:
         ):
             raise ValueError("Free-form clarification requires selected_entity_ids or resolution_value.")
 
-        # Some accountable choices intentionally stop automation instead of
-        # launching another Rule/Agent run.  Recounting conflicting inventory is
-        # the canonical example: continuing with stale facts would be unsafe and
-        # rerunning the Agent cannot resolve the physical discrepancy.
-        if (
-            response.resolution_code == "AUTHORITATIVE_DATA_CONFLICT"
-            and response.resolution_value == "HOLD_AND_RECOUNT"
-        ):
+        # HOLD choices intentionally stop automation instead of launching another
+        # Rule/Agent run. Continuing with stale or physically unverified facts is
+        # unsafe, so the front end receives an explicit non-resumable outcome.
+        if option is not None and option.outcome == "HOLD":
             record.status = "RESOLVED"
             self.store.save(record)
+            recount = (
+                response.resolution_code == "AUTHORITATIVE_DATA_CONFLICT"
+                and response.resolution_value == "HOLD_AND_RECOUNT"
+            )
             hold = WorkflowHoldResult(
-                reason_code="AUTHORITATIVE_DATA_CONFLICT",
+                reason_code=response.resolution_code or "HUMAN_SELECTED_HOLD",
                 message=(
                     "Automation remains on hold while inventory is recounted; "
                     "no Rule, Agent, optimizer, or MAPF run was restarted."
+                    if recount
+                    else (
+                        option.unavailable_reason
+                        or "Automation remains on hold until the required human work is complete."
+                    )
                 ),
-                selected_option_id="HOLD_AND_RECOUNT",
-                required_actions=[
-                    "HOLD_AFFECTED_ORDER",
-                    "EXCLUDE_STOCK_FROM_ALLOCATION",
-                    "CREATE_RECOUNT_WORK_ITEM",
-                ],
+                selected_option_id=option.option_id,
+                required_actions=(
+                    [
+                        "HOLD_AFFECTED_ORDER",
+                        "EXCLUDE_STOCK_FROM_ALLOCATION",
+                        "CREATE_RECOUNT_WORK_ITEM",
+                    ]
+                    if recount
+                    else ["COMPLETE_REQUIRED_HUMAN_WORK", "RETRY_WITH_FRESH_FACTS"]
+                ),
             )
             return HumanInteractionResumeResult(
                 interaction_id=interaction_id,
                 interaction_status="RESOLVED",
+                resume_outcome="HELD",
                 terminal_status="held_for_human_action",
-                terminal_reason_code="AUTHORITATIVE_DATA_CONFLICT",
+                terminal_reason_code=hold.reason_code,
                 workflow_hold=hold,
                 message=hold.message,
+            )
+        if option is not None and option.outcome == "TERMINATE":
+            record.status = "RESOLVED"
+            self.store.save(record)
+            return HumanInteractionResumeResult(
+                interaction_id=interaction_id,
+                interaction_status="RESOLVED",
+                resume_outcome="TERMINATED",
+                terminal_status="cancelled",
+                terminal_reason_code=response.resolution_code,
+                message=(
+                    option.unavailable_reason
+                    or "The selected option terminated the current automation run."
+                ),
             )
 
         request_payload = dict(record.original_request)
@@ -236,9 +275,14 @@ class HumanInteractionService:
                 # the gate then restores the dedicated locked INCIDENT_RESPONSE route.
                 trusted_mode = "force_rule"
 
-        from app.services.orchestration_service import OrchestrationService
+        if runner is None:
+            from app.services.orchestration_service import OrchestrationService
 
-        result = OrchestrationService().run(request, trusted_planning_mode=trusted_mode)
+            result = OrchestrationService().run(
+                request, trusted_planning_mode=trusted_mode
+            )
+        else:
+            result = runner(request, trusted_mode)
 
         if record.interaction.route_locked and record.interaction.resume_route is not None:
             expected_route = record.interaction.resume_route
@@ -263,9 +307,20 @@ class HumanInteractionService:
         record.status = "RESOLVED"
         record.result_path = result.persistence.path if result.persistence else None
         self.store.save(record)
+        if result.pending_human_interaction is not None:
+            outcome = "PENDING_REVIEW"
+        elif result.workflow_hold is not None or result.status == "held_for_human_action":
+            outcome = "HELD"
+        elif result.status == "failed":
+            outcome = "FAILED"
+        elif result.status in {"cancelled", "input_rejected"}:
+            outcome = "TERMINATED"
+        else:
+            outcome = "RESUMED"
         return HumanInteractionResumeResult(
             interaction_id=interaction_id,
             interaction_status="RESOLVED",
+            resume_outcome=outcome,
             orchestration_result=result,
             message="The operator response was merged and the workflow resumed.",
         )

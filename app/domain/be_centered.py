@@ -11,6 +11,8 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from app.domain.schemas import (
+    HumanInteractionResumeOutcome,
+    HumanInteractionStatus,
     OptimizationBackend,
     PublicRuntimeSnapshot,
     SimulationPlanResponse,
@@ -18,6 +20,8 @@ from app.domain.schemas import (
     StructuredMissionInput,
     WarehouseId,
     ReplanReason,
+    WorkflowHoldResult,
+    WorkflowStatus,
 )
 
 
@@ -52,6 +56,18 @@ class BeSimulationPlanResponse(StrictModel):
     result: SimulationPlanResponse
     trace_url: str | None = None
     debug_url: str | None = None
+
+
+class BeHumanInteractionResumeResponse(StrictModel):
+    """HITL result scoped to one Spring simulation run."""
+
+    interaction_id: str
+    interaction_status: HumanInteractionStatus
+    resume_outcome: HumanInteractionResumeOutcome
+    message: str
+    terminal_status: WorkflowStatus | None = None
+    workflow_hold: WorkflowHoldResult | None = None
+    plan_response: BeSimulationPlanResponse | None = None
 
 
 class BeSimulationReplanRequest(BeSimulationPlanRequest):

@@ -141,6 +141,8 @@ def _derive_incident(incident: OperationalIncidentImpact) -> OperationalIncident
                 label="현장 수동 회수",
                 resolution_value="MANUAL_RECOVERY",
                 selected_entity_ids=exact_ids,
+                outcome="HOLD",
+                unavailable_reason="현장 수동 회수가 완료된 후 새 계획을 요청해야 합니다.",
             ),
             HumanInteractionOption(
                 option_id="ROBOT_HANDOFF",
@@ -173,6 +175,8 @@ def _derive_incident(incident: OperationalIncidentImpact) -> OperationalIncident
                 label="임시 차단·정지 유지",
                 resolution_value="KEEP_SAFETY_HOLD",
                 selected_entity_ids=exact_ids,
+                outcome="HOLD",
+                unavailable_reason="현장 안전 확인이 끝날 때까지 자동 계획을 재개할 수 없습니다.",
             ),
             HumanInteractionOption(
                 option_id="CONFIRM_SAFE_AND_CONTINUE",

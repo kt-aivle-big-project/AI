@@ -7,12 +7,15 @@ from uuid import uuid4
 from app.core.config import get_settings
 from app.domain.be_centered import (
     BeCenteredPreflightResponse,
+    BeHumanInteractionResumeResponse,
     BeSimulationReplanRequest,
     BeSimulationPlanRequest,
     BeSimulationPlanResponse,
 )
 from app.domain.schemas import (
     AutoMissionRequest,
+    HumanInteractionResumeRequest,
+    OrchestrationResult,
     RuntimePlanningOverrides,
     ReplanMissionRequest,
     SimulationPlan,
@@ -32,6 +35,7 @@ from app.repositories.be_shared_repository import (
     resolve_runtime_route_node,
 )
 from app.services.orchestration_service import OrchestrationService
+from app.services.hitl_service import HumanInteractionService
 from app.services.simulation_plan_service import (
     RollingHorizonReplanService,
     SimulationPlanStore,
@@ -579,3 +583,237 @@ class BeCenteredPlanService:
             response_json=response.model_dump(mode="json", exclude_none=True),
         )
         return response
+
+    def respond_to_human_interaction(
+        self,
+        simulation_run_id: int,
+        interaction_id: str,
+        payload: HumanInteractionResumeRequest,
+    ) -> BeHumanInteractionResumeResponse:
+        """Resume one HITL checkpoint through the BE-shared planning contract."""
+
+        context = self.postgres.resolve_simulation_run(simulation_run_id)
+        warehouse_id = str(context["warehouse_code"])
+        numeric_warehouse_id = int(context["warehouse_id"])
+        hitl = HumanInteractionService()
+        record = hitl.get(interaction_id)
+        expected_simulation_id = f"BE-RUN-{simulation_run_id}"
+        if str(record.original_request.get("simulation_id")) != expected_simulation_id:
+            raise BeCenteredDataError(
+                f"interaction_id={interaction_id} does not belong to "
+                f"simulation_run_id={simulation_run_id}."
+            )
+        if str(record.original_request.get("warehouse_id")) != warehouse_id:
+            raise BeCenteredDataError(
+                f"interaction_id={interaction_id} warehouse does not match the simulation run."
+            )
+
+        captured: dict[str, Any] = {}
+        store = SimulationPlanStore()
+
+        def run_resumed(
+            request: AutoMissionRequest,
+            trusted_planning_mode: str | None,
+        ) -> OrchestrationResult:
+            source_plan_id = request.runtime_overrides.source_plan_id
+            if source_plan_id:
+                persisted = self.postgres.load_plan(
+                    source_plan_id, simulation_run_id
+                )
+                if persisted is None:
+                    raise BeCenteredDataError(
+                        f"source_plan_id={source_plan_id} does not belong to "
+                        f"simulation_run_id={simulation_run_id}."
+                    )
+                active = SimulationPlan.model_validate(persisted)
+                try:
+                    store.load(active.plan_id)
+                except FileNotFoundError:
+                    store.save(active, None)
+                repository = BeSharedWarehouseRepository(
+                    simulation_run_id=simulation_run_id,
+                    replanning_from_plan_id=active.plan_id,
+                )
+                observed: dict[str, OrchestrationResult] = {}
+
+                def run_combined(combined: AutoMissionRequest) -> OrchestrationResult:
+                    value = OrchestrationService().run(
+                        combined,
+                        trusted_planning_mode=trusted_planning_mode,
+                        persist_simulation_plan=False,
+                        repository=repository,
+                    )
+                    observed["result"] = value
+                    return value
+
+                compact = RollingHorizonReplanService(
+                    store=store,
+                    runner=run_combined,
+                    repository=repository,
+                ).replan(
+                    ReplanMissionRequest(
+                        active_plan_id=active.plan_id,
+                        active_plan_version=active.plan_version,
+                        replan_at_sim_time_ms=(
+                            request.runtime_overrides.planning_horizon_start_ms
+                        ),
+                        mission=request,
+                        reason="NEW_ORDER",
+                        activation_policy="ALL_ROBOTS_READY",
+                    )
+                )
+                result = observed["result"]
+                if compact.plan is not None:
+                    result = result.model_copy(
+                        update={"simulation_plan": compact.plan}
+                    )
+                captured.update(
+                    compact=compact,
+                    result=result,
+                    request=request,
+                    request_type="HITL_REPLAN",
+                )
+                return result
+
+            repository = BeSharedWarehouseRepository(
+                simulation_run_id=simulation_run_id
+            )
+            result = OrchestrationService().run(
+                request,
+                trusted_planning_mode=trusted_planning_mode,
+                persist_simulation_plan=False,
+                repository=repository,
+            )
+            if result.simulation_plan is not None:
+                next_version = self.postgres.next_plan_version(simulation_run_id)
+                plan = result.simulation_plan.model_copy(
+                    update={
+                        "plan_id": (
+                            f"PLAN-{warehouse_id}-BE-RUN-{simulation_run_id}-"
+                            f"{next_version}-{uuid4().hex[:10].upper()}"
+                        ),
+                        "plan_version": next_version,
+                    }
+                )
+                result = result.model_copy(update={"simulation_plan": plan})
+            compact = self._compact_result(result)
+            captured.update(
+                compact=compact,
+                result=result,
+                request=request,
+                request_type="HITL_PLAN",
+            )
+            return result
+
+        resumed = hitl.respond(
+            interaction_id,
+            payload,
+            runner=run_resumed,
+        )
+        compact = captured.get("compact")
+        result = captured.get("result")
+        plan_response = None
+        if isinstance(compact, SimulationPlanResponse) and isinstance(
+            result, OrchestrationResult
+        ):
+            structured = record.original_request.get("structured_input") or {}
+            request_id = (
+                structured.get("request_id")
+                if isinstance(structured, dict)
+                else None
+            ) or f"REQ-BE-HITL-{simulation_run_id}-{uuid4().hex[:12].upper()}"
+            plan = compact.plan
+            if plan is not None:
+                request_json = record.original_request
+                self.postgres.save_plan(
+                    plan_id=plan.plan_id,
+                    simulation_run_id=simulation_run_id,
+                    warehouse_id=numeric_warehouse_id,
+                    plan_version=plan.plan_version,
+                    status=plan.status,
+                    request_json=request_json,
+                    plan_json=plan.model_dump(mode="json"),
+                    trace_json=result.model_dump(mode="json", exclude_none=True),
+                    planning_mode=result.effective_planning_mode,
+                    optimization_backend=result.optimization_backend,
+                    map_version=plan.map_version,
+                    runtime_version=(
+                        result.context_snapshot.runtime_version
+                        if result.context_snapshot is not None
+                        else None
+                    ),
+                    makespan_ms=plan.makespan_ms,
+                    base_plan_id=plan.base_plan_id,
+                    supersedes_plan_id=plan.supersedes_plan_id,
+                    plan_kind=plan.plan_kind,
+                )
+                self.postgres.save_inventory_reservations(
+                    plan_id=plan.plan_id,
+                    simulation_run_id=simulation_run_id,
+                    batches=(
+                        list(result.goods_to_person_compilation.batches)
+                        if result.goods_to_person_compilation is not None
+                        else []
+                    ),
+                )
+                store.save(plan, result)
+            plan_response = BeSimulationPlanResponse(
+                simulation_run_id=simulation_run_id,
+                warehouse_id=warehouse_id,
+                warehouse_numeric_id=numeric_warehouse_id,
+                request_id=request_id,
+                result=compact,
+                trace_url=(
+                    f"/api/v1/warehouses/{warehouse_id}/missions/plans/{plan.plan_id}/trace"
+                    if plan is not None
+                    else None
+                ),
+                debug_url=(
+                    f"/api/v1/warehouses/{warehouse_id}/missions/plans/{plan.plan_id}/debug"
+                    if plan is not None
+                    else None
+                ),
+            )
+            self.postgres.save_request_log(
+                request_id=request_id,
+                simulation_run_id=simulation_run_id,
+                request_type=str(captured.get("request_type") or "HITL"),
+                status=compact.status,
+                request_json=record.original_request,
+                response_json=plan_response.model_dump(
+                    mode="json", exclude_none=True
+                ),
+            )
+
+        return BeHumanInteractionResumeResponse(
+            interaction_id=resumed.interaction_id,
+            interaction_status=resumed.interaction_status,
+            resume_outcome=resumed.resume_outcome,
+            message=resumed.message,
+            terminal_status=resumed.terminal_status,
+            workflow_hold=resumed.workflow_hold,
+            plan_response=plan_response,
+        )
+
+    @staticmethod
+    def _compact_result(result: OrchestrationResult) -> SimulationPlanResponse:
+        return SimulationPlanResponse(
+            status=result.status,
+            warehouse_id=result.warehouse_id,
+            simulation_id=result.simulation_id,
+            request_mode=result.request_mode,
+            final_route=(
+                result.orchestration_plan.formulation_route
+                if result.orchestration_plan
+                else None
+            ),
+            effective_planning_mode=result.effective_planning_mode,
+            planning_mode_source=result.planning_mode_source,
+            router_llm_executed=_router_llm_executed(result),
+            plan=result.simulation_plan,
+            frontend_summary=result.frontend_summary,
+            pending_human_interaction=result.pending_human_interaction,
+            input_rejection=result.input_rejection,
+            workflow_hold=result.workflow_hold,
+            errors=result.errors,
+        )

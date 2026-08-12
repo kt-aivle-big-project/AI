@@ -721,6 +721,8 @@ def resolve_request_gate(
                     label="작업 보류 후 재실사",
                     resolution_value="HOLD_AND_RECOUNT",
                     impact_summary="자동 할당을 중단하고 재고 정합성 확인을 요청합니다.",
+                    outcome="HOLD",
+                    unavailable_reason="재고 재실사가 완료될 때까지 자동 계획을 재개할 수 없습니다.",
                 ),
                 HumanInteractionOption(
                     option_id="USE_CONFIRMED_SENSOR_QUANTITY",
@@ -784,9 +786,9 @@ def resolve_request_gate(
             headline="대체 목적지 승인",
             prompt=prompt,
             options=[
-                HumanInteractionOption(option_id="WAIT_FOR_CONTRACT_DESTINATION", label=f"{destinations[0]} 복구 대기", resolution_value="WAIT"),
+                HumanInteractionOption(option_id="WAIT_FOR_CONTRACT_DESTINATION", label=f"{destinations[0]} 복구 대기", resolution_value="WAIT", outcome="HOLD", unavailable_reason="계약 목적지가 복구될 때까지 자동 계획을 재개할 수 없습니다."),
                 HumanInteractionOption(option_id="APPROVE_ALTERNATIVE_DESTINATION", label=f"{destinations[1]} 대체 승인", selected_entity_ids=[destinations[1]], resolution_value=destinations[1]),
-                HumanInteractionOption(option_id="HOLD_ORDER", label="주문 보류", resolution_value="HOLD_ORDER"),
+                HumanInteractionOption(option_id="HOLD_ORDER", label="주문 보류", resolution_value="HOLD_ORDER", outcome="HOLD", unavailable_reason="보류된 주문을 다시 활성화한 뒤 새 계획을 요청해야 합니다."),
             ],
             recommended_option_id="WAIT_FOR_CONTRACT_DESTINATION",
             default_action="HOLD",
