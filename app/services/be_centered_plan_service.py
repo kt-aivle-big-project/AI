@@ -56,7 +56,7 @@ def _router_llm_executed(result: Any) -> bool:
 def _trusted_replan_planning_mode(reason: ReplanReason) -> PlanningMode | None:
     """System battery recovery is deterministic and must not invoke the router."""
 
-    return "force_rule" if reason == "LOW_BATTERY" else None
+    return "force_rule" if reason in {"LOW_BATTERY", "EDGE_BLOCKED"} else None
 
 
 def _merge_replan_operation_overlay(
@@ -470,16 +470,38 @@ class BeCenteredPlanService:
                 "namespace is authoritative."
             )
         current_structured_input = request.structured_input
-        events = (
-            [
+        repository = BeSharedWarehouseRepository(
+            simulation_run_id=simulation_run_id,
+            replanning_from_plan_id=active.plan_id,
+        )
+        if request.reason == "LOW_BATTERY":
+            events = [
                 EventInput(
                     type="low_battery",
                     payload={"replan_reason": "LOW_BATTERY"},
                 )
             ]
-            if request.reason == "LOW_BATTERY"
-            else current_structured_input.to_events()
-        )
+        else:
+            events = current_structured_input.to_events()
+            if request.reason == "EDGE_BLOCKED":
+                blocked_edge_ids = sorted(
+                    {
+                        str(value["edge_id"])
+                        for value in repository.runtime_edge_records()
+                        if str(value.get("status", "")).casefold() == "blocked"
+                    }
+                )
+                events.extend(
+                    EventInput(
+                        type="edge_blocked",
+                        edge_id=edge_id,
+                        payload={
+                            "status": "blocked",
+                            "reason_code": "EDGE_BLOCKED_REPLAN",
+                        },
+                    )
+                    for edge_id in blocked_edge_ids
+                )
         structured_input = _merge_replan_operation_overlay(
             current_structured_input,
             self.postgres.load_plan_request(
@@ -505,10 +527,6 @@ class BeCenteredPlanService:
                 if request.runtime_snapshot is not None
                 else RuntimePlanningOverrides()
             ),
-        )
-        repository = BeSharedWarehouseRepository(
-            simulation_run_id=simulation_run_id,
-            replanning_from_plan_id=active.plan_id,
         )
         trusted_planning_mode = _trusted_replan_planning_mode(request.reason)
 

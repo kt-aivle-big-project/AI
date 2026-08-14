@@ -495,13 +495,34 @@ class BeSharedWarehouseRepository(JsonWarehouseRepository):
 
     def _runtime_edges(self) -> list[dict[str, Any]]:
         values = []
+        graph_edges_by_resource: dict[str, list[str]] = defaultdict(list)
+        projected_edge_ids: set[str] = set()
+        for projected in self.graph.get("edges", []):
+            projected_id = str(projected.get("id") or "")
+            resource_code = str(
+                projected.get("physical_resource_code") or projected_id
+            )
+            if projected_id:
+                projected_edge_ids.add(projected_id)
+                graph_edges_by_resource[resource_code].append(projected_id)
         for edge in self.be_runtime.load_edge_runtime(self.simulation_run_id):
             code = edge.edge_code or self._numeric_edge_to_code.get(edge.edge_id)
             if not code:
                 continue
-            values.append(
-                {
-                    "edge_id": code,
+            # PostgreSQL/Redis stores one physical code for a bidirectional
+            # aisle (for example V5_0), while the Neo4j route projection owns
+            # two directed arcs (V5_0:F and V5_0:R). Runtime constraints apply
+            # to the physical aisle, so expand them to every projected arc.
+            projected_ids = graph_edges_by_resource.get(str(code), [])
+            if not projected_ids and str(code) in projected_edge_ids:
+                projected_ids = [str(code)]
+            if not projected_ids:
+                # Preserve genuinely unknown references so the repository
+                # contract validator still reports stale Redis/map data.
+                projected_ids = [str(code)]
+            for projected_id in projected_ids:
+                values.append({
+                    "edge_id": projected_id,
                     "status": str(edge.status or "OPEN").casefold(),
                     "cost_multiplier": float(edge.cost_multiplier),
                     "travel_time_multiplier": float(edge.travel_time_multiplier),
@@ -510,8 +531,7 @@ class BeSharedWarehouseRepository(JsonWarehouseRepository):
                         if edge.occupied_by_robot_id is not None
                         else None
                     ),
-                }
-            )
+                })
         return values
 
     @property

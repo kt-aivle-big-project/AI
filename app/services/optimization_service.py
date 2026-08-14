@@ -1764,6 +1764,25 @@ class ExternalCuOptGateway:
     def solve(self, payload: CuOptPayload) -> OptimizerResult:
         """Call the configured service with explicit transport and no solver fallback."""
 
+        # A rolling replan may preserve an already-picked operation on the old
+        # plan until its safe handover, leaving no new business task for the
+        # optimizer. NVIDIA cuOpt rejects an empty task_locations vector. The
+        # following terminal-relocation stage still has to append the robot's
+        # PARK/CHARGE goal, so represent the empty assignment problem as a
+        # successful local result instead of sending an invalid HTTP request.
+        if not payload.task_data.task_ids:
+            return OptimizerResult(
+                backend="cuopt",
+                status="success",
+                optimizer="nvidia-cuopt-empty-task-bypass",
+                global_objective_cost=0.0,
+                estimated_makespan_ms=0.0,
+                routes=[],
+                reason=(
+                    "No new business task after preserving committed work; "
+                    "terminal relocation will append PARK/CHARGE goals."
+                ),
+            )
         try:
             if self.settings.cuopt_payload_format.casefold() == "internal":
                 native_request = payload.model_dump(mode="json")
