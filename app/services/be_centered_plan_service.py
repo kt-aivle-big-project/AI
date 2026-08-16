@@ -8,6 +8,7 @@ from app.core.config import get_settings
 from app.domain.be_centered import (
     BeCenteredPreflightResponse,
     BeHumanInteractionResumeResponse,
+    BeLowBatteryContext,
     BeSimulationReplanRequest,
     BeSimulationPlanRequest,
     BeSimulationPlanResponse,
@@ -18,6 +19,7 @@ from app.domain.schemas import (
     HumanInteractionResumeRequest,
     OrchestrationResult,
     PlanningMode,
+    RobotRuntimeOverride,
     RuntimePlanningOverrides,
     ReplanMissionRequest,
     ReplanReason,
@@ -57,6 +59,70 @@ def _trusted_replan_planning_mode(reason: ReplanReason) -> PlanningMode | None:
     """System battery recovery is deterministic and must not invoke the router."""
 
     return "force_rule" if reason == "LOW_BATTERY" else None
+
+
+def _low_battery_event(context: BeLowBatteryContext | None) -> EventInput:
+    if context is None:
+        return EventInput(
+            type="low_battery",
+            payload={"replan_reason": "LOW_BATTERY"},
+        )
+    return EventInput(
+        type="low_battery",
+        robot_id=context.robot_id,
+        node_id=context.current_node,
+        payload={
+            "replan_reason": "LOW_BATTERY",
+            "status": context.status,
+            "battery_pct": context.battery_pct,
+            "charging_threshold_pct": context.charging_threshold_pct,
+            "current_task_id": context.current_task_id,
+            "carrying_load": context.carrying_load,
+            "stopped_at_sim_time_ms": context.stopped_at_sim_time_ms,
+        },
+    )
+
+
+def _with_low_battery_runtime_state(
+    overrides: RuntimePlanningOverrides,
+    context: BeLowBatteryContext | None,
+) -> RuntimePlanningOverrides:
+    """Overlay the real safe-stop state without enabling public snapshots."""
+
+    if context is None:
+        return overrides
+    by_robot = {value.robot_id: value for value in overrides.robot_states}
+    previous = by_robot.get(context.robot_id)
+    updates = {
+        "current_node": context.current_node,
+        "current_edge": None,
+        "from_node": None,
+        "to_node": None,
+        "edge_progress": None,
+        "status": "low_battery",
+        "battery_pct": context.battery_pct,
+        "current_load_units": 1 if context.carrying_load else 0,
+        "sim_time_ms": context.stopped_at_sim_time_ms,
+    }
+    by_robot[context.robot_id] = (
+        previous.model_copy(update=updates)
+        if previous is not None
+        else RobotRuntimeOverride(robot_id=context.robot_id, **updates)
+    )
+    return overrides.model_copy(
+        update={
+            "robot_states": sorted(
+                by_robot.values(), key=lambda value: value.robot_id
+            ),
+            "planning_horizon_start_ms": max(
+                overrides.planning_horizon_start_ms,
+                context.stopped_at_sim_time_ms,
+            ),
+            "relocate_idle_robot_ids": sorted(
+                set(overrides.relocate_idle_robot_ids) | {context.robot_id}
+            ),
+        }
+    )
 
 
 def _merge_replan_operation_overlay(
@@ -471,12 +537,7 @@ class BeCenteredPlanService:
             )
         current_structured_input = request.structured_input
         events = (
-            [
-                EventInput(
-                    type="low_battery",
-                    payload={"replan_reason": "LOW_BATTERY"},
-                )
-            ]
+            [_low_battery_event(request.low_battery_context)]
             if request.reason == "LOW_BATTERY"
             else current_structured_input.to_events()
         )
@@ -489,6 +550,16 @@ class BeCenteredPlanService:
         effective_request = request.model_copy(
             update={"structured_input": structured_input}
         )
+        runtime_overrides = (
+            request.runtime_snapshot.to_internal()
+            if request.runtime_snapshot is not None
+            else RuntimePlanningOverrides()
+        )
+        if request.reason == "LOW_BATTERY":
+            runtime_overrides = _with_low_battery_runtime_state(
+                runtime_overrides,
+                request.low_battery_context,
+            )
         internal = AutoMissionRequest(
             warehouse_id=warehouse_id,
             simulation_id=f"BE-RUN-{simulation_run_id}",
@@ -500,11 +571,7 @@ class BeCenteredPlanService:
             events=events,
             structured_input=structured_input,
             user_command=request.user_command,
-            runtime_overrides=(
-                request.runtime_snapshot.to_internal()
-                if request.runtime_snapshot is not None
-                else RuntimePlanningOverrides()
-            ),
+            runtime_overrides=runtime_overrides,
         )
         repository = BeSharedWarehouseRepository(
             simulation_run_id=simulation_run_id,

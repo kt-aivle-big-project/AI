@@ -70,6 +70,21 @@ class BeHumanInteractionResumeResponse(StrictModel):
     plan_response: BeSimulationPlanResponse | None = None
 
 
+class BeLowBatteryContext(StrictModel):
+    """Authoritative robot state captured by Spring at a safe-node boundary."""
+
+    status: Literal["LOW_BATTERY"] = "LOW_BATTERY"
+    robot_id: str = Field(min_length=1)
+    robot_numeric_id: int | None = Field(default=None, ge=1)
+    battery_pct: float = Field(ge=0.0, le=100.0)
+    charging_threshold_pct: float = Field(ge=0.0, le=100.0)
+    current_node: str = Field(min_length=1)
+    current_node_numeric_id: int | None = Field(default=None, ge=1)
+    current_task_id: int | None = Field(default=None, ge=1)
+    carrying_load: bool = False
+    stopped_at_sim_time_ms: int = Field(ge=0)
+
+
 class BeSimulationReplanRequest(BeSimulationPlanRequest):
     """Rolling-horizon request scoped to one Spring simulation run."""
 
@@ -80,6 +95,7 @@ class BeSimulationReplanRequest(BeSimulationPlanRequest):
     activation_policy: Literal["PER_ROBOT_HANDOVER", "ALL_ROBOTS_READY"] = (
         "ALL_ROBOTS_READY"
     )
+    low_battery_context: BeLowBatteryContext | None = None
 
 
 class BeCenteredPreflightResponse(StrictModel):

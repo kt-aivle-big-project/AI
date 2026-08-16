@@ -768,7 +768,7 @@ class RollingHorizonReplanService:
         deviated_robot_ids = {
             value.robot_id
             for value in explicit.robot_states
-            if value.status in {"fault", "offline"}
+            if value.status in {"fault", "offline", "low_battery"}
         }
         preserved_edges = [
             value
