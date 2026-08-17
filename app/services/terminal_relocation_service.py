@@ -48,10 +48,14 @@ class RobotTerminalPolicyService:
         policy: TerminalPolicy,
         graph_arcs: list[dict],
         node_types: dict[str, str],
+        excluded_targets: set[str] | None = None,
     ) -> str | None:
         target_type = "charging_slot" if policy == "CHARGE" else "route_charge_junction"
+        excluded_targets = excluded_targets or set()
         candidates = sorted(
-            node_id for node_id, node_type in node_types.items() if node_type == target_type
+            node_id
+            for node_id, node_type in node_types.items()
+            if node_type == target_type and node_id not in excluded_targets
         )
         graph = DirectedGraphService(graph_arcs)
         scored: list[tuple[float, str]] = []
@@ -67,6 +71,7 @@ class RobotTerminalPolicyService:
         robot: RobotRuntime | OptimizationVehicle,
         graph_arcs: list[dict],
         node_types: dict[str, str],
+        excluded_targets: set[str] | None = None,
     ) -> tuple[TerminalPolicy, str]:
         settings = get_settings()
         start_node = robot.current_node if isinstance(robot, RobotRuntime) else robot.start_node
@@ -79,11 +84,35 @@ class RobotTerminalPolicyService:
         )
         if policy == "STAY":
             return policy, start_node
+
+        # Spring BE assigns one stable charging slot to every robot and exposes
+        # it as RobotRuntime.home_node.  A low-battery robot is normally removed
+        # from the business-task solver fleet, so its recovery route is appended
+        # from runtime state here.  Preserve that dedicated home instead of
+        # independently choosing the nearest slot (which allowed two robots to
+        # converge on the same charger).
+        home_node = (
+            robot.home_node
+            if isinstance(robot, RobotRuntime)
+            else robot.end_node
+        )
+        if (
+            policy == "CHARGE"
+            and home_node
+            and node_types.get(home_node) == "charging_slot"
+            and home_node not in (excluded_targets or set())
+        ):
+            # Do not silently switch chargers when the dedicated home is
+            # temporarily unreachable.  Keep the contracted destination and
+            # let route/MAPF validation surface the topology problem.
+            return policy, home_node
+
         target = self._nearest_target(
             start_node=start_node,
             policy=policy,
             graph_arcs=graph_arcs,
             node_types=node_types,
+            excluded_targets=excluded_targets,
         )
         return (policy, target) if target else ("STAY", start_node)
 
@@ -214,6 +243,18 @@ class TerminalRelocationEnricher:
         routes = list(result.routes)
         records: list[TerminalRelocationRecord] = []
         errors: list[str] = []
+        claimed_terminal_targets: dict[str, str] = {}
+
+        # Solver-contracted endpoints are already authoritative reservations.
+        # Detect invalid duplicate charging homes before generating MAPF goals.
+        for robot_id, target in sorted(assigned_terminal_targets.items()):
+            previous = claimed_terminal_targets.get(target)
+            if previous is not None and previous != robot_id:
+                errors.append(
+                    f"Charging target {target} is assigned to both {previous} and {robot_id}."
+                )
+                continue
+            claimed_terminal_targets[target] = robot_id
 
         for robot_id in sorted(terminal_robot_ids):
             vehicle = request_vehicle.get(robot_id)
@@ -248,10 +289,22 @@ class TerminalRelocationEnricher:
                 available_at = vehicle.available_at_ms
                 capacity = vehicle.capacity_units
             elif runtime is not None and runtime.current_node:
+                if (
+                    runtime.home_node
+                    and node_types.get(runtime.home_node) == "charging_slot"
+                    and runtime.home_node in claimed_terminal_targets
+                    and claimed_terminal_targets[runtime.home_node] != robot_id
+                ):
+                    errors.append(
+                        f"Dedicated charging home {runtime.home_node} for {robot_id} "
+                        f"is already assigned to {claimed_terminal_targets[runtime.home_node]}."
+                    )
+                    continue
                 policy, target = policy_service.policy_for_robot(
                     robot=runtime,
                     graph_arcs=graph_arcs,
                     node_types=node_types,
+                    excluded_targets=set(claimed_terminal_targets),
                 )
                 start_node = runtime.current_node
                 available_at = max(runtime.sim_time_ms, runtime_overrides.planning_horizon_start_ms)
@@ -262,6 +315,15 @@ class TerminalRelocationEnricher:
 
             if policy == "STAY" or not target:
                 continue
+            if policy == "CHARGE":
+                previous = claimed_terminal_targets.get(target)
+                if previous is not None and previous != robot_id:
+                    errors.append(
+                        f"Charging target {target} is already assigned to {previous}; "
+                        f"cannot also assign {robot_id}."
+                    )
+                    continue
+                claimed_terminal_targets[target] = robot_id
             if target not in payload.location_index_map or start_node not in payload.location_index_map:
                 errors.append(f"Terminal route for {robot_id} references an unknown node.")
                 continue
@@ -272,7 +334,10 @@ class TerminalRelocationEnricher:
                 if route is not None
                 else start_node
             )
-            if from_node == target:
+            # A low-battery robot already standing on its charging home still
+            # needs a CHARGE service step.  Only no-op PARK relocations may be
+            # omitted entirely.
+            if from_node == target and policy != "CHARGE":
                 continue
             task_id = f"TERMINAL-{robot_id}-{policy}"
             if route is None:
