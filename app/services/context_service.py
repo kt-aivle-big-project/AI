@@ -131,12 +131,18 @@ def apply_runtime_overrides(
                     "to_node": value.to_node,
                     "edge_progress": value.edge_progress,
                     "active_task_id": (
-                        value.active_task_id
-                        if value.active_task_id is not None
-                        else robot.active_task_id
+                        None
+                        if value.clear_active_work
+                        else (
+                            value.active_task_id
+                            if value.active_task_id is not None
+                            else robot.active_task_id
+                        )
                     ),
                 }
             )
+            if value.clear_active_work:
+                update["active_mission_id"] = None
             if value.current_edge is None and value.current_node is None:
                 update["current_node"] = robot.current_node
             if value.battery_pct is not None:

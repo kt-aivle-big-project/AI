@@ -596,6 +596,9 @@ class RobotRuntimeOverride(StrictModel):
     capacity_units: int | None = Field(default=None, ge=0)
     current_load_units: int | None = Field(default=None, ge=0)
     active_task_id: str | None = None
+    # Rolling-horizon projection has reached a handover boundary where the
+    # previous task/mission must be removed from an OVERLAY Redis snapshot.
+    clear_active_work: bool = False
     sim_time_ms: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")

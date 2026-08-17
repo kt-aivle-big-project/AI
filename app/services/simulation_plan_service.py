@@ -604,6 +604,7 @@ class RuntimeExecutionSnapshotBuilder:
                     current_node=handover_node,
                     status="idle",
                     current_load_units=0,
+                    clear_active_work=True,
                     sim_time_ms=handover_at,
                 )
             )
@@ -757,19 +758,81 @@ class RollingHorizonReplanService:
             )
             for value in snapshot.robot_overrides
         }
-        robot_by_id.update(
-            {
-                value.robot_id: value.model_copy(
-                    update={"sim_time_ms": max(value.sim_time_ms, activation_at_ms)}
+        handover_by_robot = {
+            value.robot_id: value for value in snapshot.handover_points
+        }
+        projected_low_battery_ids: set[str] = set()
+        for value in explicit.robot_states:
+            projected = robot_by_id.get(value.robot_id)
+            handover = handover_by_robot.get(value.robot_id)
+            is_deviated = value.status in {"fault", "offline", "low_battery"}
+            uses_projected_low_battery_handover = bool(
+                value.status == "low_battery"
+                and projected is not None
+                and handover is not None
+            )
+            if uses_projected_low_battery_handover:
+                # The low-battery event is captured before the old plan reaches
+                # its safe handover point.  Its explicit current_node/load/task
+                # therefore describe the trigger instant, not the activation
+                # state.  Always start the CHARGE relocation from the projected
+                # handover state, whether the robot was carrying a load or only
+                # finishing the current edge/service.  Otherwise the new route
+                # can replay that edge (for example R4_1 -> R4_0) and BE will
+                # correctly reject activation because the robot is already at
+                # R4_0.
+                robot_by_id[value.robot_id] = projected.model_copy(
+                    update={
+                        "status": "low_battery",
+                        "battery_pct": value.battery_pct,
+                        "current_load_units": 0,
+                        "active_task_id": None,
+                        "clear_active_work": True,
+                        "sim_time_ms": max(
+                            projected.sim_time_ms,
+                            handover.handover_at_ms,
+                            activation_at_ms,
+                        ),
+                    }
                 )
-                for value in explicit.robot_states
-            }
-        )
+                projected_low_battery_ids.add(value.robot_id)
+                continue
+            if projected is not None and not is_deviated:
+                # The active plan owns the normal robot's position and work
+                # state at the handover barrier.  BE's event snapshot is taken
+                # when replan is requested, so copying active_task_id/load from
+                # it would make an already-finished committed operation look
+                # active again and incorrectly remove the robot from the new
+                # solver fleet.  Battery/capacity are current physical facts
+                # and may safely refresh the projected handover state.
+                robot_by_id[value.robot_id] = projected.model_copy(
+                    update={
+                        "battery_pct": (
+                            value.battery_pct
+                            if value.battery_pct is not None
+                            else projected.battery_pct
+                        ),
+                        "capacity_units": (
+                            value.capacity_units
+                            if value.capacity_units is not None
+                            else projected.capacity_units
+                        ),
+                        "sim_time_ms": max(
+                            projected.sim_time_ms,
+                            value.sim_time_ms,
+                            activation_at_ms,
+                        ),
+                    }
+                )
+                continue
+            robot_by_id[value.robot_id] = value.model_copy(
+                update={"sim_time_ms": max(value.sim_time_ms, activation_at_ms)}
+            )
         deviated_robot_ids = {
             value.robot_id
             for value in explicit.robot_states
             if value.status in {"fault", "offline", "low_battery"}
-        }
+        } - projected_low_battery_ids
         preserved_edges = [
             value
             for value in snapshot.preserved_edge_reservations
