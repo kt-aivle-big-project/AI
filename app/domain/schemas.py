@@ -2207,6 +2207,11 @@ class WaypointGraphData(StrictModel):
     to_indices: list[int]
     costs: list[float]
     travel_times_ms: list[int]
+    # Service endpoints (rack access, inbound handoff, fixed station port) may
+    # be route starts or task destinations, but never aisle shortcuts.  Keep
+    # this topology flag in the indexed payload so every local reconstruction
+    # applies the same production graph rule.
+    service_only_node_indices: list[int] = Field(default_factory=list)
 
 
 class CuOptPayload(StrictModel):

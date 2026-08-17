@@ -32,7 +32,7 @@ from app.domain.schemas import (
     WaypointRouteExpansionResult,
 )
 from app.services.edge_calendar import EdgeCalendar
-from app.services.graph_service import Arc, DirectedGraphService
+from app.services.graph_service import Arc, DirectedGraphService, payload_graph_arcs
 from app.services.traffic_manager import TrafficManagerService
 
 
@@ -103,23 +103,7 @@ class PrioritizedSIPPPlanner:
 
         reverse_index = {index: node_id for node_id, index in payload.location_index_map.items()}
         graph = DirectedGraphService(
-            [
-                {
-                    "edge_id": edge_id,
-                    "source": reverse_index[source],
-                    "target": reverse_index[target],
-                    "cost": cost,
-                    "travel_time_ms": travel,
-                }
-                for edge_id, source, target, cost, travel in zip(
-                    payload.waypoint_graph_data.edge_ids,
-                    payload.waypoint_graph_data.from_indices,
-                    payload.waypoint_graph_data.to_indices,
-                    payload.waypoint_graph_data.costs,
-                    payload.waypoint_graph_data.travel_times_ms,
-                    strict=True,
-                )
-            ]
+            payload_graph_arcs(payload, reverse_index=reverse_index)
         )
         starts = {
             robot_id: reverse_index[start]
@@ -202,6 +186,10 @@ class PrioritizedSIPPPlanner:
             preserved_station_reservations or []
         )
         station_calendar = EdgeCalendar()
+        # The station receive window is a capacity interval, not a moving-
+        # corridor traversal.  Keep only a one-millisecond ordering boundary;
+        # the configured traffic headway does not apply to station handoffs.
+        station_calendar.headway_ms = 1
         for reservation in station_reservations:
             station_calendar.reserve(
                 edge_id=self._station_resource_id(reservation.station_id),
@@ -663,6 +651,19 @@ class PrioritizedSIPPPlanner:
                                 (service_end, node, next_key[0], goal_index + 1),
                             )
 
+            # A service-only spur may be entered only to perform its ordered
+            # task.  It may be left from the initial position or immediately
+            # after that task, but must never become a collision-avoidance
+            # shortcut through an unrelated rack/station access point.
+            may_leave_service_node = (
+                state == start_state
+                or (
+                    goal_index > 0
+                    and goals[goal_index - 1][1] == node
+                )
+            )
+            if node in graph.service_only_nodes and not may_leave_service_node:
+                continue
             for arc in graph.by_source.get(node, []):
                 for depart, next_arrival, target_interval_index in cls._feasible_transitions(
                     arc=arc,
@@ -1009,7 +1010,7 @@ class MAPFPlanValidator:
         for station_id, values in by_station.items():
             ordered = sorted(values, key=lambda value: (value.start_at_ms, value.end_at_ms))
             for first, second in zip(ordered, ordered[1:]):
-                if first.end_at_ms + headway > second.start_at_ms:
+                if first.end_at_ms >= second.start_at_ms:
                     errors.append(
                         f"Station {station_id} capacity=1 overlap: "
                         f"{first.mobile_robot_id} {first.start_at_ms}-{first.end_at_ms} vs "

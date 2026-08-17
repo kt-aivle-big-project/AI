@@ -12,7 +12,7 @@ from app.domain.schemas import (
     RouteValidationResult,
     WaypointRouteExpansionResult,
 )
-from app.services.graph_service import DirectedGraphService
+from app.services.graph_service import DirectedGraphService, payload_graph_arcs
 
 
 SERVICE_ACCESS_NODE_TYPES = frozenset(
@@ -31,23 +31,7 @@ class WaypointRouteExpander:
         """Return node and edge sequences for every optimizer route."""
 
         reverse_index = {index: node_id for node_id, index in payload.location_index_map.items()}
-        arcs = [
-            {
-                "edge_id": edge_id,
-                "source": reverse_index[source],
-                "target": reverse_index[target],
-                "cost": cost,
-                "travel_time_ms": travel,
-            }
-            for edge_id, source, target, cost, travel in zip(
-                payload.waypoint_graph_data.edge_ids,
-                payload.waypoint_graph_data.from_indices,
-                payload.waypoint_graph_data.to_indices,
-                payload.waypoint_graph_data.costs,
-                payload.waypoint_graph_data.travel_times_ms,
-                strict=True,
-            )
-        ]
+        arcs = payload_graph_arcs(payload, reverse_index=reverse_index)
         graph = DirectedGraphService(arcs)
         vehicle_starts = {
             robot_id: reverse_index[start]

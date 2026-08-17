@@ -5,7 +5,43 @@ import heapq
 from collections import defaultdict
 from dataclasses import dataclass
 from math import inf
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable, Mapping
+
+if TYPE_CHECKING:
+    from app.domain.schemas import CuOptPayload
+
+
+def payload_graph_arcs(
+    payload: "CuOptPayload",
+    *,
+    reverse_index: Mapping[int, str] | None = None,
+) -> list[dict]:
+    """Rebuild graph arcs without losing service-only endpoint semantics."""
+
+    graph = payload.waypoint_graph_data
+    node_ids = reverse_index or {
+        index: node_id for node_id, index in payload.location_index_map.items()
+    }
+    service_only = set(graph.service_only_node_indices)
+    return [
+        {
+            "edge_id": edge_id,
+            "source": node_ids[source],
+            "target": node_ids[target],
+            "cost": cost,
+            "travel_time_ms": travel,
+            "source_service_only": source in service_only,
+            "target_service_only": target in service_only,
+        }
+        for edge_id, source, target, cost, travel in zip(
+            graph.edge_ids,
+            graph.from_indices,
+            graph.to_indices,
+            graph.costs,
+            graph.travel_times_ms,
+            strict=True,
+        )
+    ]
 
 
 @dataclass(frozen=True)

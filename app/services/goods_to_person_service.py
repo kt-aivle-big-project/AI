@@ -51,7 +51,7 @@ from app.domain.schemas import (
 from app.repositories.json_repository import JsonWarehouseRepository, get_repository
 from app.services.context_service import WarehouseContextService
 from app.services.edge_calendar import EdgeCalendar
-from app.services.graph_service import DirectedGraphService
+from app.services.graph_service import DirectedGraphService, payload_graph_arcs
 from app.services.optimization_service import (
     CuOptPayloadBuilder,
     CuOptPayloadValidator,
@@ -784,23 +784,7 @@ class GoodsToPersonPlanningService:
             )
         }
         graph = DirectedGraphService(
-            [
-                {
-                    "edge_id": edge_id,
-                    "source": reverse[source],
-                    "target": reverse[target],
-                    "cost": cost,
-                    "travel_time_ms": travel,
-                }
-                for edge_id, source, target, cost, travel in zip(
-                    payload.waypoint_graph_data.edge_ids,
-                    payload.waypoint_graph_data.from_indices,
-                    payload.waypoint_graph_data.to_indices,
-                    payload.waypoint_graph_data.costs,
-                    payload.waypoint_graph_data.travel_times_ms,
-                    strict=True,
-                )
-            ]
+            payload_graph_arcs(payload, reverse_index=reverse)
         )
         goals = [
             (

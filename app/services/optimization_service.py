@@ -30,7 +30,7 @@ from app.domain.schemas import (
     TaskData,
     WaypointGraphData,
 )
-from app.services.graph_service import DirectedGraphService
+from app.services.graph_service import DirectedGraphService, payload_graph_arcs
 
 
 PRIORITY_SCORE = {"high": 0, "medium": 1, "low": 2}
@@ -343,6 +343,17 @@ class CuOptPayloadBuilder:
                 to_indices=[index[str(arc["target"])] for arc in graph_arcs],
                 costs=[float(arc["cost"]) for arc in graph_arcs],
                 travel_times_ms=[int(arc["travel_time_ms"]) for arc in graph_arcs],
+                service_only_node_indices=sorted(
+                    {
+                        index[str(node_id)]
+                        for arc in graph_arcs
+                        for node_id, marked in (
+                            (arc["source"], arc.get("source_service_only") is True),
+                            (arc["target"], arc.get("target_service_only") is True),
+                        )
+                        if marked
+                    }
+                ),
             ),
             applied_map_constraints=request.map_constraints,
             time_limit_seconds=time_limit_seconds,
@@ -443,6 +454,8 @@ class CuOptPayloadValidator:
             errors.append("Waypoint graph arrays must have equal lengths.")
         if any(index not in valid_indexes for index in [*graph.from_indices, *graph.to_indices]):
             errors.append("Waypoint graph contains an invalid location index.")
+        if any(index not in valid_indexes for index in graph.service_only_node_indices):
+            errors.append("Waypoint graph contains an invalid service-only node index.")
         if any(value <= 0 for value in graph.costs) or any(value <= 0 for value in graph.travel_times_ms):
             errors.append("Graph costs and travel times must be positive.")
 
@@ -476,23 +489,10 @@ class CuOptPayloadValidator:
         if errors or not (fleet_shape_valid and task_shape_valid and graph_shape_valid):
             return PayloadValidationResult(valid=False, errors=errors, warnings=warnings)
 
-        arcs = [
-            {
-                "edge_id": edge_id,
-                "source": str(source),
-                "target": str(target),
-                "cost": cost,
-                "travel_time_ms": travel,
-            }
-            for edge_id, source, target, cost, travel in zip(
-                graph.edge_ids,
-                graph.from_indices,
-                graph.to_indices,
-                graph.costs,
-                graph.travel_times_ms,
-                strict=True,
-            )
-        ]
+        arcs = payload_graph_arcs(
+            payload,
+            reverse_index={index: str(index) for index in valid_indexes},
+        )
         indexed_graph = DirectedGraphService(arcs)
         vehicle_index = {robot_id: index for index, robot_id in enumerate(fleet.vehicle_ids)}
 
@@ -607,23 +607,7 @@ class OneToOneRuleOptimizer:
         """Greedily assign priority-ordered pairs to distinct robots."""
 
         reverse_index = {index: node_id for node_id, index in payload.location_index_map.items()}
-        arcs = [
-            {
-                "edge_id": edge_id,
-                "source": reverse_index[source],
-                "target": reverse_index[target],
-                "cost": cost,
-                "travel_time_ms": travel,
-            }
-            for edge_id, source, target, cost, travel in zip(
-                payload.waypoint_graph_data.edge_ids,
-                payload.waypoint_graph_data.from_indices,
-                payload.waypoint_graph_data.to_indices,
-                payload.waypoint_graph_data.costs,
-                payload.waypoint_graph_data.travel_times_ms,
-                strict=True,
-            )
-        ]
+        arcs = payload_graph_arcs(payload, reverse_index=reverse_index)
         graph = DirectedGraphService(arcs)
         starts = {
             robot_id: reverse_index[start]
@@ -741,23 +725,7 @@ class ORToolsRoutingOptimizer:
 
         reverse_index = {index: node_id for node_id, index in payload.location_index_map.items()}
         graph = DirectedGraphService(
-            [
-                {
-                    "edge_id": edge_id,
-                    "source": reverse_index[source],
-                    "target": reverse_index[target],
-                    "cost": cost,
-                    "travel_time_ms": travel,
-                }
-                for edge_id, source, target, cost, travel in zip(
-                    payload.waypoint_graph_data.edge_ids,
-                    payload.waypoint_graph_data.from_indices,
-                    payload.waypoint_graph_data.to_indices,
-                    payload.waypoint_graph_data.costs,
-                    payload.waypoint_graph_data.travel_times_ms,
-                    strict=True,
-                )
-            ]
+            payload_graph_arcs(payload, reverse_index=reverse_index)
         )
         vehicle_count = len(payload.fleet_data.vehicle_ids)
         # Logical nodes keep duplicate task visits even when two tasks share one rack.
