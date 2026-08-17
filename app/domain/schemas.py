@@ -622,6 +622,9 @@ class RuntimePlanningOverrides(StrictModel):
     source_plan_id: str | None = None
     planning_horizon_start_ms: int = Field(default=0, ge=0)
     relocate_idle_robot_ids: list[str] = Field(default_factory=list)
+    # Trusted rolling-horizon fleet floor. It counts task-performing robots only;
+    # charge/park relocation routes remain outside this lower bound.
+    minimum_task_vehicle_count: int = Field(default=0, ge=0)
 
 
 class PublicRuntimeSnapshot(StrictModel):
@@ -1503,9 +1506,10 @@ class CuOptDynamicInputDraft(StrictModel):
     objective_profile: ObjectiveProfile
     objective_terms: list[ObjectiveTerm] = Field(default_factory=list)
     tasks: list[CuOptTaskDraft]
-    # Rule keeps this at zero. Agent may provide a validated lower bound when an
-    # explicit natural-language policy requires useful parallel execution; cuOpt
-    # still chooses the actual robots and assignments.
+    # Agent may provide a validated lower bound for an explicit parallelism
+    # policy. A trusted rolling-horizon Rule replan may also preserve the prior
+    # task fleet after a robot becomes unavailable. cuOpt still chooses IDs and
+    # assignments.
     minimum_vehicle_count: int = Field(default=0, ge=0)
     # Historical field name retained for compatibility.  Values are canonical
     # operation IDs of any supported type, not outbound orders only.
@@ -2142,9 +2146,9 @@ class OptimizationRequest(StrictModel):
     """Solver-neutral multi-vehicle pickup-delivery problem.
 
     The fleet-limit fields remain readable for historical persisted plans.
-    Rule emits no hard minimum fleet size. Agent may emit a validated lower bound
-    for explicit parallelism policy; the routing solver still chooses assignment
-    and sequential reuse.
+    Normal Rule plans emit no hard minimum fleet size. Agent may emit a validated
+    lower bound for explicit parallelism policy, while a trusted Rule replan may
+    preserve prior task capacity; the routing solver still chooses assignment.
     """
 
     snapshot_id: str

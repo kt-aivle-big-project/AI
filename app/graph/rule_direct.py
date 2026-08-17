@@ -15,6 +15,7 @@ from app.domain.schemas import (
     MapContext,
     NormalizedWarehouseRequest,
     RobotRuntimeContext,
+    RuntimePlanningOverrides,
 )
 from app.graph.node_support import error_update, model_from_state, require_locked_route, trace_update
 from app.graph.state import LaroGraphState
@@ -83,6 +84,12 @@ def rule_cuopt_formulator_direct_node(state: LaroGraphState) -> dict:
 
     try:
         require_locked_route(state, expected_route="RULE_MISSION_PIPELINE")
+        runtime_overrides = state.get("runtime_overrides")
+        minimum_vehicle_count = (
+            runtime_overrides.minimum_task_vehicle_count
+            if isinstance(runtime_overrides, RuntimePlanningOverrides)
+            else 0
+        )
         draft = RuleCuOptFormulator().formulate_from_contexts(
             normalized_request=model_from_state(state, "normalized_request", NormalizedWarehouseRequest),
             snapshot=model_from_state(state, "context_snapshot", ContextSnapshot),
@@ -91,6 +98,7 @@ def rule_cuopt_formulator_direct_node(state: LaroGraphState) -> dict:
             map_context=model_from_state(state, "map_context", MapContext),
             graph_arcs=list(state["graph_arcs"]),
             time_limit_seconds=_time_limit(state),
+            minimum_vehicle_count=minimum_vehicle_count,
         )
         return {
             "cuopt_dynamic_input_draft": draft,

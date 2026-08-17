@@ -608,6 +608,7 @@ class RuleCuOptFormulator:
         map_context: MapContext,
         graph_arcs: list[dict[str, Any]],
         time_limit_seconds: int,
+        minimum_vehicle_count: int = 0,
     ) -> CuOptDynamicInputDraft:
         """Create the direct Rule-path draft from typed authoritative contexts.
 
@@ -812,6 +813,12 @@ class RuleCuOptFormulator:
         )
         blocked = sorted(blocked_set)
         soft_penalties = sorted(soft_set - blocked_set)
+        actionable_cycle_count = len(tasks) + len(g2p_order_ids)
+        bounded_minimum_vehicle_count = _bounded_rule_vehicle_floor(
+            requested=minimum_vehicle_count,
+            eligible_vehicle_count=len(included_robot_ids),
+            actionable_cycle_count=actionable_cycle_count,
+        )
         return CuOptDynamicInputDraft(
             formulation_mode=("GOODS_TO_PERSON" if g2p_mode else "ORDER_TASKS"),
             g2p_order_ids=(g2p_order_ids if g2p_mode else []),
@@ -821,10 +828,10 @@ class RuleCuOptFormulator:
             objective_profile=normalized_request.constraints.objective_profile,
             objective_terms=_objective_terms(normalized_request),
             tasks=tasks,
-            # Fleet size is a solver decision.  A task count is not a valid
-            # lower bound because one AMR may execute several BOX cycles in
-            # sequence when that is globally cheaper.
-            minimum_vehicle_count=0,
+            # Normal plans leave fleet size to cuOpt. A trusted rolling-horizon
+            # replan may preserve the old task fleet, bounded by healthy
+            # candidates and independent remaining work.
+            minimum_vehicle_count=bounded_minimum_vehicle_count,
             deferred_order_ids=sorted(set(deferred)),
             fleet=CuOptFleetDraft(
                 included_robot_ids=included_robot_ids,
@@ -1053,25 +1060,37 @@ def _operation_coverage_errors(
     return errors
 
 
+def _bounded_rule_vehicle_floor(
+    *,
+    requested: int,
+    eligible_vehicle_count: int,
+    actionable_cycle_count: int,
+) -> int:
+    """Bound a trusted Rule replan floor to physically useful parallel work."""
+
+    return min(
+        max(0, int(requested)),
+        max(0, int(eligible_vehicle_count)),
+        max(0, int(actionable_cycle_count)),
+    )
+
+
 def _minimum_vehicle_count_errors(
     *,
     draft: CuOptDynamicInputDraft,
     included_robot_count: int,
-    expected_source: str | None,
 ) -> list[str]:
-    """Validate an Agent fleet lower bound without selecting robot identities.
+    """Validate a trusted fleet lower bound without selecting robot identities.
 
-    Rule never invents a hard fleet cardinality. Agent may request useful
-    parallelism, but only within the authoritative included fleet and the
-    number of independently executable operations represented by the draft.
+    Agent may request useful parallelism. A rolling-horizon Rule replan may
+    preserve prior task capacity. Both remain bounded by authoritative eligible
+    robots and independently executable work represented by the draft.
     """
 
     requested = int(draft.minimum_vehicle_count)
     if requested == 0:
         return []
     errors: list[str] = []
-    if expected_source == "rule" or draft.formulation_source == "rule":
-        errors.append("RULE_MINIMUM_VEHICLE_COUNT_FORBIDDEN")
     if requested > included_robot_count:
         errors.append(
             "MINIMUM_VEHICLE_COUNT_EXCEEDS_INCLUDED_FLEET:requested="
@@ -1419,7 +1438,6 @@ class CuOptDynamicInputValidator:
             _minimum_vehicle_count_errors(
                 draft=draft,
                 included_robot_count=len(included),
-                expected_source=expected_source,
             )
         )
 
@@ -1727,7 +1745,6 @@ class CuOptDynamicInputValidator:
             _minimum_vehicle_count_errors(
                 draft=draft,
                 included_robot_count=len(included),
-                expected_source=expected_source,
             )
         )
 

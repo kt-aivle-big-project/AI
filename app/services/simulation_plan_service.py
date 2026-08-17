@@ -805,7 +805,38 @@ class RollingHorizonReplanService:
                 explicit.planning_horizon_start_ms,
             ),
             relocate_idle_robot_ids=relocate_ids,
+            minimum_task_vehicle_count=explicit.minimum_task_vehicle_count,
         )
+
+    @staticmethod
+    def _remaining_task_vehicle_count(
+        active: SimulationPlan,
+        snapshot: ReplanExecutionSnapshot,
+    ) -> int:
+        """Count old-plan robots that still owned replannable physical work."""
+
+        completed = set(snapshot.completed_task_bases)
+        locked = set(snapshot.locked_task_bases)
+        remaining_task_bases = {
+            canonical
+            for operation in active.logical_operations
+            for task_id in operation.task_ids
+            if (canonical := canonical_task_id(task_id)) is not None
+            and canonical not in completed
+            and canonical not in locked
+        }
+        if not remaining_task_bases:
+            return 0
+        return len({
+            robot.robot_id
+            for robot in active.robots
+            if any(
+                step.step_type == "SERVICE"
+                and step.end_at_ms > snapshot.replan_at_sim_time_ms
+                and canonical_task_id(step.task_id) in remaining_task_bases
+                for step in robot.steps
+            )
+        })
 
     def replan(self, request: ReplanMissionRequest) -> SimulationPlanResponse:
         active, prior_result = self.store.load(request.active_plan_id)
@@ -895,9 +926,23 @@ class RollingHorizonReplanService:
             if request.activation_policy == "ALL_ROBOTS_READY"
             else request.replan_at_sim_time_ms
         )
+        explicit_runtime_overrides = new_mission.runtime_overrides
+        if request.reason == "LOW_BATTERY":
+            previous_task_vehicle_count = self._remaining_task_vehicle_count(
+                active,
+                snapshot,
+            )
+            explicit_runtime_overrides = explicit_runtime_overrides.model_copy(
+                update={
+                    "minimum_task_vehicle_count": max(
+                        explicit_runtime_overrides.minimum_task_vehicle_count,
+                        previous_task_vehicle_count,
+                    )
+                }
+            )
         runtime_overrides = self._merge_runtime_overrides(
             snapshot,
-            new_mission.runtime_overrides,
+            explicit_runtime_overrides,
             activation_at_ms,
         )
         combined = new_mission.model_copy(
