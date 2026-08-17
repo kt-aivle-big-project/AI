@@ -1,6 +1,10 @@
 """v9 batch allocation, route resolution, solver, and MAPF graph nodes."""
 from __future__ import annotations
 
+import json
+from typing import Any
+
+from app.core.console import safe_console_print
 from app.core.node_observability import observe_node
 from app.domain.schemas import (
     CandidateSpaceValidation,
@@ -24,6 +28,157 @@ from app.services.inventory_allocation_service import GlobalInventoryAllocator
 from app.services.mapf_service import MAPFPlanValidator, PrioritizedSIPPPlanner
 from app.services.optimization_service import CandidateSpaceGuard, OneToOneRuleOptimizer
 from app.services.physical_problem_service import PhysicalProblemProfiler, PlanningRouteResolver
+
+
+def _field(value: Any, name: str, default: Any = None) -> Any:
+    """Read one field from a Pydantic model or its serialized dictionary."""
+
+    if isinstance(value, dict):
+        return value.get(name, default)
+    return getattr(value, name, default)
+
+
+def _mapf_error_summary(errors: list[str]) -> str:
+    """Translate the first deterministic MAPF error into an operator-facing reason."""
+
+    if not errors:
+        return "충전소 복귀 경로가 MAPF 안전 검증을 통과하지 못했습니다."
+    first = errors[0]
+    translations = (
+        ("violates headway", "다른 로봇 또는 기존 예약과의 안전 간격이 충돌했습니다."),
+        ("non-monotonic MAPF steps", "경로 단계의 시간 순서가 올바르지 않습니다."),
+        ("waits at unsafe node", "안전 대기 노드가 아닌 위치에 대기 단계가 생성되었습니다."),
+        ("exceeds max_edge_wait_ms", "경로의 대기 시간이 허용 한도를 초과했습니다."),
+        ("SERVICE step without task_id", "작업 식별자가 없는 실행 단계가 생성되었습니다."),
+        ("services unknown task", "현재 계획에 없는 작업 단계가 경로에 포함되었습니다."),
+        ("service duration", "작업 처리 시간이 원본 계획과 일치하지 않습니다."),
+        ("Mandatory handling steps are missing", "필수 작업 단계가 경로에서 누락되었습니다."),
+        ("Handling steps must occur exactly once", "같은 작업 단계가 중복되었거나 누락되었습니다."),
+        ("capacity=1 overlap", "충전소 또는 작업 스테이션 사용 시간이 다른 로봇과 겹쳤습니다."),
+        ("total_service_ms does not match", "전체 작업 시간과 세부 실행 단계의 합계가 일치하지 않습니다."),
+    )
+    return next((message for marker, message in translations if marker in first), first)
+
+
+def _mapf_failure_diagnostics(
+    state: LaroGraphState,
+    schedule: TrafficScheduleResult,
+    validation: MAPFValidationResult,
+) -> dict[str, Any]:
+    """Build one compact failure record suitable for CloudWatch inspection."""
+
+    runtime = state.get("runtime_overrides")
+    robot_states = list(_field(runtime, "robot_states", []) or [])
+    low_battery_states = [
+        value
+        for value in robot_states
+        if str(_field(value, "status", "")).casefold() == "low_battery"
+    ]
+    low_battery_ids = {
+        str(_field(value, "robot_id", ""))
+        for value in low_battery_states
+        if _field(value, "robot_id")
+    }
+
+    relocation = state.get("terminal_relocation")
+    relocation_records = [
+        {
+            "robot_id": str(_field(value, "robot_id", "")),
+            "policy": str(_field(value, "policy", "")),
+            "from_node": _field(value, "from_node"),
+            "to_node": _field(value, "to_node"),
+            "task_id": _field(value, "task_id"),
+            "reason": _field(value, "reason"),
+        }
+        for value in (_field(relocation, "relocations", []) or [])
+        if not low_battery_ids
+        or str(_field(value, "robot_id", "")) in low_battery_ids
+    ]
+    route_records = []
+    for route in schedule.routes:
+        if low_battery_ids and route.robot_id not in low_battery_ids:
+            continue
+        charge_steps = [
+            step
+            for step in route.steps
+            if step.step_type == "SERVICE" and step.service_kind == "CHARGE"
+        ]
+        route_records.append(
+            {
+                "robot_id": route.robot_id,
+                "step_count": len(route.steps),
+                "finish_at_ms": route.finish_at_ms,
+                "last_node": next(
+                    (
+                        step.node_id or step.to_node
+                        for step in reversed(route.steps)
+                        if step.node_id or step.to_node
+                    ),
+                    None,
+                ),
+                "charge_task_ids": [step.task_id for step in charge_steps],
+            }
+        )
+
+    return {
+        "event": "mapf_validation_failed",
+        "simulation_id": state.get("simulation_id"),
+        "workflow_status": "human_review",
+        "operator_summary": _mapf_error_summary(list(validation.errors)),
+        "errors": list(validation.errors),
+        "warnings": list(validation.warnings),
+        "low_battery_robots": [
+            {
+                "robot_id": _field(value, "robot_id"),
+                "battery_pct": _field(value, "battery_pct"),
+                "current_node": _field(value, "current_node"),
+                "current_edge": _field(value, "current_edge"),
+                "active_task_id": _field(value, "active_task_id"),
+                "current_load_units": _field(value, "current_load_units"),
+                "sim_time_ms": _field(value, "sim_time_ms"),
+            }
+            for value in low_battery_states
+        ],
+        "terminal_relocations": relocation_records,
+        "mapf_routes": route_records,
+        "schedule": {
+            "route_count": len(schedule.routes),
+            "reservation_count": len(schedule.reservations),
+            "station_reservation_count": len(schedule.station_reservations),
+            "total_wait_ms": schedule.total_wait_ms,
+            "total_service_ms": schedule.total_service_ms,
+            "makespan_ms": schedule.makespan_ms,
+        },
+    }
+
+
+def _mapf_operator_message(diagnostics: dict[str, Any]) -> str:
+    """Describe the failed low-battery return in one UI-friendly sentence."""
+
+    robots = diagnostics["low_battery_robots"]
+    relocations = diagnostics["terminal_relocations"]
+    robot_ids = ", ".join(
+        str(value["robot_id"]) for value in robots if value["robot_id"]
+    )
+    charge_targets = ", ".join(
+        str(value["to_node"])
+        for value in relocations
+        if value["policy"] == "CHARGE" and value["to_node"]
+    )
+    if not robot_ids:
+        return (
+            "생성된 로봇 경로를 실행하지 못했습니다. "
+            f"{diagnostics['operator_summary']}"
+        )
+    target = (
+        f"에서 충전소 {charge_targets}까지의 복귀 경로"
+        if charge_targets
+        else "의 복귀 경로"
+    )
+    return (
+        f"배터리 부족 로봇 {robot_ids}{target}를 실행하지 못했습니다. "
+        f"{diagnostics['operator_summary']}"
+    )
 
 
 @observe_node(
@@ -222,10 +377,22 @@ def mapf_plan_validator_node(state: LaroGraphState) -> dict:
                 or []
             ),
         )
+        operator_message = None
+        if not validation.valid:
+            failure_context = _mapf_failure_diagnostics(state, schedule, validation)
+            operator_message = _mapf_operator_message(failure_context)
+            safe_console_print(
+                "[mapf_plan_validator 진단] "
+                + json.dumps(failure_context, ensure_ascii=False, default=str)
+            )
         validated_schedule = schedule.model_copy(
             update={
                 "valid": validation.valid,
-                "conflicts": [*schedule.conflicts, *validation.errors],
+                "conflicts": [
+                    *schedule.conflicts,
+                    *([operator_message] if operator_message else []),
+                    *validation.errors,
+                ],
                 "warnings": [*schedule.warnings, *validation.warnings],
             }
         )
