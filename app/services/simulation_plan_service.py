@@ -869,6 +869,7 @@ class RollingHorizonReplanService:
             ),
             relocate_idle_robot_ids=relocate_ids,
             minimum_task_vehicle_count=explicit.minimum_task_vehicle_count,
+            allowed_task_robot_ids=explicit.allowed_task_robot_ids,
         )
 
     @staticmethod
@@ -877,6 +878,20 @@ class RollingHorizonReplanService:
         snapshot: ReplanExecutionSnapshot,
     ) -> int:
         """Count old-plan robots that still owned replannable physical work."""
+
+        return len(
+            RollingHorizonReplanService._remaining_task_vehicle_ids(
+                active,
+                snapshot,
+            )
+        )
+
+    @staticmethod
+    def _remaining_task_vehicle_ids(
+        active: SimulationPlan,
+        snapshot: ReplanExecutionSnapshot,
+    ) -> set[str]:
+        """Return old-plan robot IDs that still own replannable work."""
 
         completed = set(snapshot.completed_task_bases)
         locked = set(snapshot.locked_task_bases)
@@ -889,8 +904,8 @@ class RollingHorizonReplanService:
             and canonical not in locked
         }
         if not remaining_task_bases:
-            return 0
-        return len({
+            return set()
+        return {
             robot.robot_id
             for robot in active.robots
             if any(
@@ -899,7 +914,38 @@ class RollingHorizonReplanService:
                 and canonical_task_id(step.task_id) in remaining_task_bases
                 for step in robot.steps
             )
-        })
+        }
+
+    @staticmethod
+    def _low_battery_transition_task_vehicle_ids(
+        active: SimulationPlan,
+        snapshot: ReplanExecutionSnapshot,
+        explicit: RuntimePlanningOverrides,
+    ) -> set[str]:
+        """Keep existing productive robots without adding transition robots.
+
+        A low-battery robot remains physically active while it hands over and
+        travels to its charger.  Requiring the same number of *task* robots at
+        that instant adds a replacement before the retiring robot clears the
+        shared map.  That turns an N-robot plan into N+1 simultaneous MAPF
+        routes and can make an otherwise valid charging transition infeasible.
+        """
+
+        remaining_robot_ids = (
+            RollingHorizonReplanService._remaining_task_vehicle_ids(
+                active,
+                snapshot,
+            )
+        )
+        retiring_robot_ids = {
+            value.robot_id
+            for value in explicit.robot_states
+            if value.status == "low_battery"
+        }
+        continuing_robot_ids = remaining_robot_ids - retiring_robot_ids
+        if explicit.allowed_task_robot_ids is not None:
+            continuing_robot_ids &= set(explicit.allowed_task_robot_ids)
+        return continuing_robot_ids
 
     def replan(self, request: ReplanMissionRequest) -> SimulationPlanResponse:
         active, prior_result = self.store.load(request.active_plan_id)
@@ -991,16 +1037,38 @@ class RollingHorizonReplanService:
         )
         explicit_runtime_overrides = new_mission.runtime_overrides
         if request.reason == "LOW_BATTERY":
-            previous_task_vehicle_count = self._remaining_task_vehicle_count(
+            remaining_task_vehicle_ids = self._remaining_task_vehicle_ids(
                 active,
                 snapshot,
+            )
+            transition_task_vehicle_ids = self._low_battery_transition_task_vehicle_ids(
+                active,
+                snapshot,
+                explicit_runtime_overrides,
+            )
+            # With at least one continuing task robot, freeze the transition
+            # candidate set to those old-plan workers.  This prevents cuOpt
+            # from activating a reserve robot while the low-battery robot is
+            # still physically travelling to its charger.  If the retiring
+            # robot was the only worker, leave the candidate set unrestricted
+            # so one replacement can accept its unfinished work.
+            allowed_task_robot_ids = (
+                sorted(transition_task_vehicle_ids)
+                if transition_task_vehicle_ids
+                else explicit_runtime_overrides.allowed_task_robot_ids
+            )
+            transition_task_vehicle_count = (
+                len(transition_task_vehicle_ids)
+                if transition_task_vehicle_ids
+                else len(remaining_task_vehicle_ids)
             )
             explicit_runtime_overrides = explicit_runtime_overrides.model_copy(
                 update={
                     "minimum_task_vehicle_count": max(
                         explicit_runtime_overrides.minimum_task_vehicle_count,
-                        previous_task_vehicle_count,
-                    )
+                        transition_task_vehicle_count,
+                    ),
+                    "allowed_task_robot_ids": allowed_task_robot_ids,
                 }
             )
         runtime_overrides = self._merge_runtime_overrides(

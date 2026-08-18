@@ -63,7 +63,17 @@ def apply_runtime_overrides(
     horizon_start_ms = int(
         getattr(overrides, "planning_horizon_start_ms", 0) or 0
     )
-    if not robot_states and horizon_start_ms <= 0:
+    allowed_task_robot_ids = getattr(overrides, "allowed_task_robot_ids", None)
+    allowed_task_robot_set = (
+        set(allowed_task_robot_ids)
+        if allowed_task_robot_ids is not None
+        else None
+    )
+    if (
+        not robot_states
+        and horizon_start_ms <= 0
+        and allowed_task_robot_set is None
+    ):
         return context
 
     base_by_id = {value.robot_id: value for value in context.robots}
@@ -172,6 +182,11 @@ def apply_runtime_overrides(
             reasons.append("low_battery")
         if robot.capacity_units - robot.current_load_units < context.min_capacity_units:
             reasons.append("insufficient_capacity")
+        if (
+            allowed_task_robot_set is not None
+            and robot.robot_id not in allowed_task_robot_set
+        ):
+            reasons.append("transition_fleet_restriction")
         if reasons:
             for reason in reasons:
                 excluded[reason].append(robot.robot_id)

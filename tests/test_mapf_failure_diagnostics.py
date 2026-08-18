@@ -18,6 +18,10 @@ from app.domain.schemas import (
     RobotRuntimeContext,
     RobotRuntimeOverride,
     RuntimePlanningOverrides,
+    SimulationLogicalOperation,
+    SimulationPlan,
+    SimulationPlanStep,
+    SimulationRobotPlan,
     TerminalRelocationRecord,
     TerminalRelocationResult,
     TaskData,
@@ -752,3 +756,109 @@ def test_planner_diagnostics_keep_priority_retry_summary(monkeypatch) -> None:
     assert retry_warning in update["traffic_schedule"].warnings
     assert len(output) == 1
     assert '"warnings": ["MAPF alternate-priority retries exhausted:' in output[0]
+
+
+def test_low_battery_transition_keeps_only_existing_task_robots() -> None:
+    active = SimulationPlan(
+        plan_id="PLAN-OLD",
+        plan_version=1,
+        warehouse_id="WH-001",
+        simulation_id="SIM-RH",
+        map_version="MAP-1",
+        makespan_ms=6000,
+        absolute_finish_at_ms=6000,
+        robots=[
+            SimulationRobotPlan(
+                robot_id=robot_id,
+                initial_node="A",
+                finish_at_ms=6000,
+                steps=[
+                    SimulationPlanStep(
+                        step_id=f"{robot_id}-1",
+                        sequence=1,
+                        step_type="SERVICE",
+                        start_at_ms=3000,
+                        end_at_ms=4000,
+                        node_id="B",
+                        task_id=f"TASK-{index:03d}_PICK",
+                        service_kind="PICKUP",
+                    )
+                ],
+            )
+            for index, robot_id in enumerate(
+                ("R296", "R297", "R298", "R299"),
+                start=1,
+            )
+        ],
+        logical_operations=[
+            SimulationLogicalOperation(
+                operation_id=f"IN-{index:03d}",
+                operation_type="INBOUND_ITEM",
+                task_ids=[f"TASK-{index:03d}"],
+            )
+            for index in range(1, 5)
+        ],
+    )
+    snapshot = ReplanExecutionSnapshot(
+        source_plan_id=active.plan_id,
+        replan_at_sim_time_ms=2500,
+        earliest_handover_at_ms=2500,
+        latest_handover_at_ms=4000,
+    )
+    explicit = RuntimePlanningOverrides(
+        robot_states=[
+            RobotRuntimeOverride(
+                robot_id="R298",
+                current_node="R3_4",
+                status="low_battery",
+                battery_pct=20,
+                sim_time_ms=2500,
+            )
+        ]
+    )
+
+    allowed = RollingHorizonReplanService._low_battery_transition_task_vehicle_ids(
+        active,
+        snapshot,
+        explicit,
+    )
+
+    assert RollingHorizonReplanService._remaining_task_vehicle_count(
+        active,
+        snapshot,
+    ) == 4
+    assert allowed == {"R296", "R297", "R299"}
+
+
+def test_transition_task_allow_list_filters_reserve_robots() -> None:
+    context = RobotRuntimeContext(
+        warehouse_id="WH-001",
+        simulation_id="SIM-RH",
+        robots=[
+            RobotRuntime(
+                warehouse_id="WH-001",
+                simulation_id="SIM-RH",
+                robot_id=robot_id,
+                robot_code=robot_id,
+                status="idle",
+                battery_pct=90,
+                capacity_units=1,
+                current_node="A",
+            )
+            for robot_id in ("R296", "R297", "R299", "R300")
+        ],
+        candidate_robot_ids=["R296", "R297", "R299", "R300"],
+        min_battery_pct=30,
+        min_capacity_units=1,
+        summary="four eligible robots before low-battery transition",
+    )
+
+    filtered = apply_runtime_overrides(
+        context,
+        RuntimePlanningOverrides(
+            allowed_task_robot_ids=["R296", "R297", "R299"]
+        ),
+    )
+
+    assert filtered.candidate_robot_ids == ["R296", "R297", "R299"]
+    assert filtered.excluded_by_reason["transition_fleet_restriction"] == ["R300"]

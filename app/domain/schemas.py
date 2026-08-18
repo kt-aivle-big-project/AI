@@ -628,6 +628,12 @@ class RuntimePlanningOverrides(StrictModel):
     # Trusted rolling-horizon fleet floor. It counts task-performing robots only;
     # charge/park relocation routes remain outside this lower bound.
     minimum_task_vehicle_count: int = Field(default=0, ge=0)
+    # Optional transition-only allow-list for business-task assignment.  A
+    # low-battery replan uses this to keep the robots that were already working
+    # while the retiring robot remains on the shared map en route to charging.
+    # ``None`` means the normal eligible fleet; an empty list intentionally
+    # means that no robot may receive business work in this solve.
+    allowed_task_robot_ids: list[str] | None = None
 
 
 class PublicRuntimeSnapshot(StrictModel):
