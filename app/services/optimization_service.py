@@ -1387,13 +1387,25 @@ class CuOptPublicAPIError(RuntimeError):
         super().__init__(f"NVIDIA cuOpt HTTP {self.status_code}: {compact}")
 
 
+class CuOptNvcfTransientError(RuntimeError):
+    """NVCF capacity or transport failure after bounded retries."""
+
+    def __init__(self, message: str, *, status_code: int | None = None) -> None:
+        self.status_code = status_code
+        super().__init__(message)
+
+
 class ExternalCuOptGateway:
     """Submit validated routing data to self-hosted, thin-client, or Build API cuOpt."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, transient_retries_enabled: bool = False) -> None:
         self.settings = get_settings()
         self.builder = CuOptNativeRequestBuilder()
         self.parser = CuOptNativeResponseParser()
+        # Evaluation replays invoke the same frozen request several times and
+        # may outlive a cold NVCF worker allocation. Normal interactive plans
+        # retain their previous single-attempt latency contract.
+        self.transient_retries_enabled = transient_retries_enabled
 
     def _headers(self) -> dict[str, str]:
         """Return headers for a self-hosted HTTP endpoint or private gateway."""
@@ -1424,6 +1436,44 @@ class ExternalCuOptGateway:
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
+
+    def _nvidia_invocation_headers(self) -> dict[str, str]:
+        """Return invocation headers with an explicit NVCF worker wait window."""
+
+        headers = self._nvidia_headers()
+        if self.transient_retries_enabled:
+            headers["NVCF-POLL-SECONDS"] = str(
+                self.settings.cuopt_nvcf_poll_seconds
+            )
+        return headers
+
+    @staticmethod
+    def _is_transient_nvidia_status(status_code: int) -> bool:
+        """Retry only throttling and temporary NVCF/gateway availability failures."""
+
+        return status_code in {429, 502, 503, 504}
+
+    @staticmethod
+    def _is_transient_transport_error(exc: Exception) -> bool:
+        return isinstance(
+            exc,
+            (httpx.TimeoutException, httpx.ConnectError, httpx.RemoteProtocolError),
+        )
+
+    def _transient_response_error(self, response: object) -> CuOptNvcfTransientError:
+        status_code = int(getattr(response, "status_code"))
+        headers = getattr(response, "headers", {}) or {}
+        nvcf_status = str(headers.get("nvcf-status", "")).strip()
+        suffix = f", nvcf-status={nvcf_status}" if nvcf_status else ""
+        return CuOptNvcfTransientError(
+            f"NVIDIA cuOpt is temporarily unavailable (HTTP {status_code}{suffix}).",
+            status_code=status_code,
+        )
+
+    def _retry_delay_seconds(self, retry_index: int) -> float:
+        # 5s, 15s by default. Keep retries sparse enough to allow another
+        # serverless worker allocation without extending every successful call.
+        return self.settings.cuopt_retry_backoff_seconds * (3**retry_index)
 
     @staticmethod
     def _request_id(raw: dict) -> str | None:
@@ -1490,16 +1540,43 @@ class ExternalCuOptGateway:
     def _poll_nvidia_api(self, client: httpx.Client, req_id: str) -> dict:
         """Poll the public cuOpt status endpoint until a terminal response is returned."""
 
+        last_error: Exception | None = None
         for _ in range(self.settings.cuopt_max_poll_attempts):
             time.sleep(self.settings.cuopt_poll_interval_seconds)
-            response = client.get(self._solution_url(req_id), headers=self._nvidia_headers())
+            try:
+                response = client.get(
+                    self._solution_url(req_id),
+                    headers=self._nvidia_headers(),
+                )
+            except Exception as exc:
+                if not self._is_transient_transport_error(exc):
+                    raise
+                if not self.transient_retries_enabled:
+                    raise
+                last_error = exc
+                continue
             if response.status_code == 202:
+                continue
+            if self._is_transient_nvidia_status(response.status_code):
+                if not self.transient_retries_enabled:
+                    self._raise_nvidia_error(response)
+                last_error = self._transient_response_error(response)
                 continue
             if response.status_code != 200:
                 self._raise_nvidia_error(response)
             raw = self._response_json(response)
             return self._download_response_reference(client, raw)
-        raise TimeoutError(f"Timed out polling NVIDIA cuOpt request {req_id}.")
+        detail = (
+            f" Last transient failure: {type(last_error).__name__}: {last_error}"
+            if last_error is not None
+            else ""
+        )
+        if not self.transient_retries_enabled:
+            raise TimeoutError(f"Timed out polling NVIDIA cuOpt request {req_id}.")
+        raise CuOptNvcfTransientError(
+            "NVIDIA cuOpt did not return a terminal result within the configured "
+            f"status polling window.{detail}"
+        )
 
     def _upload_large_asset(self, client: httpx.Client, data: bytes) -> str:
         """Upload oversized cuOpt JSON through the official NVCF asset API."""
@@ -1552,9 +1629,24 @@ class ExternalCuOptGateway:
         compact = json.dumps(native_request, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
         # Resolve credentials before creating any network client.  Missing-key
         # tests and misconfigured runs therefore fail locally with zero I/O.
-        headers = self._nvidia_headers()
+        headers = self._nvidia_invocation_headers()
         asset_id: str | None = None
-        timeout = float(max(payload.time_limit_seconds + 30, 60))
+        request_timeout = float(max(payload.time_limit_seconds + 30, 60))
+        if self.transient_retries_enabled:
+            request_timeout = float(
+                max(
+                    request_timeout,
+                    self.settings.cuopt_request_timeout_seconds,
+                    self.settings.cuopt_nvcf_poll_seconds + 15,
+                )
+            )
+        timeout = httpx.Timeout(
+            request_timeout,
+            connect=min(request_timeout, 30.0),
+            read=request_timeout,
+            write=min(request_timeout, 30.0),
+            pool=min(request_timeout, 30.0),
+        )
         with httpx.Client(verify=self.settings.cuopt_verify_ssl, timeout=timeout) as client:
             try:
                 data: dict | None = native_request
@@ -1574,22 +1666,70 @@ class ExternalCuOptGateway:
                     "data": data,
                     "client_version": self.settings.cuopt_client_version,
                 }
-                response = client.post(
-                    self.settings.cuopt_api_url,
-                    json=envelope,
-                    headers=headers,
+                attempts = (
+                    self.settings.cuopt_transient_max_retries + 1
+                    if self.transient_retries_enabled
+                    else 1
                 )
-                if response.status_code not in {200, 202}:
-                    self._raise_nvidia_error(response)
-                raw = self._response_json(response)
-                req_id = self._request_id(raw)
-                if response.status_code == 202 or (req_id and "response" not in raw and "solver_response" not in raw):
-                    if not req_id:
-                        raise ValueError("NVIDIA cuOpt returned 202 without requestId.")
-                    raw = self._poll_nvidia_api(client, req_id)
-                else:
-                    raw = self._download_response_reference(client, raw)
-                return self.parser.parse(raw, payload)
+                last_error: CuOptNvcfTransientError | None = None
+                for attempt in range(attempts):
+                    try:
+                        response = client.post(
+                            self.settings.cuopt_api_url,
+                            json=envelope,
+                            headers=headers,
+                        )
+                        if self._is_transient_nvidia_status(response.status_code):
+                            if not self.transient_retries_enabled:
+                                self._raise_nvidia_error(response)
+                            raise self._transient_response_error(response)
+                        if response.status_code not in {200, 202}:
+                            self._raise_nvidia_error(response)
+                        raw = self._response_json(response)
+                        req_id = self._request_id(raw)
+                        if response.status_code == 202 or (
+                            req_id
+                            and "response" not in raw
+                            and "solver_response" not in raw
+                        ):
+                            if not req_id:
+                                raise ValueError(
+                                    "NVIDIA cuOpt returned 202 without requestId."
+                                )
+                            raw = self._poll_nvidia_api(client, req_id)
+                        else:
+                            raw = self._download_response_reference(client, raw)
+                        parsed = self.parser.parse(raw, payload)
+                        if attempt > 0:
+                            parsed = parsed.model_copy(
+                                update={
+                                    "warnings": [
+                                        *parsed.warnings,
+                                        "NVIDIA cuOpt transient failure recovered "
+                                        f"on attempt {attempt + 1} of {attempts}.",
+                                    ]
+                                }
+                            )
+                        return parsed
+                    except CuOptNvcfTransientError as exc:
+                        last_error = exc
+                    except Exception as exc:
+                        if not self._is_transient_transport_error(exc):
+                            raise
+                        last_error = CuOptNvcfTransientError(
+                            "NVIDIA cuOpt transport failed temporarily: "
+                            f"{type(exc).__name__}: {exc}"
+                        )
+
+                    if attempt + 1 < attempts:
+                        time.sleep(self._retry_delay_seconds(attempt))
+
+                assert last_error is not None
+                raise CuOptNvcfTransientError(
+                    "NVIDIA cuOpt remained temporarily unavailable after "
+                    f"{attempts} attempts. Last failure: {last_error}",
+                    status_code=last_error.status_code,
+                )
             finally:
                 if asset_id:
                     self._delete_large_asset(client, asset_id)
@@ -1750,6 +1890,14 @@ class ExternalCuOptGateway:
                 optimizer="nvidia-cuopt-api",
                 reason=str(exc),
                 errors=[f"cuopt_http_{exc.status_code}"],
+            )
+        except CuOptNvcfTransientError as exc:
+            return OptimizerResult(
+                backend="cuopt",
+                status="unavailable",
+                optimizer="nvidia-cuopt-api",
+                reason=str(exc),
+                errors=["cuopt_nvcf_transient_unavailable"],
             )
         except Exception as exc:
             return OptimizerResult(

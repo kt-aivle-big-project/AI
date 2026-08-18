@@ -1,6 +1,7 @@
 """Conditional routing functions for the v13.20 HITL-aware single-decision Rule/Agent workflow."""
 from __future__ import annotations
 
+from app.core.config import get_settings
 from app.domain.schemas import (
     CandidateSpaceValidation,
     CuOptDynamicInputDraft,
@@ -401,7 +402,12 @@ def after_dynamic_input_validation_router(state: LaroGraphState) -> str:
     if validation.valid:
         return "pre_optimization_approval_gate"
     draft = model_from_state(state, "cuopt_dynamic_input_draft", CuOptDynamicInputDraft)
-    if draft.formulation_source == "llm" and validation.repairable and int(state.get("formulation_retry_count", 0)) < 1:
+    if (
+        draft.formulation_source == "llm"
+        and validation.repairable
+        and int(state.get("formulation_retry_count", 0))
+        < get_settings().llm_cuopt_formulation_max_retries
+    ):
         return "cuopt_formulation_retry_prepare"
     return "human_review"
 

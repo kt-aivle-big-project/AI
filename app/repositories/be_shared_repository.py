@@ -486,9 +486,19 @@ class BeSharedWarehouseRepository(JsonWarehouseRepository):
                     # In the shared BOX model, capacity is physical boxes, not
                     # sellable units. Every AMR carries exactly one BOX.
                     "capacity_units": 1,
-                    "current_load_units": 1 if int(runtime.current_load_units or 0) > 0 else 0,
+                    "current_load_units": (
+                        1
+                        if int(runtime.current_load_units or 0) > 0
+                        or runtime.carrying_load is True
+                        else 0
+                    ),
                     "active_task_id": runtime.active_task_code or (str(runtime.current_task_id) if runtime.current_task_id is not None else None),
-                    "sim_time_ms": int(runtime.sim_time_ms or (snapshot.meta.sim_time_ms if snapshot.meta else 0) or 0),
+                    "sim_time_ms": int(
+                        runtime.sim_time_ms
+                        or runtime.simulation_time_millis
+                        or (snapshot.meta.sim_time_ms if snapshot.meta else 0)
+                        or 0
+                    ),
                 }
             )
         return values

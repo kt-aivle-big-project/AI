@@ -793,6 +793,8 @@ def _structured_normalized_request(state: LaroGraphState) -> NormalizedWarehouse
     operations: list[NormalizedOperation] = []
     incidents: list[OperationalIncidentImpact] = []
     clarification_questions: list[str] = []
+    event_soft_edge_ids: list[str] = []
+    event_blocked_edge_ids: list[str] = []
     for index, event in enumerate(state.get("events", []), start=1):
         incident = _incident_from_event(event, index)
         if incident is not None:
@@ -845,6 +847,10 @@ def _structured_normalized_request(state: LaroGraphState) -> NormalizedWarehouse
                     source_event_type=event.type,
                 )
             )
+        elif event.type == "edge_congested" and event.edge_id:
+            event_soft_edge_ids.append(event.edge_id)
+        elif event.type == "edge_blocked" and event.edge_id:
+            event_blocked_edge_ids.append(event.edge_id)
         elif event.type not in {
             "edge_congested",
             "edge_occupied",
@@ -886,6 +892,16 @@ def _structured_normalized_request(state: LaroGraphState) -> NormalizedWarehouse
         constraints = NormalizedRequestConstraints.model_validate(raw_constraints)
     else:
         constraints = NormalizedRequestConstraints()
+    constraints = constraints.model_copy(
+        update={
+            "soft_avoid_edge_ids": _dedupe(
+                [*constraints.soft_avoid_edge_ids, *event_soft_edge_ids]
+            ),
+            "hard_block_edge_ids": _dedupe(
+                [*constraints.hard_block_edge_ids, *event_blocked_edge_ids]
+            ),
+        }
+    )
     return NormalizedWarehouseRequest(
         source="structured_events",
         operations=operations,
@@ -1456,15 +1472,26 @@ def request_router_llm_node(state: LaroGraphState) -> dict:
         recommendation = routed.recommendation
         if generated_command_batch:
             # Generated command batches already passed deterministic canonical
-            # syntax validation.  Their operations stay immutable, while an
-            # operator-authored user_command may still require clarification or
-            # approval before the route is locked.
+            # syntax validation and the deterministic request gate below owns
+            # every actual safety, authorization, conflict, and ambiguity
+            # boundary.  The Router model may choose Rule vs Agent, but it may
+            # not invent a model-only approval that blocks authoritative work.
             request = request.model_copy(update={"user_clarification_questions": []})
             recommendation = recommendation.model_copy(
                 update={
+                    "route": (
+                        "AGENT_FORMULATION"
+                        if recommendation.route == "HUMAN_REVIEW"
+                        else recommendation.route
+                    ),
+                    "gate_action": "PROCEED",
+                    "reason_code": None,
+                    "prompt": None,
+                    "options": [],
+                    "recommended_option_id": None,
                     "reasons": [
                         *recommendation.reasons,
-                        "Generated command operations remain authoritative; only the optional operator intent may open Human Review.",
+                        "Generated command operations remain authoritative; only deterministic responsibility boundaries may open Human Review.",
                     ],
                 }
             )

@@ -90,6 +90,44 @@ def _contains_any(text: str, markers: tuple[str, ...]) -> bool:
     return any(marker.casefold() in folded for marker in markers)
 
 
+def _ambiguous_relative_intent(command: str) -> bool:
+    """Detect a relative direction/order request with no stated reference.
+
+    A model must not guess whether ``opposite`` means reversing task priority,
+    robot travel direction, or a warehouse route. Explicitly naming the thing
+    to reverse makes the request actionable; a bare relative phrase opens a
+    clarification checkpoint before either formulation branch.
+    """
+
+    relative_markers = (
+        "opposite direction",
+        "reverse direction",
+        "the other way",
+        "반대 방향",
+        "반대로",
+        "역방향",
+        "역순",
+    )
+    explicit_reference_markers = (
+        "task order",
+        "operation order",
+        "priority order",
+        "warehouse direction",
+        "route direction",
+        "edge direction",
+        "작업 순서",
+        "임무 순서",
+        "우선순위",
+        "창고 방향",
+        "경로 방향",
+        "통로 방향",
+    )
+    return _contains_any(command, relative_markers) and not _contains_any(
+        command,
+        explicit_reference_markers,
+    )
+
+
 _CANONICAL_ORDER_ID = re.compile(r"^ORD-\d{3,}$", re.IGNORECASE)
 _CANONICAL_INBOUND_ID = re.compile(r"^IN-\d{3,}$", re.IGNORECASE)
 _CANONICAL_ROBOT_ID = re.compile(r"^R\d{3}$", re.IGNORECASE)
@@ -435,6 +473,16 @@ def _inventory_data_conflict(command: str) -> str | None:
     """Detect an explicitly reported DB-versus-sensor quantity conflict."""
 
     folded = command.casefold()
+    if (
+        "db" in folded
+        and "sensor" in folded
+        and any(marker in folded for marker in ("different", "mismatch", "conflict"))
+    ):
+        match = re.search(
+            r"(?<![A-Z0-9])(?:K\d+_\d+(?:-L[123])?|ITEM_[A-Z0-9_]+)(?![A-Z0-9])",
+            command.upper(),
+        )
+        return match.group(0) if match else "inventory-record"
     if not (
         ("db" in folded or "postgres" in folded or "시스템 재고" in command)
         and ("sensor" in folded or "센서" in command or "실사" in command)
@@ -467,7 +515,17 @@ def _destination_override_request(command: str) -> tuple[str | None, list[str]] 
     folded = command.casefold()
     if not any(marker in folded for marker in ("대체", "변경", "override", "substitute")):
         return None
-    destinations = sorted(set(re.findall(r"(?<![A-Z0-9])O_[A-Z](?![A-Z0-9])", command.upper())))
+    # Preserve appearance order: the first code is the contractual destination
+    # and the second is the requested replacement. Sorting would silently swap
+    # the meaning of a command such as ``O_B를 O_A로 변경``.
+    destinations = list(
+        dict.fromkeys(
+            re.findall(
+                r"(?<![A-Z0-9])O_[A-Z](?![A-Z0-9])",
+                command.upper(),
+            )
+        )
+    )
     if len(destinations) < 2:
         return None
     order = re.search(r"(?<![A-Z0-9])ORD-\d{3,}(?![A-Z0-9])", command.upper())
@@ -492,6 +550,7 @@ def _interaction(
     recommended_option_id: str | None = None,
     default_action: str = "HOLD",
     context_summary: str = "",
+    evidence_ids: list[str] | None = None,
 ) -> HumanInteractionRequest:
     return HumanInteractionRequest(
         interaction_id=_id(simulation_id, reason_code, prompt),
@@ -501,6 +560,7 @@ def _interaction(
         headline=headline,
         prompt=prompt,
         options=options or [],
+        evidence_ids=evidence_ids or [],
         recommended_option_id=recommended_option_id,
         default_action=default_action,  # type: ignore[arg-type]
         route_locked=False,
@@ -793,6 +853,11 @@ def resolve_request_gate(
             recommended_option_id="WAIT_FOR_CONTRACT_DESTINATION",
             default_action="HOLD",
             context_summary="Changing a contractual delivery destination crosses an authorization boundary.",
+            evidence_ids=[
+                *([order_id] if order_id else []),
+                destinations[0],
+                destinations[1],
+            ],
         )
         return RequestGateDecision(
             action="REQUIRE_HUMAN_APPROVAL",
@@ -811,7 +876,17 @@ def resolve_request_gate(
         "bypass policy",
         "skip inventory check",
     )
-    if _contains_any(command, safety_markers) and not _has_response(
+    flexible_english_safety_override = any(
+        re.search(pattern, command, flags=re.IGNORECASE)
+        for pattern in (
+            r"\bignore\b.{0,32}\bsafety\b",
+            r"\b(?:skip|bypass|disable)\b.{0,32}\b(?:validation|safety|policy|inventory check)\b",
+        )
+    )
+    if (
+        _contains_any(command, safety_markers)
+        or flexible_english_safety_override
+    ) and not _has_response(
         human_responses, "SAFETY_OVERRIDE_REQUEST"
     ):
         prompt = "요청이 안전·재고 검증 우회를 포함합니다. 운영자 예외 검토를 진행할까요?"
@@ -843,6 +918,49 @@ def resolve_request_gate(
             action="REQUIRE_HUMAN_APPROVAL",
             recommended_route="AGENT_FORMULATION",
             reasons=[*reasons, "The request crosses a safety or authorization boundary."],
+            human_interaction=interaction,
+        )
+
+    if _ambiguous_relative_intent(command) and not _has_response(
+        human_responses,
+        "OPERATOR_INTENT_CLARIFICATION",
+    ):
+        prompt = (
+            "‘반대 방향’이 작업 처리 순서를 뒤집는다는 의미인지, "
+            "로봇의 창고 이동 방향을 바꾼다는 의미인지 선택해 주세요."
+        )
+        interaction = _interaction(
+            simulation_id=simulation_id,
+            kind="CLARIFICATION",
+            reason_code="OPERATOR_INTENT_CLARIFICATION",
+            headline="사용자 명령의 기준 확인",
+            prompt=prompt,
+            options=[
+                HumanInteractionOption(
+                    option_id="REVERSE_TASK_ORDER",
+                    label="작업 순서 반대로",
+                    resolution_value="REVERSE_TASK_ORDER",
+                    impact_summary="이번 계획의 작업 우선순서를 반대로 적용합니다.",
+                ),
+                HumanInteractionOption(
+                    option_id="REVERSE_WAREHOUSE_DIRECTION",
+                    label="이동 방향 반대로",
+                    resolution_value="REVERSE_WAREHOUSE_DIRECTION",
+                    impact_summary="창고 경로의 진행 방향 변경 가능성을 검토합니다.",
+                ),
+            ],
+            default_action="HOLD",
+            context_summary=(
+                "The relative direction has no explicit task-order or route reference."
+            ),
+        )
+        return RequestGateDecision(
+            action="ASK_CLARIFICATION",
+            recommended_route="AGENT_FORMULATION",
+            reasons=[
+                *reasons,
+                "A relative direction request has no explicit reference and cannot be safely inferred.",
+            ],
             human_interaction=interaction,
         )
 

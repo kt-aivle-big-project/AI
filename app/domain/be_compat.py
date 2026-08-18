@@ -193,10 +193,16 @@ class BeCompatRuntimeRobot(BeCompatModel):
     battery_level: float | None = Field(default=None, alias="batteryLevel")
     status: str
     current_task_id: int | None = Field(default=None, alias="currentTaskId")
+    carrying_load: bool | None = Field(default=None, alias="carryingLoad")
     updated_at: str | None = Field(default=None, alias="updatedAt")
 
     schema_version: int = Field(default=1, alias="schemaVersion")
     sim_time_ms: int | None = Field(default=None, alias="simTimeMs")
+    # The current Spring RobotState record uses this longer field name.  Keep
+    # accepting the older LARO extension name above for backward compatibility.
+    simulation_time_millis: int | None = Field(
+        default=None, alias="simulationTimeMillis"
+    )
     state_version: int | None = Field(default=None, alias="stateVersion")
     active_plan_id: str | None = Field(default=None, alias="activePlanId")
     active_plan_version: int | None = Field(default=None, alias="activePlanVersion")

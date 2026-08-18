@@ -81,10 +81,44 @@ def optimizer_node(state: LaroGraphState) -> dict:
     try:
         payload = model_from_state(state, "cuopt_payload", CuOptPayload)
         backend = state["optimization_backend"]
+        runtime_overrides = state.get("runtime_overrides")
+        relocate_robot_ids = list(
+            getattr(runtime_overrides, "relocate_idle_robot_ids", []) or []
+        )
+        if not payload.task_data.task_ids and relocate_robot_ids:
+            # A rolling-horizon low-battery handover can legitimately finish
+            # every business operation before the new horizon starts.  In that
+            # case the only remaining work is the execution-only CHARGE/PARK
+            # goal appended by TerminalRelocationEnricher.  External cuOpt does
+            # not accept an empty order-location array, and there is no
+            # assignment problem for it to solve, so publish the mathematically
+            # exact empty assignment and continue through the normal independent
+            # assignment, relocation, MAPF, and plan validators.
+            result = OptimizerResult(
+                backend=backend,
+                status="success",
+                optimizer="terminal-relocation-empty-assignment",
+                global_objective_cost=0.0,
+                estimated_makespan_ms=0.0,
+                warnings=[
+                    "Business-task assignment skipped because only terminal relocation remains."
+                ],
+            )
+            return {"optimizer_result": result, **trace_update("optimizer")}
         if backend == "ortools":
             result = ORToolsRoutingOptimizer().solve(payload)
         elif backend == "cuopt":
-            result = ExternalCuOptGateway().solve(payload)
+            # Evaluation repeats may retry a transient transport failure so one
+            # flaky sample does not abort an entire comparison suite.  Keep the
+            # normal planning path on the gateway's production constructor and
+            # retry policy; this also preserves the public gateway contract for
+            # integrations that provide their own implementation.
+            gateway = (
+                ExternalCuOptGateway(transient_retries_enabled=True)
+                if state.get("evaluation_shadow_mode", False)
+                else ExternalCuOptGateway()
+            )
+            result = gateway.solve(payload)
         else:
             raise ValueError("cuopt_payload_only must terminate before optimizer execution")
 

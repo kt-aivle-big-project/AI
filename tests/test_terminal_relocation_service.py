@@ -12,6 +12,7 @@ from app.domain.schemas import (
     TaskData,
     WaypointGraphData,
 )
+from app.graph.optimization import optimizer_node
 from app.services.terminal_relocation_service import (
     RobotTerminalPolicyService,
     TerminalRelocationEnricher,
@@ -73,6 +74,34 @@ def test_low_battery_policy_prefers_dedicated_home_over_nearest_charger() -> Non
 
     assert policy == "CHARGE"
     assert target == "C02"
+
+
+def test_relocation_only_plan_skips_empty_external_cuopt_request(monkeypatch) -> None:
+    def unexpected_external_solve(*_args, **_kwargs):
+        raise AssertionError("relocation-only planning must not call external cuOpt")
+
+    monkeypatch.setattr(
+        "app.graph.optimization.ExternalCuOptGateway.solve",
+        unexpected_external_solve,
+    )
+
+    update = optimizer_node(
+        {
+            "cuopt_payload": _empty_payload(),
+            "optimization_backend": "cuopt",
+            "runtime_overrides": RuntimePlanningOverrides(
+                relocate_idle_robot_ids=["R001"]
+            ),
+            "workflow_trace": [],
+            "node_execution_log": [],
+        }
+    )
+
+    result = update["optimizer_result"]
+    assert result.status == "success"
+    assert result.backend == "cuopt"
+    assert result.optimizer == "terminal-relocation-empty-assignment"
+    assert result.routes == []
 
 
 def test_relocation_assigns_each_low_battery_robot_to_its_own_charger() -> None:

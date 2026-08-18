@@ -95,6 +95,10 @@ class LaroInputState(TypedDict):
     events: list[EventInput]
     structured_input: StructuredMissionInput | None
     user_command: str | None
+    # A Human Review resume and deterministic evaluation may carry a frozen
+    # normalization result. It must be part of the graph input schema; fields
+    # declared only on the internal state are discarded by LangGraph at START.
+    normalized_request_override: NormalizedWarehouseRequest | None
     mission_spec: NotRequired[MissionSpec]
     max_planner_retries: int
     retry_count: int

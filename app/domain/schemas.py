@@ -599,6 +599,10 @@ class RobotRuntimeOverride(StrictModel):
     # Rolling-horizon projection has reached a handover boundary where the
     # previous task/mission must be removed from an OVERLAY Redis snapshot.
     clear_active_work: bool = False
+    # The Spring simulator has already quiesced this empty robot at the stated
+    # node.  Unlike an ordinary telemetry overlay, this position is the real
+    # rolling-horizon handover and must replace any future plan projection.
+    safe_handover_reached: bool = False
     sim_time_ms: int = Field(default=0, ge=0)
 
     @model_validator(mode="after")

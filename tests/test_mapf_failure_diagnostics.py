@@ -830,6 +830,69 @@ def test_low_battery_transition_keeps_only_existing_task_robots() -> None:
     assert allowed == {"R296", "R297", "R299"}
 
 
+def test_low_battery_transition_releases_allow_list_when_old_worker_is_below_planning_threshold() -> None:
+    active = SimulationPlan(
+        plan_id="PLAN-OLD",
+        plan_version=1,
+        warehouse_id="WH-001",
+        simulation_id="SIM-RH",
+        map_version="MAP-1",
+        makespan_ms=6000,
+        absolute_finish_at_ms=6000,
+        robots=[
+            SimulationRobotPlan(
+                robot_id="R296",
+                initial_node="A",
+                finish_at_ms=6000,
+                steps=[
+                    SimulationPlanStep(
+                        step_id="R296-1",
+                        sequence=1,
+                        step_type="SERVICE",
+                        start_at_ms=3000,
+                        end_at_ms=4000,
+                        node_id="B",
+                        task_id="TASK-001_PICK",
+                        service_kind="PICKUP",
+                    )
+                ],
+            )
+        ],
+        logical_operations=[
+            SimulationLogicalOperation(
+                operation_id="IN-001",
+                operation_type="INBOUND_ITEM",
+                task_ids=["TASK-001"],
+            )
+        ],
+    )
+    snapshot = ReplanExecutionSnapshot(
+        source_plan_id=active.plan_id,
+        replan_at_sim_time_ms=2500,
+        earliest_handover_at_ms=2500,
+        latest_handover_at_ms=4000,
+    )
+    explicit = RuntimePlanningOverrides(
+        robot_states=[
+            RobotRuntimeOverride(
+                robot_id="R296",
+                current_node="B",
+                status="idle",
+                battery_pct=24,
+                sim_time_ms=4000,
+            )
+        ]
+    )
+
+    allowed = RollingHorizonReplanService._low_battery_transition_task_vehicle_ids(
+        active,
+        snapshot,
+        explicit,
+    )
+
+    assert allowed == set()
+
+
 def test_transition_task_allow_list_filters_reserve_robots() -> None:
     context = RobotRuntimeContext(
         warehouse_id="WH-001",

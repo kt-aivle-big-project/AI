@@ -180,11 +180,7 @@ class RequestOperationRepository:
                     "source_port_id": operation.source_facility_code or source,
                     "source_node": source,
                     "target_node": destination,
-                    "target_rack_id": (
-                        getattr(self.base, "rack_id_for_access_node", lambda _: None)(destination)
-                        if destination
-                        else None
-                    ),
+                    "target_rack_id": self._resolve_target_rack_id(destination),
                     "target_rack_level": operation.target_rack_level,
                     "priority": self._priority(operation),
                     "status": "arrived",
@@ -193,6 +189,31 @@ class RequestOperationRepository:
                     "drop_service_time_ms": int(operation.drop_service_time_ms),
                     "attributes": operation.attributes,
                 }
+
+    def _resolve_target_rack_id(self, destination: str | None) -> str | None:
+        """Resolve either a route access node or an authoritative BE rack code.
+
+        Replan requests carry the physical rack stored on the Spring ``Task``.
+        That rack is not itself a MAPF route node, so the old access-node-only
+        lookup returned ``None`` and allowed putaway to be selected again.
+        """
+
+        if not destination:
+            return None
+        destination = str(destination)
+        rack_id = getattr(
+            self.base, "rack_id_for_access_node", lambda _: None
+        )(destination)
+        if rack_id:
+            return str(rack_id)
+
+        rack = getattr(self.base, "rack", lambda _: None)(destination)
+        if rack is not None:
+            return destination
+        access_nodes = getattr(self.base, "rack_access_nodes", lambda _: [])(
+            destination
+        )
+        return destination if access_nodes else None
 
     def _ensure_request_destinations(self) -> None:
         for value in self._outbound.values():

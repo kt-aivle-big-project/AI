@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from pathlib import Path
 from typing import Callable, Any
@@ -30,6 +31,8 @@ from app.domain.schemas import (
 
 
 _TASK_PHASE_SUFFIXES = ("_EMPTY_TOTE", "_RETURN", "_DROP", "_PICK")
+
+logger = logging.getLogger(__name__)
 
 
 def canonical_task_id(task_id: str | None) -> str | None:
@@ -498,8 +501,12 @@ class RuntimeExecutionSnapshotBuilder:
         del prior_result  # The compact SimulationPlan contains the executable truth.
         if replan_at_sim_time_ms < plan.plan_start_sim_time_ms:
             raise ValueError("replan time cannot precede the active plan start")
-        if replan_at_sim_time_ms > plan.absolute_finish_at_ms:
-            raise ValueError("replan time cannot exceed the active plan finish")
+
+        # The persisted plan finish is the planned timeline boundary, not a hard
+        # runtime boundary.  BE may legitimately keep a robot in WAIT/CHARGE
+        # after that point (for example until the battery actually reaches
+        # 100%).  A later replan must therefore start from the authoritative BE
+        # runtime clock instead of rejecting the request or rewinding time.
 
         repository = repository or get_repository(
             plan.warehouse_id, plan.simulation_id
@@ -729,11 +736,13 @@ class RollingHorizonReplanService:
         store: SimulationPlanStore | None = None,
         runner: Callable[[AutoMissionRequest], Any] | None = None,
         repository: Any | None = None,
+        evaluation_capture: Callable[..., Any] | None = None,
     ) -> None:
         self.store = store or SimulationPlanStore()
         self.builder = SimulationPlanBuilder()
         self.runner = runner
         self.repository = repository
+        self.evaluation_capture = evaluation_capture
 
     @staticmethod
     def _merge_runtime_overrides(
@@ -873,6 +882,158 @@ class RollingHorizonReplanService:
         )
 
     @staticmethod
+    def _reconcile_safe_handover_states(
+        snapshot: ReplanExecutionSnapshot,
+        explicit: RuntimePlanningOverrides,
+    ) -> ReplanExecutionSnapshot:
+        """Replace stale plan projections with Spring-confirmed safe stops.
+
+        A quiesced, empty robot is already standing at its handover node.  If
+        the old schedule is projected to a later global activation barrier,
+        two independent robots can incorrectly collapse onto the same future
+        node even though their real stopped positions are distinct.  Loaded
+        commitments are never replaced here; those must finish under the old
+        plan before ownership changes.
+        """
+
+        authoritative = {
+            value.robot_id: value
+            for value in explicit.robot_states
+            if value.safe_handover_reached
+            and value.current_node is not None
+            and value.current_edge is None
+            and int(value.current_load_units or 0) == 0
+        }
+        if not authoritative:
+            return snapshot
+
+        prior_points = {
+            value.robot_id: value for value in snapshot.handover_points
+        }
+        replaced_robot_ids: set[str] = set()
+        points: list[PlanHandoverPoint] = []
+        for point in snapshot.handover_points:
+            state = authoritative.get(point.robot_id)
+            # A plan-derived loaded commitment remains authoritative even if a
+            # stale Redis row happens to look empty at the request boundary.
+            if state is None or point.carrying_load or point.locked_task_ids:
+                points.append(point)
+                continue
+            handover_at_ms = max(
+                snapshot.replan_at_sim_time_ms,
+                state.sim_time_ms,
+            )
+            points.append(
+                point.model_copy(
+                    update={
+                        "node_id": state.current_node,
+                        "handover_at_ms": handover_at_ms,
+                        "reason": (
+                            "Spring playback confirmed the robot is empty and "
+                            "stopped at this safe handover node."
+                        ),
+                        "handover_policy": "CURRENT_NODE",
+                        "current_step_id": None,
+                        "locked_task_ids": [],
+                        "carrying_load": False,
+                    }
+                )
+            )
+            replaced_robot_ids.add(point.robot_id)
+
+        # A reserve robot may be present in Redis but absent from the old plan.
+        # It remains an ordinary runtime override and needs no handover point.
+        overrides: list[RobotRuntimeOverride] = []
+        for projected in snapshot.robot_overrides:
+            state = authoritative.get(projected.robot_id)
+            point = prior_points.get(projected.robot_id)
+            if (
+                state is None
+                or point is None
+                or point.carrying_load
+                or point.locked_task_ids
+            ):
+                overrides.append(projected)
+                continue
+            overrides.append(
+                state.model_copy(
+                    update={
+                        "status": (
+                            "low_battery"
+                            if state.status == "low_battery"
+                            else "idle"
+                        ),
+                        "current_load_units": 0,
+                        "active_task_id": None,
+                        "clear_active_work": True,
+                        "sim_time_ms": max(
+                            snapshot.replan_at_sim_time_ms,
+                            state.sim_time_ms,
+                        ),
+                    }
+                )
+            )
+
+        handover_times = [value.handover_at_ms for value in points]
+        projected_nodes_before: dict[str, list[str]] = {}
+        for point in snapshot.handover_points:
+            projected_nodes_before.setdefault(point.node_id, []).append(point.robot_id)
+        duplicate_nodes_before = {
+            node: robot_ids
+            for node, robot_ids in projected_nodes_before.items()
+            if len(robot_ids) > 1
+        }
+        reconciled_nodes: dict[str, list[str]] = {}
+        for point in points:
+            reconciled_nodes.setdefault(point.node_id, []).append(point.robot_id)
+        duplicate_nodes_after = {
+            node: robot_ids
+            for node, robot_ids in reconciled_nodes.items()
+            if len(robot_ids) > 1
+        }
+        logger.info(
+            "[rolling-replan safe-handover reconcile] sourcePlanId=%s "
+            "replaced=%s projectedDuplicatesBefore=%s duplicatesAfter=%s",
+            snapshot.source_plan_id,
+            sorted(replaced_robot_ids),
+            duplicate_nodes_before,
+            duplicate_nodes_after,
+        )
+        return snapshot.model_copy(
+            update={
+                "earliest_handover_at_ms": min(
+                    handover_times,
+                    default=snapshot.replan_at_sim_time_ms,
+                ),
+                "latest_handover_at_ms": max(
+                    handover_times,
+                    default=snapshot.replan_at_sim_time_ms,
+                ),
+                "handover_points": sorted(
+                    points, key=lambda value: value.robot_id
+                ),
+                "robot_overrides": sorted(
+                    overrides, key=lambda value: value.robot_id
+                ),
+                "preserved_edge_reservations": [
+                    value
+                    for value in snapshot.preserved_edge_reservations
+                    if value.robot_id not in replaced_robot_ids
+                ],
+                "preserved_node_reservations": [
+                    value
+                    for value in snapshot.preserved_node_reservations
+                    if value.robot_id not in replaced_robot_ids
+                ],
+                "preserved_station_reservations": [
+                    value
+                    for value in snapshot.preserved_station_reservations
+                    if value.mobile_robot_id not in replaced_robot_ids
+                ],
+            }
+        )
+
+    @staticmethod
     def _remaining_task_vehicle_count(
         active: SimulationPlan,
         snapshot: ReplanExecutionSnapshot,
@@ -922,13 +1083,21 @@ class RollingHorizonReplanService:
         snapshot: ReplanExecutionSnapshot,
         explicit: RuntimePlanningOverrides,
     ) -> set[str]:
-        """Keep existing productive robots without adding transition robots.
+        """Keep only *eligible* existing workers without adding reserve robots.
 
         A low-battery robot remains physically active while it hands over and
         travels to its charger.  Requiring the same number of *task* robots at
         that instant adds a replacement before the retiring robot clears the
         shared map.  That turns an N-robot plan into N+1 simultaneous MAPF
         routes and can make an otherwise valid charging transition infeasible.
+
+        Battery is checked against the same global planning threshold used by
+        ``RobotRuntimeContext``.  A robot can still be reported as ``idle`` at
+        the projected handover while its physical battery has already fallen
+        below that threshold.  Freezing the candidate allow-list to such a
+        robot produces ``ALL_CANDIDATES_UNAVAILABLE`` even when healthy reserve
+        robots exist.  Returning an empty set in that case deliberately removes
+        the transition allow-list so one reserve robot can take the work.
         """
 
         remaining_robot_ids = (
@@ -937,12 +1106,24 @@ class RollingHorizonReplanService:
                 snapshot,
             )
         )
-        retiring_robot_ids = {
-            value.robot_id
-            for value in explicit.robot_states
-            if value.status == "low_battery"
+        runtime_by_robot = {
+            value.robot_id: value for value in explicit.robot_states
         }
-        continuing_robot_ids = remaining_robot_ids - retiring_robot_ids
+        minimum_battery_pct = get_settings().robot_min_battery_pct
+        continuing_robot_ids = {
+            robot_id
+            for robot_id in remaining_robot_ids
+            if (
+                (runtime := runtime_by_robot.get(robot_id)) is None
+                or (
+                    runtime.status not in {"fault", "offline", "low_battery"}
+                    and (
+                        runtime.battery_pct is None
+                        or runtime.battery_pct >= minimum_battery_pct
+                    )
+                )
+            )
+        }
         if explicit.allowed_task_robot_ids is not None:
             continuing_robot_ids &= set(explicit.allowed_task_robot_ids)
         return continuing_robot_ids
@@ -970,6 +1151,11 @@ class RollingHorizonReplanService:
             request.replan_at_sim_time_ms,
             prior_result,
             repository=self.repository,
+        )
+        explicit_runtime_overrides = request.mission.runtime_overrides
+        snapshot = self._reconcile_safe_handover_states(
+            snapshot,
+            explicit_runtime_overrides,
         )
         completed_bases = set(snapshot.completed_task_bases)
         locked_bases = set(snapshot.locked_task_bases)
@@ -1035,7 +1221,6 @@ class RollingHorizonReplanService:
             if request.activation_policy == "ALL_ROBOTS_READY"
             else request.replan_at_sim_time_ms
         )
-        explicit_runtime_overrides = new_mission.runtime_overrides
         if request.reason == "LOW_BATTERY":
             remaining_task_vehicle_ids = self._remaining_task_vehicle_ids(
                 active,
@@ -1121,10 +1306,15 @@ class RollingHorizonReplanService:
                 superseded = active.model_copy(update={"status": "SUPERSEDED"})
                 self.store.save(superseded, prior_result)
             self.store.save(plan, result)
-        from app.services.planning_evaluation_service import (
-            PlanningEvaluationCaptureService,
-        )
-        evaluation = PlanningEvaluationCaptureService().capture(
+        if self.evaluation_capture is None:
+            from app.services.planning_evaluation_service import (
+                PlanningEvaluationCaptureService,
+            )
+
+            capture_evaluation = PlanningEvaluationCaptureService().capture
+        else:
+            capture_evaluation = self.evaluation_capture
+        evaluation = capture_evaluation(
             raw_request=request,
             internal_request=combined,
             result=result,

@@ -101,11 +101,13 @@ def _enforce_authoritative_inbound_contract(
 ) -> CuOptDynamicInputDraft:
     """Restore immutable inbound facts and bind pickup to the Neo4j graph.
 
-    The LLM may choose the putaway rack and policy, but it does not own the
+    The LLM may choose a valid putaway rack and policy, but it does not own the
     receipt identity, item, handling unit, priority, BOX demand, or inbound
-    pickup point.  PICKUP_FROM relations are built from the active Neo4j
-    handoff/access connection, so the AMR-side pickup node is compiled from
-    those relations instead of trusting a free-form LLM node choice.
+    pickup point.  A hallucinated/occupied slot and a duplicate slot claim are
+    not operator decisions: bind only those invalid choices to the cheapest
+    unused graph-backed slot.  PICKUP_FROM relations are built from the active
+    Neo4j handoff/access connection, so the AMR-side pickup node is compiled
+    from those relations instead of trusting a free-form LLM node choice.
     """
 
     inbound_by_id = {
@@ -114,6 +116,7 @@ def _enforce_authoritative_inbound_contract(
         if node.node_type == "inbound"
     }
     tasks = []
+    claimed_putaway_slots: set[tuple[str, int]] = set()
     for task in draft.tasks:
         if task.operation_type != "INBOUND_ITEM":
             tasks.append(task)
@@ -130,9 +133,23 @@ def _enforce_authoritative_inbound_contract(
             or attributes.get("quantity")
             or task.demand
         )
+        putaway = _select_authoritative_putaway_assignment(
+            inbound_id=task.order_id,
+            requested_rack_id=task.rack_id,
+            requested_rack_level=task.rack_level,
+            requested_delivery_node=task.delivery_node,
+            claimed_slot_keys=claimed_putaway_slots,
+            graph=graph,
+        )
+        rack_id = task.rack_id
+        rack_level = task.rack_level
+        delivery_node = task.delivery_node
+        if putaway is not None:
+            rack_id, rack_level, delivery_node = putaway
+            claimed_putaway_slots.add((rack_id, rack_level))
         pickup_node = _select_authoritative_inbound_pickup(
             inbound_id=task.order_id,
-            delivery_node=task.delivery_node,
+            delivery_node=delivery_node,
             graph=graph,
         )
         tasks.append(
@@ -149,6 +166,9 @@ def _enforce_authoritative_inbound_contract(
                     "demand": box_count,
                     "priority": str(attributes.get("priority") or task.priority),
                     "mandatory": True,
+                    "rack_id": rack_id,
+                    "rack_level": rack_level,
+                    "delivery_node": delivery_node,
                     # No relation means the graph is incomplete. Preserve the
                     # original value in that case so the validator reports the
                     # missing contract instead of silently inventing a node.
@@ -157,6 +177,138 @@ def _enforce_authoritative_inbound_contract(
             )
         )
     return draft.model_copy(update={"tasks": tasks})
+
+
+def _select_authoritative_putaway_assignment(
+    *,
+    inbound_id: str,
+    requested_rack_id: str | None,
+    requested_rack_level: int | None,
+    requested_delivery_node: str,
+    claimed_slot_keys: set[tuple[str, int]],
+    graph: WarehouseSituationGraph,
+) -> tuple[str, int, str] | None:
+    """Keep a valid LLM slot, otherwise choose an unused reachable slot.
+
+    PUTAWAY_TO and HAS_ACCESS_POINT are authoritative warehouse facts.  Route
+    evidence is used only to rank valid candidates; it never invents a rack or
+    access node.  This makes ordinary LLM identifier mistakes self-healing
+    without adding another potentially slow LLM call or weakening validation.
+    """
+
+    source_node_id = f"inbound:{inbound_id}"
+    slot_keys: set[tuple[str, int]] = set()
+    for relation in graph.relations:
+        if (
+            relation.source_node_id != source_node_id
+            or relation.relation_type != "PUTAWAY_TO"
+            or not relation.target_node_id.startswith("rack_slot:")
+        ):
+            continue
+        raw_slot = relation.target_node_id.removeprefix("rack_slot:")
+        try:
+            rack_id, level_text = raw_slot.rsplit(":L", 1)
+            slot_keys.add((rack_id, int(level_text)))
+        except (TypeError, ValueError):
+            continue
+
+    access_by_slot: dict[tuple[str, int], set[str]] = {}
+    for rack_id, rack_level in slot_keys:
+        slot_node_id = f"rack_slot:{rack_id}:L{rack_level}"
+        rack_node_id = f"rack:{rack_id}"
+        access_by_slot[(rack_id, rack_level)] = {
+            relation.target_node_id.removeprefix("map:")
+            for relation in graph.relations
+            if relation.relation_type == "HAS_ACCESS_POINT"
+            and relation.source_node_id in {slot_node_id, rack_node_id}
+            and relation.target_node_id.startswith("map:")
+        }
+
+    requested_key = None
+    if requested_rack_id is not None and requested_rack_level is not None:
+        requested_key = (str(requested_rack_id), int(requested_rack_level))
+    if (
+        requested_key in slot_keys
+        and requested_key not in claimed_slot_keys
+        and requested_delivery_node in access_by_slot.get(requested_key, set())
+    ):
+        return requested_key[0], requested_key[1], requested_delivery_node
+
+    pickup_nodes = {
+        relation.target_node_id.removeprefix("map:")
+        for relation in graph.relations
+        if relation.source_node_id == source_node_id
+        and relation.relation_type == "PICKUP_FROM"
+        and relation.target_node_id.startswith("map:")
+    }
+
+    def best_robot_path(pickup_node: str):
+        return min(
+            (
+                path
+                for path in graph.path_evidence
+                if path.purpose == "ROBOT_TO_PICKUP"
+                and path.target_node_id == pickup_node
+            ),
+            key=lambda path: (path.travel_time_ms, path.cost, path.path_id),
+            default=None,
+        )
+
+    def delivery_path(pickup_node: str, delivery_node: str):
+        if pickup_node == delivery_node:
+            return 0, 0.0, ""
+        path = min(
+            (
+                value
+                for value in graph.path_evidence
+                if value.purpose == "PICKUP_TO_DELIVERY"
+                and value.source_node_id == pickup_node
+                and value.target_node_id == delivery_node
+            ),
+            key=lambda value: (value.travel_time_ms, value.cost, value.path_id),
+            default=None,
+        )
+        if path is None:
+            return None
+        return path.travel_time_ms, path.cost, path.path_id
+
+    candidates: list[tuple[tuple, str, int, str]] = []
+    for rack_id, rack_level in sorted(slot_keys):
+        slot_key = (rack_id, rack_level)
+        if slot_key in claimed_slot_keys:
+            continue
+        for delivery_node in sorted(access_by_slot.get(slot_key, set())):
+            route_scores = []
+            for pickup_node in sorted(pickup_nodes):
+                robot_path = best_robot_path(pickup_node)
+                delivery = delivery_path(pickup_node, delivery_node)
+                if robot_path is None or delivery is None:
+                    continue
+                delivery_time, delivery_cost, delivery_path_id = delivery
+                route_scores.append(
+                    (
+                        robot_path.travel_time_ms + delivery_time,
+                        robot_path.cost + delivery_cost,
+                        pickup_node,
+                        robot_path.path_id,
+                        delivery_path_id,
+                    )
+                )
+            if route_scores:
+                best_route = min(route_scores)
+                candidates.append(
+                    (
+                        (*best_route, rack_id, rack_level, delivery_node),
+                        rack_id,
+                        rack_level,
+                        delivery_node,
+                    )
+                )
+
+    if not candidates:
+        return None
+    _, rack_id, rack_level, delivery_node = min(candidates, key=lambda value: value[0])
+    return rack_id, rack_level, delivery_node
 
 
 def _select_authoritative_inbound_pickup(

@@ -198,7 +198,7 @@ class Settings(BaseSettings):
         alias="PLANNING_EVALUATION_OUTPUT_DIR",
     )
     planning_evaluation_compare_backend: str = Field(
-        default="ortools", alias="PLANNING_EVALUATION_COMPARE_BACKEND"
+        default="cuopt", alias="PLANNING_EVALUATION_COMPARE_BACKEND"
     )
     planning_evaluation_compare_depth: str = Field(
         default="mapf", alias="PLANNING_EVALUATION_COMPARE_DEPTH"
@@ -261,8 +261,11 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     openai_model: str = Field(default="gpt-5-mini", alias="OPENAI_MODEL")
-    openai_timeout_seconds: float = Field(default=120.0, alias="OPENAI_TIMEOUT_SECONDS", gt=0)
-    openai_max_retries: int = Field(default=2, alias="OPENAI_MAX_RETRIES", ge=0, le=10)
+    openai_timeout_seconds: float = Field(default=180.0, alias="OPENAI_TIMEOUT_SECONDS", gt=0)
+    # The BE/ALB request budget is 200 seconds.  A provider retry after the
+    # 180-second call timeout can never finish inside that envelope, so retry
+    # at the command-cycle level where the operator can see and control it.
+    openai_max_retries: int = Field(default=0, alias="OPENAI_MAX_RETRIES", ge=0, le=10)
     llm_cuopt_context_max_bytes: int = Field(
         default=750_000,
         alias="LLM_CUOPT_CONTEXT_MAX_BYTES",
@@ -271,6 +274,16 @@ class Settings(BaseSettings):
             "Hard UTF-8 payload ceiling for the compact LLM cuOpt formulation "
             "context. Oversized requests fail locally instead of consuming an "
             "OpenAI TPM retry."
+        ),
+    )
+    llm_cuopt_formulation_max_retries: int = Field(
+        default=0,
+        alias="LLM_CUOPT_FORMULATION_MAX_RETRIES",
+        ge=0,
+        le=1,
+        description=(
+            "Semantic LLM repair calls after draft validation. Keep this at zero "
+            "for the synchronous 200-second BE request path."
         ),
     )
 
@@ -369,10 +382,22 @@ class Settings(BaseSettings):
     cuopt_verify_ssl: bool = Field(default=True, alias="CUOPT_VERIFY_SSL")
     cuopt_poll_interval_seconds: float = Field(default=1.0, alias="CUOPT_POLL_INTERVAL_SECONDS", gt=0)
     cuopt_max_poll_attempts: int = Field(default=30, alias="CUOPT_MAX_POLL_ATTEMPTS", ge=1, le=600)
+    cuopt_nvcf_poll_seconds: int = Field(
+        default=90, alias="CUOPT_NVCF_POLL_SECONDS", ge=1, le=300
+    )
+    cuopt_request_timeout_seconds: float = Field(
+        default=150.0, alias="CUOPT_REQUEST_TIMEOUT_SECONDS", gt=0, le=1800
+    )
+    cuopt_transient_max_retries: int = Field(
+        default=2, alias="CUOPT_TRANSIENT_MAX_RETRIES", ge=0, le=5
+    )
+    cuopt_retry_backoff_seconds: float = Field(
+        default=5.0, alias="CUOPT_RETRY_BACKOFF_SECONDS", ge=0, le=120
+    )
     cuopt_time_limit_seconds: int = Field(default=5, alias="CUOPT_TIME_LIMIT_SECONDS", ge=1, le=300)
     cuopt_skip_first_trips: bool = Field(default=False, alias="CUOPT_SKIP_FIRST_TRIPS")
     cuopt_drop_return_trips: bool = Field(default=True, alias="CUOPT_DROP_RETURN_TRIPS")
-    frontend_explanation_mode: str = Field(default="llm", alias="FRONTEND_EXPLANATION_MODE")
+    frontend_explanation_mode: str = Field(default="deterministic", alias="FRONTEND_EXPLANATION_MODE")
     frontend_explanation_language: str = Field(default="ko", alias="FRONTEND_EXPLANATION_LANGUAGE")
     ortools_time_limit_seconds: int = Field(default=5, alias="ORTOOLS_TIME_LIMIT_SECONDS", ge=1, le=300)
     global_solver_wait_threshold_ms: int = Field(default=15000, alias="GLOBAL_SOLVER_WAIT_THRESHOLD_MS", ge=0)
@@ -615,9 +640,12 @@ class Settings(BaseSettings):
     @field_validator("planning_evaluation_compare_backend", mode="before")
     @classmethod
     def normalize_evaluation_backend(cls, value: object) -> str:
-        text = str(value or "ortools").strip().casefold()
-        if text not in {"ortools", "cuopt_payload_only", "cuopt"}:
-            raise ValueError("PLANNING_EVALUATION_COMPARE_BACKEND is invalid.")
+        text = str(value or "cuopt").strip().casefold()
+        if text != "cuopt":
+            raise ValueError(
+                "PLANNING_EVALUATION_COMPARE_BACKEND must be cuopt for "
+                "operational Rule/Agent evaluation."
+            )
         return text
 
     @field_validator("planning_evaluation_compare_depth", mode="before")
@@ -695,7 +723,7 @@ class Settings(BaseSettings):
     def normalize_frontend_explanation_mode(cls, value: object) -> str:
         """Normalize the front-end explanation strategy."""
 
-        text = str(value or "llm").strip().casefold()
+        text = str(value or "deterministic").strip().casefold()
         if text not in {"llm", "deterministic", "off"}:
             raise ValueError("FRONTEND_EXPLANATION_MODE must be llm, deterministic, or off.")
         return text

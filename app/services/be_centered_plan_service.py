@@ -1,6 +1,7 @@
 """Planning facade for the existing Spring BE simulation model."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 from uuid import uuid4
 
@@ -48,6 +49,9 @@ from app.services.simulation_plan_service import (
 from app.services.be_route_projection import build_projection
 
 
+logger = logging.getLogger(__name__)
+
+
 def _router_llm_executed(result: Any) -> bool:
     return any(
         value.node_name == "request_router_llm" and value.llm_used
@@ -59,6 +63,23 @@ def _trusted_replan_planning_mode(reason: ReplanReason) -> PlanningMode | None:
     """System battery recovery is deterministic and must not invoke the router."""
 
     return "force_rule" if reason == "LOW_BATTERY" else None
+
+
+def _canonical_request_log_type(value: object) -> str:
+    """Map HITL execution provenance onto the DB request-log contract.
+
+    ``laro_ext.request_log`` intentionally distinguishes only initial plans
+    from replans.  Human review is workflow provenance, not a third planning
+    operation type, so resumed requests must keep the underlying PLAN/REPLAN
+    classification when they are persisted.
+    """
+
+    normalized = str(value or "").strip().upper()
+    if normalized in {"REPLAN", "HITL_REPLAN"}:
+        return "REPLAN"
+    if normalized in {"PLAN", "HITL_PLAN", "HITL"}:
+        return "PLAN"
+    raise ValueError(f"Unsupported BE request log type: {value!r}")
 
 
 def _low_battery_event(context: BeLowBatteryContext | None) -> EventInput:
@@ -120,6 +141,99 @@ def _with_low_battery_runtime_state(
             ),
             "relocate_idle_robot_ids": sorted(
                 set(overrides.relocate_idle_robot_ids) | {context.robot_id}
+            ),
+        }
+    )
+
+
+def _with_quiesced_runtime_states(
+    overrides: RuntimePlanningOverrides,
+    repository: Any,
+    *,
+    replan_at_sim_time_ms: int,
+) -> RuntimePlanningOverrides:
+    """Overlay safe-stop positions published by Spring after quiescing.
+
+    ``LaroPlanService`` waits for the playback handover barrier before calling
+    the replan endpoint.  At that point an empty IDLE/WAITING robot located on
+    a node is no longer a prediction: it is physically stopped there.  Mark
+    only those unambiguous rows as authoritative.  Loaded or moving robots
+    deliberately keep the old-plan projection so their committed physical
+    cycle can finish before the new plan takes ownership.
+    """
+
+    by_robot = {value.robot_id: value for value in overrides.robot_states}
+    confirmed: list[dict[str, Any]] = []
+    for runtime in repository.all_robots():
+        robot_id = str(runtime.get("robot_id") or "").strip()
+        current_node = runtime.get("current_node")
+        current_edge = runtime.get("current_edge")
+        status = str(runtime.get("status") or "").strip().casefold()
+        current_load_units = int(runtime.get("current_load_units") or 0)
+        if (
+            not robot_id
+            or not current_node
+            or current_edge
+            or current_load_units > 0
+            or status not in {"idle", "waiting"}
+        ):
+            continue
+
+        previous = by_robot.get(robot_id)
+        runtime_time = int(runtime.get("sim_time_ms") or 0)
+        updates = {
+            "current_node": str(current_node),
+            "current_edge": None,
+            "from_node": None,
+            "to_node": None,
+            "edge_progress": None,
+            "status": (
+                "low_battery"
+                if previous is not None and previous.status == "low_battery"
+                else "idle"
+            ),
+            "battery_pct": (
+                previous.battery_pct
+                if previous is not None and previous.battery_pct is not None
+                else runtime.get("battery_pct")
+            ),
+            "capacity_units": runtime.get("capacity_units"),
+            "current_load_units": 0,
+            "active_task_id": None,
+            "clear_active_work": True,
+            "safe_handover_reached": True,
+            "sim_time_ms": max(runtime_time, replan_at_sim_time_ms),
+        }
+        by_robot[robot_id] = (
+            previous.model_copy(update=updates)
+            if previous is not None
+            else RobotRuntimeOverride(robot_id=robot_id, **updates)
+        )
+        confirmed.append(
+            {
+                "robot_id": robot_id,
+                "node": str(current_node),
+                "sim_time_ms": updates["sim_time_ms"],
+                "status": updates["status"],
+            }
+        )
+
+    if not by_robot:
+        return overrides
+    logger.info(
+        "[low-battery safe-handover snapshot] replanAt=%s confirmed=%s states=%s",
+        replan_at_sim_time_ms,
+        len(confirmed),
+        confirmed,
+    )
+    return overrides.model_copy(
+        update={
+            "robot_states": sorted(
+                by_robot.values(), key=lambda value: value.robot_id
+            ),
+            "planning_horizon_start_ms": max(
+                overrides.planning_horizon_start_ms,
+                replan_at_sim_time_ms,
             ),
         }
     )
@@ -560,6 +674,16 @@ class BeCenteredPlanService:
                 runtime_overrides,
                 request.low_battery_context,
             )
+        repository = BeSharedWarehouseRepository(
+            simulation_run_id=simulation_run_id,
+            replanning_from_plan_id=active.plan_id,
+        )
+        if request.reason == "LOW_BATTERY":
+            runtime_overrides = _with_quiesced_runtime_states(
+                runtime_overrides,
+                repository,
+                replan_at_sim_time_ms=request.replan_at_sim_time_ms,
+            )
         internal = AutoMissionRequest(
             warehouse_id=warehouse_id,
             simulation_id=f"BE-RUN-{simulation_run_id}",
@@ -572,10 +696,6 @@ class BeCenteredPlanService:
             structured_input=structured_input,
             user_command=request.user_command,
             runtime_overrides=runtime_overrides,
-        )
-        repository = BeSharedWarehouseRepository(
-            simulation_run_id=simulation_run_id,
-            replanning_from_plan_id=active.plan_id,
         )
         trusted_planning_mode = _trusted_replan_planning_mode(request.reason)
 
@@ -812,7 +932,13 @@ class BeCenteredPlanService:
         if isinstance(compact, SimulationPlanResponse) and isinstance(
             result, OrchestrationResult
         ):
-            structured = record.original_request.get("structured_input") or {}
+            resumed_request = captured.get("request")
+            request_json = (
+                resumed_request.model_dump(mode="json", exclude_none=True)
+                if isinstance(resumed_request, AutoMissionRequest)
+                else record.original_request
+            )
+            structured = request_json.get("structured_input") or {}
             request_id = (
                 structured.get("request_id")
                 if isinstance(structured, dict)
@@ -820,7 +946,6 @@ class BeCenteredPlanService:
             ) or f"REQ-BE-HITL-{simulation_run_id}-{uuid4().hex[:12].upper()}"
             plan = compact.plan
             if plan is not None:
-                request_json = record.original_request
                 self.postgres.save_plan(
                     plan_id=plan.plan_id,
                     simulation_run_id=simulation_run_id,
@@ -873,9 +998,11 @@ class BeCenteredPlanService:
             self.postgres.save_request_log(
                 request_id=request_id,
                 simulation_run_id=simulation_run_id,
-                request_type=str(captured.get("request_type") or "HITL"),
+                request_type=_canonical_request_log_type(
+                    captured.get("request_type") or "HITL"
+                ),
                 status=compact.status,
-                request_json=record.original_request,
+                request_json=request_json,
                 response_json=plan_response.model_dump(
                     mode="json", exclude_none=True
                 ),

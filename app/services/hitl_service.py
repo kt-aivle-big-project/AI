@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import re
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -15,12 +17,151 @@ from app.domain.schemas import (
     HumanInteractionResumeRequest,
     HumanInteractionResumeResult,
     OrchestrationResult,
+    StructuredMissionInput,
     WorkflowHoldResult,
 )
 
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+_ORDER_ID = re.compile(r"(?<![A-Z0-9])ORD-\d{3,}(?![A-Z0-9])")
+_DESTINATION_CODE = re.compile(r"O_[A-Z]")
+
+
+def _destination_override_evidence(
+    record: HumanInteractionRecord,
+) -> tuple[str, str, str]:
+    """Return authoritative order/current/requested destination identifiers."""
+
+    evidence = [str(value).upper() for value in record.interaction.evidence_ids]
+    order_ids = [value for value in evidence if _ORDER_ID.fullmatch(value)]
+    destination_ids = [
+        value for value in evidence if _DESTINATION_CODE.fullmatch(value)
+    ]
+    if len(order_ids) == 1 and len(destination_ids) >= 2:
+        return order_ids[0], destination_ids[0], destination_ids[1]
+
+    # Backward-compatible recovery for pending cards created before evidence_ids
+    # were persisted. Preserve the command's appearance order.
+    command = str(record.original_request.get("user_command") or "").upper()
+    command_orders = list(dict.fromkeys(_ORDER_ID.findall(command)))
+    command_destinations = list(
+        dict.fromkeys(
+            re.findall(r"(?<![A-Z0-9])O_[A-Z](?![A-Z0-9])", command)
+        )
+    )
+    if len(command_orders) != 1 or len(command_destinations) < 2:
+        raise ValueError(
+            "DESTINATION_OVERRIDE_APPROVAL requires one canonical order ID and "
+            "both current and replacement destination codes."
+        )
+    return command_orders[0], command_destinations[0], command_destinations[1]
+
+
+def _apply_approved_destination_override(
+    *,
+    record: HumanInteractionRecord,
+    response: HumanInteractionResponse,
+    request_payload: dict[str, Any],
+) -> None:
+    """Mutate the copied structured request after explicit destination approval.
+
+    The operator may select only the destination already embedded in the review
+    option. The current destination is rechecked against the frozen structured
+    order so stale or cross-order approvals fail before any optimizer call.
+    """
+
+    if response.resolution_code != "DESTINATION_OVERRIDE_APPROVAL":
+        return
+    if response.selected_option_id != "APPROVE_ALTERNATIVE_DESTINATION":
+        raise ValueError(
+            "Destination override resume requires "
+            "APPROVE_ALTERNATIVE_DESTINATION."
+        )
+
+    order_id, expected_current, expected_replacement = (
+        _destination_override_evidence(record)
+    )
+    selected_destinations = [
+        str(value).upper()
+        for value in [*response.selected_entity_ids, response.resolution_value]
+        if value and _DESTINATION_CODE.fullmatch(str(value).upper())
+    ]
+    if set(selected_destinations) != {expected_replacement}:
+        raise ValueError(
+            "Approved destination does not match the reviewed replacement: "
+            f"expected={expected_replacement};selected={selected_destinations}."
+        )
+
+    raw_structured = request_payload.get("structured_input")
+    if not isinstance(raw_structured, dict):
+        raise ValueError(
+            "Destination override requires authoritative structured_input."
+        )
+    raw_operations = raw_structured.get("operations")
+    if not isinstance(raw_operations, list):
+        raise ValueError(
+            "Destination override requires structured_input.operations."
+        )
+    matches = [
+        value
+        for value in raw_operations
+        if isinstance(value, dict)
+        and str(value.get("operation_id") or "").upper() == order_id
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            "Destination override order must resolve exactly once: "
+            f"order_id={order_id};matches={len(matches)}."
+        )
+    operation = matches[0]
+    if str(operation.get("operation_type") or "").upper() != "OUTBOUND":
+        raise ValueError(
+            f"Destination override is valid only for OUTBOUND work: {order_id}."
+        )
+    destination_field = next(
+        (
+            field
+            for field in (
+                "destination_node_code",
+                "destination_facility_code",
+            )
+            if operation.get(field)
+        ),
+        None,
+    )
+    if destination_field is None:
+        raise ValueError(
+            f"{order_id} has no canonical destination code to override."
+        )
+    current = str(operation[destination_field]).upper()
+    if current != expected_current:
+        raise ValueError(
+            "Destination override is stale or targets the wrong order: "
+            f"order_id={order_id};expected_current={expected_current};actual={current}."
+        )
+    operation[destination_field] = expected_replacement
+
+    # Revalidate the complete authoritative contract and refresh matching event
+    # payloads so graph state and the request-scoped repository see one value.
+    structured = StructuredMissionInput.model_validate(raw_structured)
+    request_payload["structured_input"] = structured.model_dump(mode="json")
+    replacement_events = {
+        (value.type, value.order_id or value.inbound_id): value.model_dump(mode="json")
+        for value in structured.to_events()
+    }
+    refreshed_events: list[dict[str, Any]] = []
+    for raw_event in list(request_payload.get("events") or []):
+        event = (
+            raw_event.model_dump(mode="json")
+            if hasattr(raw_event, "model_dump")
+            else dict(raw_event)
+        )
+        key = (str(event.get("type") or ""), event.get("order_id") or event.get("inbound_id"))
+        refreshed_events.append(replacement_events.get(key, event))
+    request_payload["events"] = refreshed_events
 
 
 class HumanInteractionStore:
@@ -74,6 +215,10 @@ class HumanInteractionService:
 
     @staticmethod
     def original_request_from_state(state: dict[str, Any]) -> dict[str, Any]:
+        frozen_normalized = (
+            state.get("normalized_request_override")
+            or state.get("normalized_request")
+        )
         return {
             "warehouse_id": state.get("warehouse_id", get_settings().default_warehouse_id),
             "simulation_id": state["simulation_id"],
@@ -88,6 +233,11 @@ class HumanInteractionService:
                 state["structured_input"].model_dump(mode="json")
                 if hasattr(state.get("structured_input"), "model_dump")
                 else state.get("structured_input")
+            ),
+            "normalized_request_override": (
+                frozen_normalized.model_dump(mode="json")
+                if hasattr(frozen_normalized, "model_dump")
+                else frozen_normalized
             ),
             "mission_spec": (
                 state["mission_spec"].model_dump(mode="json")
@@ -257,11 +407,18 @@ class HumanInteractionService:
                 ),
             )
 
-        request_payload = dict(record.original_request)
+        # Keep the persisted checkpoint immutable. Destination approval edits a
+        # private resume payload, never the original facts shown to the reviewer.
+        request_payload = deepcopy(record.original_request)
         responses = list(request_payload.get("human_responses") or [])
         responses.append(response.model_dump(mode="json"))
         request_payload["human_responses"] = responses
         request_payload["parent_interaction_id"] = interaction_id
+        _apply_approved_destination_override(
+            record=record,
+            response=response,
+            request_payload=request_payload,
+        )
         request = AutoMissionRequest.model_validate(request_payload)
 
         trusted_mode = None
