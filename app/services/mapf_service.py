@@ -12,6 +12,7 @@ from __future__ import annotations
 import heapq
 from collections import defaultdict
 from dataclasses import dataclass
+from itertools import permutations
 from math import inf
 
 from app.core.config import get_settings
@@ -80,6 +81,76 @@ class PrioritizedSIPPPlanner:
     """Build collision-aware timed paths for solver-assigned ordered goals."""
 
     SEARCH_HORIZON_MS = 24 * 60 * 60 * 1000
+    EXHAUSTIVE_PRIORITY_RETRY_MAX_ROBOTS = 5
+    MAX_PRIORITY_RETRY_ORDERS = 120
+
+    @classmethod
+    def _priority_retry_orders(
+        cls,
+        default_order: tuple[str, ...],
+        failed_robot_ids: list[str],
+    ) -> list[tuple[str, ...]]:
+        """Return deterministic MAPF priority orders within a bounded budget.
+
+        A failed robot merely moving to the head is not a complete search: the
+        relative order of the other robots can still decide whether a shared
+        corridor is available when the failed robot reaches its second or
+        third service goal.  Five active routes have only 120 permutations, so
+        low-battery replans at the current production fleet size can safely
+        exhaust that space.  Larger fleets retain the conflict-directed orders
+        first and then consume a fixed additional budget.
+        """
+
+        if len(default_order) <= 1:
+            return []
+
+        retry_orders: list[tuple[str, ...]] = []
+
+        def add(candidate: tuple[str, ...]) -> None:
+            if (
+                candidate != default_order
+                and candidate not in retry_orders
+                and len(retry_orders) < cls.MAX_PRIORITY_RETRY_ORDERS
+            ):
+                retry_orders.append(candidate)
+
+        retry_heads = [
+            *failed_robot_ids,
+            *(
+                robot_id
+                for robot_id in default_order
+                if robot_id not in failed_robot_ids
+            ),
+        ]
+        for robot_id in retry_heads:
+            add(
+                (
+                    robot_id,
+                    *(value for value in default_order if value != robot_id),
+                )
+            )
+        add(tuple(reversed(default_order)))
+
+        # Complete the small-fleet search.  For larger fleets the same loop is
+        # deliberately capped so a recovery attempt cannot exceed the API
+        # timeout merely because n! grows quickly.
+        for candidate in permutations(default_order):
+            add(tuple(candidate))
+            if len(retry_orders) >= cls.MAX_PRIORITY_RETRY_ORDERS:
+                break
+            if (
+                len(default_order) <= cls.EXHAUSTIVE_PRIORITY_RETRY_MAX_ROBOTS
+                and len(retry_orders) == cls._permutation_count(default_order) - 1
+            ):
+                break
+        return retry_orders
+
+    @staticmethod
+    def _permutation_count(values: tuple[str, ...]) -> int:
+        count = 1
+        for size in range(2, len(values) + 1):
+            count *= size
+        return count
 
     def plan(
         self,
@@ -368,23 +439,13 @@ class PrioritizedSIPPPlanner:
         )
         if conflicts and _allow_priority_retry and len(ordered_routes) > 1:
             default_order = tuple(route.vehicle_id for route in ordered_routes)
-            retry_orders: list[tuple[str, ...]] = []
-            retry_heads = [
-                *failed_robot_ids,
-                *(robot_id for robot_id in default_order if robot_id not in failed_robot_ids),
-            ]
-            for robot_id in retry_heads:
-                candidate = (
-                    robot_id,
-                    *(value for value in default_order if value != robot_id),
-                )
-                if candidate != default_order and candidate not in retry_orders:
-                    retry_orders.append(candidate)
-            reversed_order = tuple(reversed(default_order))
-            if reversed_order != default_order and reversed_order not in retry_orders:
-                retry_orders.append(reversed_order)
+            retry_orders = self._priority_retry_orders(
+                default_order,
+                failed_robot_ids,
+            )
 
             attempted_orders: list[str] = []
+            failed_attempts: list[str] = []
             for retry_order in retry_orders:
                 attempted_orders.append(">".join(retry_order))
                 retry_expansion, retry_schedule = self.plan(
@@ -402,6 +463,8 @@ class PrioritizedSIPPPlanner:
                     recovery_warning = (
                         "MAPF recovered with alternate robot priority: "
                         + ">".join(retry_order)
+                        + f" (attempt {len(attempted_orders)}/"
+                        + f"{len(retry_orders)})"
                     )
                     return retry_expansion, retry_schedule.model_copy(
                         update={
@@ -411,14 +474,29 @@ class PrioritizedSIPPPlanner:
                             ]
                         }
                     )
+                retry_failed_ids = [
+                    route.vehicle_id
+                    for route in result.routes
+                    if any(
+                        route.vehicle_id in error
+                        for error in retry_expansion.errors
+                    )
+                ]
+                failed_attempts.append(
+                    f"{attempted_orders[-1]}=>"
+                    + (",".join(retry_failed_ids) or "unknown")
+                )
 
             if attempted_orders:
+                tail = failed_attempts[-8:]
                 schedule = schedule.model_copy(
                     update={
                         "warnings": [
                             *schedule.warnings,
-                            "MAPF alternate-priority retries failed: "
-                            + ", ".join(attempted_orders),
+                            "MAPF alternate-priority retries exhausted: "
+                            f"attempts={len(attempted_orders)}, "
+                            f"robots={len(default_order)}, "
+                            "last_failures=" + "; ".join(tail),
                         ]
                     }
                 )

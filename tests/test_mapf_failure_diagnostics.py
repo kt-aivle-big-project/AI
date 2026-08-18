@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from itertools import permutations
 from types import SimpleNamespace
 
 from app.domain.schemas import (
@@ -557,7 +558,197 @@ def test_mapf_retries_with_blocked_robot_first_and_keeps_charge_route() -> None:
     assert charge_route.steps[-1].node_id == "C04"
     assert charge_route.steps[-1].task_id == "TERMINAL-R292-CHARGE"
     assert any(
-        warning
-        == "MAPF recovered with alternate robot priority: R290>R289>R292"
+        warning.startswith(
+            "MAPF recovered with alternate robot priority: R290>R289>R292 "
+        )
         for warning in recovered_schedule.warnings
     )
+
+
+def test_five_robot_retry_search_covers_every_priority_order() -> None:
+    default_order = ("R295", "R296", "R297", "R298", "R299")
+
+    retry_orders = PrioritizedSIPPPlanner._priority_retry_orders(
+        default_order,
+        ["R299"],
+    )
+
+    assert len(retry_orders) == 119
+    assert default_order not in retry_orders
+    assert set(retry_orders) == set(permutations(default_order)) - {
+        default_order
+    }
+    assert retry_orders[0][0] == "R299"
+
+
+def test_large_fleet_retry_search_stays_within_the_time_budget() -> None:
+    default_order = tuple(f"R{index:03d}" for index in range(8))
+
+    retry_orders = PrioritizedSIPPPlanner._priority_retry_orders(
+        default_order,
+        ["R007"],
+    )
+
+    assert len(retry_orders) == PrioritizedSIPPPlanner.MAX_PRIORITY_RETRY_ORDERS
+    assert len(set(retry_orders)) == len(retry_orders)
+    assert default_order not in retry_orders
+    assert retry_orders[0][0] == "R007"
+
+
+def test_planner_reaches_a_non_heuristic_five_robot_priority(monkeypatch) -> None:
+    robot_ids = [f"R{index:03d}" for index in range(1, 6)]
+    location_index = {
+        f"S{index}": index - 1 for index in range(1, 6)
+    }
+    payload = CuOptPayload(
+        snapshot_id="SNAP-FIVE-ROBOT-RETRY",
+        location_index_map=location_index,
+        fleet_data=FleetData(
+            vehicle_ids=robot_ids,
+            vehicle_start_locations=list(range(5)),
+            vehicle_end_locations=list(range(5)),
+            capacities=[1] * 5,
+            vehicle_available_at_ms=[0] * 5,
+            skip_first_trips=[False] * 5,
+            drop_return_trips=[True] * 5,
+        ),
+        task_data=TaskData(
+            task_ids=[],
+            task_locations=[],
+            pickup_and_delivery_pairs=[],
+            demand=[],
+            priorities=[],
+            service_times_ms=[],
+            fixed_vehicle_ids=[],
+        ),
+        waypoint_graph_data=WaypointGraphData(
+            edge_ids=[],
+            from_indices=[],
+            to_indices=[],
+            costs=[],
+            travel_times_ms=[],
+        ),
+        applied_map_constraints=MapConstraints(),
+    )
+    result = OptimizerResult(
+        backend="cuopt",
+        status="success",
+        optimizer="cuopt",
+        routes=[
+            OptimizerRoute(vehicle_id=robot_id, task_sequence=[])
+            for robot_id in robot_ids
+        ],
+    )
+    map_context = MapContext(
+        graph_version="MAP-FIVE-ROBOT-RETRY",
+        node_count=5,
+        edge_count=0,
+        map_constraints=MapConstraints(),
+        summary="Synthetic priority-order recovery contract.",
+    )
+    planner = PrioritizedSIPPPlanner()
+    target_order = ("R003", "R005", "R002", "R001", "R004")
+    current_prefix: list[str] = []
+    reset_before_next_call = False
+
+    def fake_plan_robot_route(**kwargs):
+        nonlocal current_prefix, reset_before_next_call
+        if reset_before_next_call:
+            current_prefix = []
+            reset_before_next_call = False
+        robot_id = kwargs["robot_id"]
+        current_prefix.append(robot_id)
+        if tuple(current_prefix) != target_order[: len(current_prefix)]:
+            reset_before_next_call = True
+            return None, f"Synthetic priority conflict for {robot_id}."
+        return (
+            SimpleNamespace(
+                steps=[],
+                reservations=[],
+                segments=[],
+                node_sequence=[kwargs["start_node"]],
+                finish_at_ms=0,
+                edge_calendar=kwargs["edge_calendar"],
+            ),
+            None,
+        )
+
+    monkeypatch.setattr(planner, "_plan_robot_route", fake_plan_robot_route)
+
+    expansion, schedule = planner.plan(
+        payload=payload,
+        result=result,
+        map_context=map_context,
+        node_types={node_id: "route" for node_id in location_index},
+    )
+
+    assert expansion.status == "expanded"
+    assert schedule.valid is True
+    assert [route.robot_id for route in schedule.routes] == list(target_order)
+    assert any(
+        warning.startswith(
+            "MAPF recovered with alternate robot priority: "
+            + ">".join(target_order)
+        )
+        for warning in schedule.warnings
+    )
+
+
+def test_planner_diagnostics_keep_priority_retry_summary(monkeypatch) -> None:
+    state, _ = _failed_low_battery_state()
+    expansion = WaypointRouteExpansionResult(
+        status="failed",
+        errors=[
+            "No safe ordered-goal path for R299: "
+            "R3_3 -> ['N161', 'R5_3', 'N164', 'R5_4', 'C03']."
+        ],
+    )
+    retry_warning = (
+        "MAPF alternate-priority retries exhausted: attempts=119, robots=5, "
+        "last_failures=R299>R295>R296>R297>R298=>R299"
+    )
+    schedule = TrafficScheduleResult(
+        valid=False,
+        conflicts=list(expansion.errors),
+        warnings=[retry_warning],
+    )
+    state["runtime_overrides"].robot_states.append(
+        RobotRuntimeOverride(
+            robot_id="R299",
+            current_node="R3_3",
+            status="idle",
+            battery_pct=85,
+            current_load_units=0,
+            sim_time_ms=23_096,
+        )
+    )
+    state.update(
+        {
+            "execution_payload": object(),
+            "execution_optimizer_result": object(),
+            "map_context": object(),
+            "graph_node_types": {},
+        }
+    )
+    output: list[str] = []
+
+    monkeypatch.setattr(
+        v9_planning,
+        "model_from_state",
+        lambda current, key, _model: current[key],
+    )
+    monkeypatch.setattr(
+        v9_planning,
+        "PrioritizedSIPPPlanner",
+        lambda: SimpleNamespace(plan=lambda **_kwargs: (expansion, schedule)),
+    )
+    monkeypatch.setattr(v9_planning, "safe_console_print", output.append)
+
+    update = v9_planning.prioritized_mapf_planner_node(state)
+
+    assert update["errors"][0].message.startswith(
+        "로봇 R299의 충돌 없는 실행 경로"
+    )
+    assert retry_warning in update["traffic_schedule"].warnings
+    assert len(output) == 1
+    assert '"warnings": ["MAPF alternate-priority retries exhausted:' in output[0]

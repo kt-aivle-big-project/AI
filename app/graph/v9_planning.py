@@ -409,6 +409,7 @@ def prioritized_mapf_planner_node(state: LaroGraphState) -> dict:
                 valid=False,
                 errors=planner_errors
                 or ["Prioritized MAPF could not build an executable route."],
+                warnings=list(schedule.warnings),
             )
             failure_context = _mapf_failure_diagnostics(
                 state, schedule, validation
