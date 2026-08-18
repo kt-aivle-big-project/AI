@@ -3,8 +3,14 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from app.domain.schemas import (
+    CuOptPayload,
     EdgeReservation,
+    FleetData,
     MAPFValidationResult,
+    MapConstraints,
+    MapContext,
+    OptimizerResult,
+    OptimizerRoute,
     PlanHandoverPoint,
     ReplanExecutionSnapshot,
     RobotRuntime,
@@ -13,13 +19,16 @@ from app.domain.schemas import (
     RuntimePlanningOverrides,
     TerminalRelocationRecord,
     TerminalRelocationResult,
+    TaskData,
     TimedRobotRoute,
     TimedRouteStep,
     TrafficScheduleResult,
     WaypointRouteExpansionResult,
+    WaypointGraphData,
 )
 from app.graph import v9_planning
 from app.services.context_service import apply_runtime_overrides
+from app.services.mapf_service import PrioritizedSIPPPlanner
 from app.services.simulation_plan_service import RollingHorizonReplanService
 
 
@@ -93,6 +102,37 @@ def test_mapf_failure_diagnostics_identifies_low_battery_return() -> None:
     assert diagnostics["terminal_relocations"][0]["to_node"] == "C01"
     assert diagnostics["mapf_routes"][0]["charge_task_ids"] == ["TERMINAL-R248-CHARGE"]
     assert "사용 시간이 다른 로봇과 겹쳤습니다" in diagnostics["operator_summary"]
+
+
+def test_mapf_failure_diagnostics_reports_the_robot_that_actually_failed() -> None:
+    state, schedule = _failed_low_battery_state()
+    state["runtime_overrides"].robot_states.append(
+        RobotRuntimeOverride(
+            robot_id="R290",
+            current_node="R3_3",
+            status="idle",
+            battery_pct=85,
+            current_load_units=0,
+            sim_time_ms=29_385,
+        )
+    )
+    validation = MAPFValidationResult(
+        valid=False,
+        errors=[
+            "No safe ordered-goal path for R290: "
+            "R3_3 -> ['R3_2', 'R3_10', 'C02']."
+        ],
+    )
+
+    diagnostics = v9_planning._mapf_failure_diagnostics(
+        state, schedule, validation
+    )
+    message = v9_planning._mapf_operator_message(diagnostics)
+
+    assert diagnostics["failed_robot_ids"] == ["R290"]
+    assert diagnostics["low_battery_robots"][0]["robot_id"] == "R248"
+    assert message.startswith("로봇 R290의 충돌 없는 실행 경로")
+    assert "배터리 부족 로봇 R248" not in message
 
 
 def test_validator_logs_context_and_exposes_operator_message(monkeypatch) -> None:
@@ -394,3 +434,130 @@ def test_normal_robot_uses_projected_handover_state_not_stale_active_work() -> N
     assert projected_robot.current_load_units == 0
     assert projected_robot.load_state == "EMPTY"
     assert projected.candidate_robot_ids == ["R001"]
+
+
+def _priority_conflict_problem() -> tuple[
+    CuOptPayload,
+    OptimizerResult,
+    MapContext,
+    dict[str, str],
+]:
+    nodes = ["A", "B", "C", "D", "E", "F", "G", "C04"]
+    indices = {node: index for index, node in enumerate(nodes)}
+    edges = [
+        ("E-A-B", "A", "B"),
+        ("E-B-C", "B", "C"),
+        ("E-C-D", "C", "D"),
+        ("E-E-C", "E", "C"),
+        ("E-C-B", "C", "B"),
+        ("E-B-F", "B", "F"),
+        ("E-G-C04", "G", "C04"),
+    ]
+    payload = CuOptPayload(
+        snapshot_id="SNAP-MAPF-PRIORITY",
+        location_index_map=indices,
+        fleet_data=FleetData(
+            vehicle_ids=["R289", "R290", "R292"],
+            vehicle_start_locations=[indices["A"], indices["E"], indices["G"]],
+            vehicle_end_locations=[indices["A"], indices["E"], indices["C04"]],
+            capacities=[1, 1, 1],
+            vehicle_available_at_ms=[0, 0, 0],
+            skip_first_trips=[False, False, False],
+            drop_return_trips=[False, False, False],
+        ),
+        task_data=TaskData(
+            task_ids=[
+                "TASK-A_DROP",
+                "TASK-B_DROP",
+                "TERMINAL-R292-CHARGE",
+            ],
+            task_locations=[indices["D"], indices["F"], indices["C04"]],
+            pickup_and_delivery_pairs=[],
+            demand=[0, 0, 0],
+            priorities=[10, 10, 10],
+            service_times_ms=[1_000, 1_000, 96_000],
+            fixed_vehicle_ids=["R289", "R290", "R292"],
+        ),
+        waypoint_graph_data=WaypointGraphData(
+            edge_ids=[edge_id for edge_id, _, _ in edges],
+            from_indices=[indices[source] for _, source, _ in edges],
+            to_indices=[indices[target] for _, _, target in edges],
+            costs=[1.0 for _ in edges],
+            travel_times_ms=[1_000 for _ in edges],
+        ),
+        applied_map_constraints=MapConstraints(),
+    )
+    result = OptimizerResult(
+        backend="cuopt",
+        status="success",
+        optimizer="cuopt",
+        routes=[
+            OptimizerRoute(vehicle_id="R289", task_sequence=["TASK-A_DROP"]),
+            OptimizerRoute(vehicle_id="R290", task_sequence=["TASK-B_DROP"]),
+            OptimizerRoute(
+                vehicle_id="R292",
+                task_sequence=["TERMINAL-R292-CHARGE"],
+            ),
+        ],
+    )
+    map_context = MapContext(
+        graph_version="MAP-MAPF-PRIORITY",
+        node_count=len(nodes),
+        edge_count=len(edges),
+        map_constraints=MapConstraints(),
+        summary="Two routes need the same corridor in opposite directions.",
+    )
+    node_types = {
+        "A": "route",
+        "B": "route",
+        "C": "rack",
+        "D": "route",
+        "E": "rack",
+        "F": "route",
+        "G": "route",
+        "C04": "charging_slot",
+    }
+    return payload, result, map_context, node_types
+
+
+def test_mapf_retries_with_blocked_robot_first_and_keeps_charge_route() -> None:
+    payload, result, map_context, node_types = _priority_conflict_problem()
+    planner = PrioritizedSIPPPlanner()
+
+    first_expansion, first_schedule = planner.plan(
+        payload=payload,
+        result=result,
+        map_context=map_context,
+        node_types=node_types,
+        _allow_priority_retry=False,
+    )
+
+    assert first_expansion.status == "failed"
+    assert first_schedule.valid is False
+    assert any("R290" in error for error in first_expansion.errors)
+
+    recovered_expansion, recovered_schedule = planner.plan(
+        payload=payload,
+        result=result,
+        map_context=map_context,
+        node_types=node_types,
+    )
+
+    assert recovered_expansion.status == "expanded"
+    assert recovered_schedule.valid is True
+    assert {route.robot_id for route in recovered_schedule.routes} == {
+        "R289",
+        "R290",
+        "R292",
+    }
+    charge_route = next(
+        route for route in recovered_schedule.routes if route.robot_id == "R292"
+    )
+    assert charge_route.steps[-1].service_kind == "CHARGE"
+    assert charge_route.steps[-1].node_id == "C04"
+    assert charge_route.steps[-1].task_id == "TERMINAL-R292-CHARGE"
+    assert any(
+        warning
+        == "MAPF recovered with alternate robot priority: R290>R289>R292"
+        for warning in recovered_schedule.warnings
+    )

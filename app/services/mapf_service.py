@@ -91,6 +91,8 @@ class PrioritizedSIPPPlanner:
         g2p_batches: list[HandlingUnitBatchPlan] | None = None,
         preserved_node_reservations: list[NodeReservation] | None = None,
         preserved_station_reservations: list[StationServiceReservation] | None = None,
+        _priority_order: tuple[str, ...] | None = None,
+        _allow_priority_retry: bool = True,
     ) -> tuple[WaypointRouteExpansionResult, TrafficScheduleResult]:
         """Return static expansions and timed paths using shared calendars."""
 
@@ -145,9 +147,18 @@ class PrioritizedSIPPPlanner:
             zip(payload.task_data.task_ids, service_times, strict=True)
         )
         task_priority = dict(zip(payload.task_data.task_ids, payload.task_data.priorities, strict=True))
+        priority_rank = {
+            robot_id: index
+            for index, robot_id in enumerate(_priority_order or ())
+        }
         ordered_routes = sorted(
             result.routes,
             key=lambda route: (
+                (
+                    priority_rank.get(route.vehicle_id, len(priority_rank))
+                    if priority_rank
+                    else 0
+                ),
                 0
                 if (
                     route.task_sequence
@@ -181,6 +192,7 @@ class PrioritizedSIPPPlanner:
         timed_routes: list[TimedRobotRoute] = []
         reservations: list[EdgeReservation] = []
         conflicts: list[str] = []
+        failed_robot_ids: list[str] = []
         warnings: list[str] = []
         station_reservations: list[StationServiceReservation] = list(
             preserved_station_reservations or []
@@ -235,6 +247,7 @@ class PrioritizedSIPPPlanner:
                 node_types=node_types,
             )
             if planned is None:
+                failed_robot_ids.append(robot_id)
                 conflicts.append(route_error or f"No prioritized SIPP plan was found for {robot_id}.")
                 continue
 
@@ -353,6 +366,62 @@ class PrioritizedSIPPPlanner:
             total_service_ms=total_service,
             makespan_ms=makespan,
         )
+        if conflicts and _allow_priority_retry and len(ordered_routes) > 1:
+            default_order = tuple(route.vehicle_id for route in ordered_routes)
+            retry_orders: list[tuple[str, ...]] = []
+            retry_heads = [
+                *failed_robot_ids,
+                *(robot_id for robot_id in default_order if robot_id not in failed_robot_ids),
+            ]
+            for robot_id in retry_heads:
+                candidate = (
+                    robot_id,
+                    *(value for value in default_order if value != robot_id),
+                )
+                if candidate != default_order and candidate not in retry_orders:
+                    retry_orders.append(candidate)
+            reversed_order = tuple(reversed(default_order))
+            if reversed_order != default_order and reversed_order not in retry_orders:
+                retry_orders.append(reversed_order)
+
+            attempted_orders: list[str] = []
+            for retry_order in retry_orders:
+                attempted_orders.append(">".join(retry_order))
+                retry_expansion, retry_schedule = self.plan(
+                    payload=payload,
+                    result=result,
+                    map_context=map_context,
+                    node_types=node_types,
+                    g2p_batches=g2p_batches,
+                    preserved_node_reservations=preserved_node_reservations,
+                    preserved_station_reservations=preserved_station_reservations,
+                    _priority_order=retry_order,
+                    _allow_priority_retry=False,
+                )
+                if retry_expansion.status != "failed" and retry_schedule.valid:
+                    recovery_warning = (
+                        "MAPF recovered with alternate robot priority: "
+                        + ">".join(retry_order)
+                    )
+                    return retry_expansion, retry_schedule.model_copy(
+                        update={
+                            "warnings": [
+                                *retry_schedule.warnings,
+                                recovery_warning,
+                            ]
+                        }
+                    )
+
+            if attempted_orders:
+                schedule = schedule.model_copy(
+                    update={
+                        "warnings": [
+                            *schedule.warnings,
+                            "MAPF alternate-priority retries failed: "
+                            + ", ".join(attempted_orders),
+                        ]
+                    }
+                )
         return expansion, schedule
 
     def _plan_robot_route(

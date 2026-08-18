@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 from app.core.console import safe_console_print
@@ -57,8 +58,35 @@ def _mapf_error_summary(errors: list[str]) -> str:
         ("Handling steps must occur exactly once", "같은 작업 단계가 중복되었거나 누락되었습니다."),
         ("capacity=1 overlap", "충전소 또는 작업 스테이션 사용 시간이 다른 로봇과 겹쳤습니다."),
         ("total_service_ms does not match", "전체 작업 시간과 세부 실행 단계의 합계가 일치하지 않습니다."),
+        ("No safe ordered-goal path", "기존 작업 경로와 예약을 모두 만족하는 충돌 없는 경로를 찾지 못했습니다."),
     )
     return next((message for marker, message in translations if marker in first), first)
+
+
+def _mapf_failed_robot_ids(
+    errors: list[str], known_robot_ids: set[str]
+) -> list[str]:
+    """Return robot IDs explicitly referenced by deterministic MAPF errors."""
+
+    referenced = {
+        robot_id
+        for robot_id in known_robot_ids
+        if any(
+            re.search(
+                rf"(?<![\w-]){re.escape(robot_id)}(?![\w-])",
+                error,
+            )
+            for error in errors
+        )
+    }
+    if referenced:
+        return sorted(referenced)
+
+    for error in errors:
+        match = re.search(r"No safe ordered-goal path for ([^:\s]+):", error)
+        if match:
+            referenced.add(match.group(1))
+    return sorted(referenced)
 
 
 def _mapf_failure_diagnostics(
@@ -80,6 +108,12 @@ def _mapf_failure_diagnostics(
         for value in low_battery_states
         if _field(value, "robot_id")
     }
+    known_robot_ids = {
+        str(_field(value, "robot_id", ""))
+        for value in robot_states
+        if _field(value, "robot_id")
+    }
+    known_robot_ids.update(route.robot_id for route in schedule.routes)
 
     relocation = state.get("terminal_relocation")
     relocation_records = [
@@ -128,6 +162,9 @@ def _mapf_failure_diagnostics(
         "operator_summary": _mapf_error_summary(list(validation.errors)),
         "errors": list(validation.errors),
         "warnings": list(validation.warnings),
+        "failed_robot_ids": _mapf_failed_robot_ids(
+            list(validation.errors), known_robot_ids
+        ),
         "low_battery_robots": [
             {
                 "robot_id": _field(value, "robot_id"),
@@ -154,17 +191,35 @@ def _mapf_failure_diagnostics(
 
 
 def _mapf_operator_message(diagnostics: dict[str, Any]) -> str:
-    """Describe the failed low-battery return in one UI-friendly sentence."""
+    """Describe the robots that actually failed MAPF in one UI-friendly sentence."""
 
     robots = diagnostics["low_battery_robots"]
     relocations = diagnostics["terminal_relocations"]
-    robot_ids = ", ".join(
+    low_battery_ids = {
         str(value["robot_id"]) for value in robots if value["robot_id"]
-    )
+    }
+    failed_robot_ids = [
+        str(value) for value in diagnostics.get("failed_robot_ids", []) if value
+    ]
+    failed_low_battery_ids = [
+        robot_id for robot_id in failed_robot_ids if robot_id in low_battery_ids
+    ]
+    if failed_robot_ids and not failed_low_battery_ids:
+        return (
+            f"로봇 {', '.join(failed_robot_ids)}의 충돌 없는 실행 경로를 "
+            f"생성하지 못했습니다. {diagnostics['operator_summary']}"
+        )
+
+    robot_ids = ", ".join(failed_low_battery_ids or sorted(low_battery_ids))
     charge_targets = ", ".join(
         str(value["to_node"])
         for value in relocations
-        if value["policy"] == "CHARGE" and value["to_node"]
+        if value["policy"] == "CHARGE"
+        and value["to_node"]
+        and (
+            not failed_low_battery_ids
+            or str(value["robot_id"]) in failed_low_battery_ids
+        )
     )
     if not robot_ids:
         return (
