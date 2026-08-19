@@ -175,7 +175,7 @@ def _with_quiesced_runtime_states(
             or not current_node
             or current_edge
             or current_load_units > 0
-            or status not in {"idle", "waiting"}
+            or status not in {"idle", "waiting", "low_battery"}
         ):
             continue
 

@@ -259,6 +259,20 @@ class PrioritizedSIPPPlanner:
                 end=reservation.end_at_ms,
                 robot_id=reservation.robot_id,
             )
+        # Every robot physically occupies its start node when the new plan
+        # becomes available.  Protect that instant before planning any route;
+        # otherwise an earlier-priority route can pass through a later robot's
+        # still-occupied start node and make that robot's own SIPP start state
+        # impossible.  The robot's planner ignores its own marker, while other
+        # robots observe the normal node safety headway around it.
+        for robot_id, start_node in starts.items():
+            start_at_ms = available_at_by_robot.get(robot_id, 0)
+            node_calendar.reserve(
+                edge_id=f"NODE:{start_node}",
+                start=start_at_ms,
+                end=start_at_ms + 1,
+                robot_id=robot_id,
+            )
         expanded_routes: list[ExpandedRobotRoute] = []
         timed_routes: list[TimedRobotRoute] = []
         reservations: list[EdgeReservation] = []

@@ -569,6 +569,92 @@ def test_mapf_retries_with_blocked_robot_first_and_keeps_charge_route() -> None:
     )
 
 
+def test_mapf_protects_later_robot_start_node_before_route_planning() -> None:
+    """A planned route must not pass through a robot waiting to start there."""
+
+    nodes = ["A", "B", "C", "D"]
+    indices = {node: index for index, node in enumerate(nodes)}
+    edges = [
+        ("E-A-B", "A", "B"),
+        ("E-B-C", "B", "C"),
+        ("E-B-D", "B", "D"),
+    ]
+    payload = CuOptPayload(
+        snapshot_id="SNAP-START-OCCUPANCY",
+        location_index_map=indices,
+        fleet_data=FleetData(
+            vehicle_ids=["R100", "R200"],
+            vehicle_start_locations=[indices["A"], indices["B"]],
+            vehicle_end_locations=[indices["A"], indices["B"]],
+            capacities=[1, 1],
+            vehicle_available_at_ms=[0, 1_000],
+            skip_first_trips=[False, False],
+            drop_return_trips=[False, False],
+        ),
+        task_data=TaskData(
+            task_ids=["TASK-R100_DROP", "TERMINAL-R200-CHARGE"],
+            task_locations=[indices["C"], indices["D"]],
+            pickup_and_delivery_pairs=[],
+            demand=[0, 0],
+            priorities=[10, 10],
+            service_times_ms=[1_000, 1_000],
+            fixed_vehicle_ids=["R100", "R200"],
+        ),
+        waypoint_graph_data=WaypointGraphData(
+            edge_ids=[edge_id for edge_id, _, _ in edges],
+            from_indices=[indices[source] for _, source, _ in edges],
+            to_indices=[indices[target] for _, _, target in edges],
+            costs=[1.0, 1.0, 1.0],
+            travel_times_ms=[1_000, 1_000, 1_000],
+        ),
+        applied_map_constraints=MapConstraints(),
+    )
+    result = OptimizerResult(
+        backend="cuopt",
+        status="success",
+        optimizer="cuopt",
+        routes=[
+            OptimizerRoute(vehicle_id="R100", task_sequence=["TASK-R100_DROP"]),
+            OptimizerRoute(
+                vehicle_id="R200",
+                task_sequence=["TERMINAL-R200-CHARGE"],
+            ),
+        ],
+    )
+    map_context = MapContext(
+        graph_version="MAP-START-OCCUPANCY",
+        node_count=len(nodes),
+        edge_count=len(edges),
+        map_constraints=MapConstraints(),
+        summary="A task route crosses a low-battery robot start node.",
+    )
+
+    expansion, schedule = PrioritizedSIPPPlanner().plan(
+        payload=payload,
+        result=result,
+        map_context=map_context,
+        node_types={node: "route" for node in nodes},
+        _allow_priority_retry=False,
+    )
+
+    assert expansion.status == "expanded"
+    assert schedule.valid is True
+    task_route = next(route for route in schedule.routes if route.robot_id == "R100")
+    battery_route = next(route for route in schedule.routes if route.robot_id == "R200")
+    task_arrival_at_b = next(
+        step.end_at_ms
+        for step in task_route.steps
+        if step.step_type == "MOVE" and step.to_node == "B"
+    )
+    battery_departure_from_b = next(
+        step.start_at_ms
+        for step in battery_route.steps
+        if step.step_type == "MOVE" and step.from_node == "B"
+    )
+    assert battery_departure_from_b == 1_000
+    assert task_arrival_at_b > battery_departure_from_b
+
+
 def test_five_robot_retry_search_covers_every_priority_order() -> None:
     default_order = ("R295", "R296", "R297", "R298", "R299")
 

@@ -8,6 +8,7 @@ from app.domain.schemas import (
     SimulationPlanStep,
     SimulationRobotPlan,
 )
+from app.services.be_centered_plan_service import _with_quiesced_runtime_states
 from app.services.simulation_plan_service import RollingHorizonReplanService
 
 
@@ -37,6 +38,52 @@ def test_robot_runtime_allows_initial_snapshot_without_handover_clock() -> None:
     )
 
     assert runtime.safe_handover_at_ms is None
+
+
+def test_quiesced_low_battery_status_is_accepted_as_safe_stop() -> None:
+    class RuntimeRepository:
+        @staticmethod
+        def all_robots():
+            return [
+                {
+                    "robot_id": "R366",
+                    "current_node": "R3_10",
+                    "current_edge": None,
+                    "status": "low_battery",
+                    "battery_pct": 20,
+                    "capacity_units": 1,
+                    "current_load_units": 0,
+                    "active_task_id": None,
+                    "safe_handover_at_ms": 18_675,
+                    "sim_time_ms": 24_900,
+                }
+            ]
+
+    result = _with_quiesced_runtime_states(
+        RuntimePlanningOverrides(
+            robot_states=[
+                RobotRuntimeOverride(
+                    robot_id="R366",
+                    current_node="R2_10",
+                    status="low_battery",
+                    battery_pct=20,
+                    current_load_units=1,
+                    active_task_id="TASK-3831",
+                    sim_time_ms=16_600,
+                )
+            ]
+        ),
+        RuntimeRepository(),
+        replan_at_sim_time_ms=24_900,
+    )
+
+    robot = result.robot_states[0]
+    assert robot.current_node == "R3_10"
+    assert robot.status == "low_battery"
+    assert robot.current_load_units == 0
+    assert robot.active_task_id is None
+    assert robot.safe_handover_reached is True
+    assert robot.sim_time_ms == 18_675
 
 
 def test_low_battery_replan_replaces_worker_and_keeps_four_task_robots() -> None:
