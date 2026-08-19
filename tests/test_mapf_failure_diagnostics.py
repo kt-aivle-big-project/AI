@@ -758,7 +758,7 @@ def test_planner_diagnostics_keep_priority_retry_summary(monkeypatch) -> None:
     assert '"warnings": ["MAPF alternate-priority retries exhausted:' in output[0]
 
 
-def test_low_battery_transition_keeps_only_existing_task_robots() -> None:
+def test_low_battery_transition_replaces_unavailable_worker_with_reserve() -> None:
     active = SimulationPlan(
         plan_id="PLAN-OLD",
         plan_version=1,
@@ -808,16 +808,44 @@ def test_low_battery_transition_keeps_only_existing_task_robots() -> None:
     explicit = RuntimePlanningOverrides(
         robot_states=[
             RobotRuntimeOverride(
+                robot_id="R296",
+                current_node="A",
+                status="idle",
+                battery_pct=80,
+                sim_time_ms=2500,
+            ),
+            RobotRuntimeOverride(
+                robot_id="R297",
+                current_node="A",
+                status="idle",
+                battery_pct=75,
+                sim_time_ms=2500,
+            ),
+            RobotRuntimeOverride(
                 robot_id="R298",
                 current_node="R3_4",
                 status="low_battery",
                 battery_pct=20,
                 sim_time_ms=2500,
-            )
+            ),
+            RobotRuntimeOverride(
+                robot_id="R299",
+                current_node="A",
+                status="idle",
+                battery_pct=70,
+                sim_time_ms=2500,
+            ),
+            RobotRuntimeOverride(
+                robot_id="R300",
+                current_node="A",
+                status="idle",
+                battery_pct=90,
+                sim_time_ms=2500,
+            ),
         ]
     )
 
-    allowed = RollingHorizonReplanService._low_battery_transition_task_vehicle_ids(
+    replacement = RollingHorizonReplanService._low_battery_replacement_runtime_overrides(
         active,
         snapshot,
         explicit,
@@ -827,10 +855,16 @@ def test_low_battery_transition_keeps_only_existing_task_robots() -> None:
         active,
         snapshot,
     ) == 4
-    assert allowed == {"R296", "R297", "R299"}
+    assert replacement.allowed_task_robot_ids == [
+        "R296",
+        "R297",
+        "R299",
+        "R300",
+    ]
+    assert replacement.minimum_task_vehicle_count == 4
 
 
-def test_low_battery_transition_releases_allow_list_when_old_worker_is_below_planning_threshold() -> None:
+def test_low_battery_transition_uses_no_task_vehicle_without_healthy_reserve() -> None:
     active = SimulationPlan(
         plan_id="PLAN-OLD",
         plan_version=1,
@@ -884,13 +918,14 @@ def test_low_battery_transition_releases_allow_list_when_old_worker_is_below_pla
         ]
     )
 
-    allowed = RollingHorizonReplanService._low_battery_transition_task_vehicle_ids(
+    replacement = RollingHorizonReplanService._low_battery_replacement_runtime_overrides(
         active,
         snapshot,
         explicit,
     )
 
-    assert allowed == set()
+    assert replacement.allowed_task_robot_ids == []
+    assert replacement.minimum_task_vehicle_count == 0
 
 
 def test_transition_task_allow_list_filters_reserve_robots() -> None:

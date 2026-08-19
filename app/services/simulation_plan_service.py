@@ -1102,55 +1102,106 @@ class RollingHorizonReplanService:
         }
 
     @staticmethod
-    def _low_battery_transition_task_vehicle_ids(
+    def _low_battery_replacement_runtime_overrides(
         active: SimulationPlan,
         snapshot: ReplanExecutionSnapshot,
         explicit: RuntimePlanningOverrides,
-    ) -> set[str]:
-        """Keep only *eligible* existing workers without adding reserve robots.
+        replannable_operation_count: int | None = None,
+    ) -> RuntimePlanningOverrides:
+        """Replace unavailable workers while preserving the task-fleet size.
 
-        A low-battery robot remains physically active while it hands over and
-        travels to its charger.  Requiring the same number of *task* robots at
-        that instant adds a replacement before the retiring robot clears the
-        shared map.  That turns an N-robot plan into N+1 simultaneous MAPF
-        routes and can make an otherwise valid charging transition infeasible.
-
-        Battery is checked against the same global planning threshold used by
-        ``RobotRuntimeContext``.  A robot can still be reported as ``idle`` at
-        the projected handover while its physical battery has already fallen
-        below that threshold.  Freezing the candidate allow-list to such a
-        robot produces ``ALL_CANDIDATES_UNAVAILABLE`` even when healthy reserve
-        robots exist.  Returning an empty set in that case deliberately removes
-        the transition allow-list so one reserve robot can take the work.
+        If four robots were performing business work and one becomes
+        low-battery, that robot receives only its CHARGE relocation.  One
+        healthy idle reserve is selected deterministically so the remaining
+        work is still solved with four task robots, never three or five.
         """
 
-        remaining_robot_ids = (
-            RollingHorizonReplanService._remaining_task_vehicle_ids(
-                active,
-                snapshot,
+        original_task_robot_ids = {
+            robot.robot_id
+            for robot in active.robots
+            if any(
+                step.task_id is not None
+                and step.service_kind not in {"CHARGE", "PARK"}
+                for step in robot.steps
             )
-        )
-        runtime_by_robot = {
-            value.robot_id: value for value in explicit.robot_states
         }
+        runtime_by_robot = {
+            value.robot_id: value for value in snapshot.robot_overrides
+        }
+        runtime_by_robot.update(
+            {value.robot_id: value for value in explicit.robot_states}
+        )
         minimum_battery_pct = get_settings().robot_min_battery_pct
-        continuing_robot_ids = {
+        eligible_robot_ids = {
             robot_id
-            for robot_id in remaining_robot_ids
-            if (
-                (runtime := runtime_by_robot.get(robot_id)) is None
-                or (
-                    runtime.status not in {"fault", "offline", "low_battery"}
-                    and (
-                        runtime.battery_pct is None
-                        or runtime.battery_pct >= minimum_battery_pct
-                    )
-                )
+            for robot_id, runtime in runtime_by_robot.items()
+            if runtime.status == "idle"
+            and (
+                runtime.battery_pct is None
+                or runtime.battery_pct >= minimum_battery_pct
             )
         }
         if explicit.allowed_task_robot_ids is not None:
-            continuing_robot_ids &= set(explicit.allowed_task_robot_ids)
-        return continuing_robot_ids
+            eligible_robot_ids &= set(explicit.allowed_task_robot_ids)
+
+        def runtime_rank(robot_id: str) -> tuple[float, str]:
+            return (
+                -float(runtime_by_robot[robot_id].battery_pct or 0.0),
+                robot_id,
+            )
+
+        continuing_candidates = sorted(
+            original_task_robot_ids & eligible_robot_ids,
+            key=runtime_rank,
+        )
+        reserve_candidates = sorted(
+            eligible_robot_ids - original_task_robot_ids,
+            key=runtime_rank,
+        )
+        if replannable_operation_count is None:
+            completed_bases = set(snapshot.completed_task_bases)
+            locked_bases = set(snapshot.locked_task_bases)
+            remaining_operation_count = sum(
+                1
+                for operation in active.logical_operations
+                if any(
+                    (canonical := canonical_task_id(task_id)) is not None
+                    and canonical not in completed_bases
+                    and canonical not in locked_bases
+                    for task_id in operation.task_ids
+                )
+            )
+        else:
+            # ``events`` is the final rolling-horizon work set: it includes
+            # active-plan work that survived completed/locked filtering plus
+            # genuinely new operations.  Counting only active.logical_operations
+            # would incorrectly produce zero at an idle checkpoint that also
+            # receives new work.
+            remaining_operation_count = max(0, replannable_operation_count)
+        target_vehicle_count = min(
+            len(original_task_robot_ids),
+            remaining_operation_count,
+        )
+        continuing_robot_ids = set(
+            continuing_candidates[:target_vehicle_count]
+        )
+        replacement_count = max(
+            0,
+            target_vehicle_count - len(continuing_robot_ids),
+        )
+        selected_robot_ids = continuing_robot_ids | set(
+            reserve_candidates[:replacement_count]
+        )
+        actual_vehicle_count = min(
+            target_vehicle_count,
+            len(selected_robot_ids),
+        )
+        return explicit.model_copy(
+            update={
+                "minimum_task_vehicle_count": actual_vehicle_count,
+                "allowed_task_robot_ids": sorted(selected_robot_ids),
+            }
+        )
 
     def replan(self, request: ReplanMissionRequest) -> SimulationPlanResponse:
         active, prior_result = self.store.load(request.active_plan_id)
@@ -1247,39 +1298,18 @@ class RollingHorizonReplanService:
             else request.replan_at_sim_time_ms
         )
         if request.reason == "LOW_BATTERY":
-            remaining_task_vehicle_ids = self._remaining_task_vehicle_ids(
-                active,
-                snapshot,
-            )
-            transition_task_vehicle_ids = self._low_battery_transition_task_vehicle_ids(
-                active,
-                snapshot,
-                explicit_runtime_overrides,
-            )
-            # With at least one continuing task robot, freeze the transition
-            # candidate set to those old-plan workers.  This prevents cuOpt
-            # from activating a reserve robot while the low-battery robot is
-            # still physically travelling to its charger.  If the retiring
-            # robot was the only worker, leave the candidate set unrestricted
-            # so one replacement can accept its unfinished work.
-            allowed_task_robot_ids = (
-                sorted(transition_task_vehicle_ids)
-                if transition_task_vehicle_ids
-                else explicit_runtime_overrides.allowed_task_robot_ids
-            )
-            transition_task_vehicle_count = (
-                len(transition_task_vehicle_ids)
-                if transition_task_vehicle_ids
-                else len(remaining_task_vehicle_ids)
-            )
-            explicit_runtime_overrides = explicit_runtime_overrides.model_copy(
-                update={
-                    "minimum_task_vehicle_count": max(
-                        explicit_runtime_overrides.minimum_task_vehicle_count,
-                        transition_task_vehicle_count,
-                    ),
-                    "allowed_task_robot_ids": allowed_task_robot_ids,
-                }
+            replannable_operation_ids = {
+                value.order_id or value.inbound_id
+                for value in events
+                if value.order_id or value.inbound_id
+            }
+            explicit_runtime_overrides = (
+                self._low_battery_replacement_runtime_overrides(
+                    active,
+                    snapshot,
+                    explicit_runtime_overrides,
+                    replannable_operation_count=len(replannable_operation_ids),
+                )
             )
         runtime_overrides = self._merge_runtime_overrides(
             snapshot,
