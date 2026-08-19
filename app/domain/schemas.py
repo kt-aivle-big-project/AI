@@ -1927,6 +1927,10 @@ class RobotRuntime(StrictModel):
     sequence: int = Field(default=0, ge=0)
     state_version: int = Field(default=1, ge=0)
     sim_tick: int | None = Field(default=None, ge=0)
+    # Exact Spring playback clock at which this robot joined a safe replan
+    # barrier. It intentionally differs from the later global Redis snapshot
+    # clock when robots finish their current tasks at different times.
+    safe_handover_at_ms: int | None = Field(default=None, ge=0)
     sim_time_ms: int = Field(default=0, ge=0)
     x: float | None = None
     y: float | None = None

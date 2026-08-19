@@ -217,6 +217,7 @@ class BeCompatRuntimeRobot(BeCompatModel):
     current_load_units: int | None = Field(default=None, alias="currentLoadUnits")
     handling_unit_code: str | None = Field(default=None, alias="handlingUnitCode")
     active_task_code: str | None = Field(default=None, alias="activeTaskCode")
+    wait_started_at_ms: int | None = Field(default=None, alias="waitStartedAtMillis")
     compatibility_mode: bool = Field(default=True, alias="compatibilityMode")
 
 

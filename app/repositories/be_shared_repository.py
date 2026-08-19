@@ -493,6 +493,11 @@ class BeSharedWarehouseRepository(JsonWarehouseRepository):
                         else 0
                     ),
                     "active_task_id": runtime.active_task_code or (str(runtime.current_task_id) if runtime.current_task_id is not None else None),
+                    # During a replan barrier Spring publishes the exact clock
+                    # at which each robot became stationary.  Keep it separate
+                    # from the global Redis snapshot time: robots that stopped
+                    # earlier must not be projected through later old-plan work.
+                    "safe_handover_at_ms": runtime.wait_started_at_ms,
                     "sim_time_ms": int(
                         runtime.sim_time_ms
                         or runtime.simulation_time_millis

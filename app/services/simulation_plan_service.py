@@ -885,15 +885,17 @@ class RollingHorizonReplanService:
     def _reconcile_safe_handover_states(
         snapshot: ReplanExecutionSnapshot,
         explicit: RuntimePlanningOverrides,
+        active_plan: SimulationPlan | None = None,
     ) -> ReplanExecutionSnapshot:
         """Replace stale plan projections with Spring-confirmed safe stops.
 
         A quiesced, empty robot is already standing at its handover node.  If
         the old schedule is projected to a later global activation barrier,
         two independent robots can incorrectly collapse onto the same future
-        node even though their real stopped positions are distinct.  Loaded
-        commitments are never replaced here; those must finish under the old
-        plan before ownership changes.
+        node even though their real stopped positions are distinct. Spring's
+        barrier only marks an empty robot safe after its current physical task
+        and service-spur egress have completed, so that observed state replaces
+        even a stale plan-derived loaded/locked projection.
         """
 
         authoritative = {
@@ -907,6 +909,33 @@ class RollingHorizonReplanService:
         if not authoritative:
             return snapshot
 
+        completed_task_bases = set(snapshot.completed_task_bases)
+        locked_task_bases = set(snapshot.locked_task_bases)
+        if active_plan is not None:
+            # The request clock is the time at which the *last* robot joined the
+            # barrier. Robots that stopped earlier did not execute later old-
+            # plan tasks while waiting. Reconstruct completion per robot from
+            # its exact Spring handover clock so those future tasks are not
+            # incorrectly dropped from the new solve.
+            for robot in active_plan.robots:
+                state = authoritative.get(robot.robot_id)
+                if state is None:
+                    continue
+                service_by_base: dict[str, list[SimulationPlanStep]] = {}
+                for step in robot.steps:
+                    if step.step_type != "SERVICE" or not step.task_id:
+                        continue
+                    base = canonical_task_id(step.task_id)
+                    if base:
+                        service_by_base.setdefault(base, []).append(step)
+                owned_bases = set(service_by_base)
+                completed_task_bases.difference_update(owned_bases)
+                locked_task_bases.difference_update(owned_bases)
+                for base, steps in service_by_base.items():
+                    final_step = max(steps, key=lambda value: value.end_at_ms)
+                    if final_step.end_at_ms <= state.sim_time_ms:
+                        completed_task_bases.add(base)
+
         prior_points = {
             value.robot_id: value for value in snapshot.handover_points
         }
@@ -914,15 +943,10 @@ class RollingHorizonReplanService:
         points: list[PlanHandoverPoint] = []
         for point in snapshot.handover_points:
             state = authoritative.get(point.robot_id)
-            # A plan-derived loaded commitment remains authoritative even if a
-            # stale Redis row happens to look empty at the request boundary.
-            if state is None or point.carrying_load or point.locked_task_ids:
+            if state is None:
                 points.append(point)
                 continue
-            handover_at_ms = max(
-                snapshot.replan_at_sim_time_ms,
-                state.sim_time_ms,
-            )
+            handover_at_ms = state.sim_time_ms
             points.append(
                 point.model_copy(
                     update={
@@ -950,8 +974,6 @@ class RollingHorizonReplanService:
             if (
                 state is None
                 or point is None
-                or point.carrying_load
-                or point.locked_task_ids
             ):
                 overrides.append(projected)
                 continue
@@ -1030,6 +1052,8 @@ class RollingHorizonReplanService:
                     for value in snapshot.preserved_station_reservations
                     if value.mobile_robot_id not in replaced_robot_ids
                 ],
+                "completed_task_bases": sorted(completed_task_bases),
+                "locked_task_bases": sorted(locked_task_bases),
             }
         )
 
@@ -1156,6 +1180,7 @@ class RollingHorizonReplanService:
         snapshot = self._reconcile_safe_handover_states(
             snapshot,
             explicit_runtime_overrides,
+            active_plan=active,
         )
         completed_bases = set(snapshot.completed_task_bases)
         locked_bases = set(snapshot.locked_task_bases)

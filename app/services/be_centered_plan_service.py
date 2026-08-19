@@ -181,6 +181,12 @@ def _with_quiesced_runtime_states(
 
         previous = by_robot.get(robot_id)
         runtime_time = int(runtime.get("sim_time_ms") or 0)
+        safe_handover_value = runtime.get("safe_handover_at_ms")
+        safe_handover_time = int(
+            runtime_time
+            if safe_handover_value is None
+            else safe_handover_value
+        )
         updates = {
             "current_node": str(current_node),
             "current_edge": None,
@@ -202,7 +208,11 @@ def _with_quiesced_runtime_states(
             "active_task_id": None,
             "clear_active_work": True,
             "safe_handover_reached": True,
-            "sim_time_ms": max(runtime_time, replan_at_sim_time_ms),
+            # Preserve the per-robot stop clock for rolling-horizon
+            # reconciliation.  The common planning horizon remains the request
+            # clock and is applied later, after completed/remaining work has
+            # been reconstructed from each physical handover.
+            "sim_time_ms": safe_handover_time,
         }
         by_robot[robot_id] = (
             previous.model_copy(update=updates)
