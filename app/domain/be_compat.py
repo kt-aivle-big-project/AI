@@ -162,15 +162,6 @@ class BeGraphSnapshot(BeCompatModel):
     edges: list[BeEdgeInput]
 
 
-class BeGraphStatusResponse(BeCompatModel):
-    warehouse_id: int = Field(alias="warehouseId")
-    available: bool
-    graph_version: str | None = Field(default=None, alias="graphVersion")
-    node_count: int = Field(default=0, alias="nodeCount")
-    edge_count: int = Field(default=0, alias="edgeCount")
-    source: str | None = None
-
-
 class BeCompatRuntimeRobot(BeCompatModel):
     """Robot state read from the unmodified Spring Redis JSON document.
 
@@ -260,21 +251,3 @@ class BeCompatRuntimeSnapshot(BeCompatModel):
     robots: list[BeCompatRuntimeRobot] = Field(default_factory=list)
     blocked_edge_ids: list[int] = Field(default_factory=list, alias="blockedEdgeIds")
     warnings: list[str] = Field(default_factory=list)
-
-
-class BeCompatRuntimeBootstrapRequest(BeCompatModel):
-    warehouse_id: int = Field(alias="warehouseId")
-    robots: list[BeRobotStateInput] = Field(default_factory=list)
-    sim_time_ms: int = Field(default=0, alias="simTimeMs", ge=0)
-    replace: bool = True
-
-
-class BeCompatContractStatus(BeCompatModel):
-    schema_name: str = Field(alias="schema")
-    ready: bool
-    spring_tables_available: bool = Field(alias="springTablesAvailable")
-    graph_source: str = Field(alias="graphSource")
-    graph_cache_mode: str = Field(alias="graphCacheMode")
-    runtime_source: str = Field(alias="runtimeSource")
-    tables: list[str] = Field(default_factory=list)
-    notes: list[str] = Field(default_factory=list)

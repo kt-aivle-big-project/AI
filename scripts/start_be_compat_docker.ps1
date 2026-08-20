@@ -55,8 +55,7 @@ $ready = $false
 while ((Get-Date) -lt $deadline) {
     try {
         $health = Invoke-RestMethod -Uri "$baseUrl/health" -TimeoutSec 5
-        $contract = Invoke-RestMethod -Uri "$baseUrl/compat/v2/contract" -TimeoutSec 5
-        if ($health.status -eq "ok" -and $contract.ready) {
+        if ($health.status -eq "ok") {
             $ready = $true
             break
         }
@@ -66,11 +65,11 @@ while ((Get-Date) -lt $deadline) {
 }
 if (-not $ready) {
     docker compose --env-file .env.docker logs --tail 150 laro-api
-    throw "LARO API/DB stack did not become ready within $TimeoutSeconds seconds."
+    throw "LARO API stack did not become ready within $TimeoutSeconds seconds."
 }
 
 Write-Host ""
-Write-Host "Shared DB and LARO API are ready." -ForegroundColor Green
+Write-Host "LARO API is ready." -ForegroundColor Green
 Write-Host "LARO API      : $baseUrl"
 Write-Host "Swagger       : $baseUrl/docs"
 Write-Host "PostgreSQL    : localhost:5432"

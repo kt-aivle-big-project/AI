@@ -427,6 +427,11 @@ class WarehouseSituationGraphBuilder:
                     )
 
             candidate_slots = list(inventory.candidate_putaway_slots)
+            candidate_slots = [
+                slot for slot in candidate_slots
+                if slot.reservation_task_id is None
+                or slot.reservation_task_id == need.task_id
+            ]
             if need.target_rack_id:
                 candidate_slots = [
                     slot for slot in candidate_slots

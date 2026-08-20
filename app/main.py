@@ -10,6 +10,12 @@ from app.api.be_compat_routes import router as be_compat_router
 from app.core.config import get_settings
 from app.core.http import UTF8JSONResponse
 from app.infrastructure.manager import get_infrastructure_manager
+from app.services.planning_evaluation_job_service import (
+    shutdown_planning_evaluation_job_service,
+)
+from app.services.planning_scenario_suite_service import (
+    shutdown_planning_scenario_suite_service,
+)
 
 
 @asynccontextmanager
@@ -23,6 +29,8 @@ async def lifespan(app: FastAPI):
     try:
         yield
     finally:
+        shutdown_planning_scenario_suite_service()
+        shutdown_planning_evaluation_job_service()
         manager.close()
 
 

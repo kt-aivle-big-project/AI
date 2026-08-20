@@ -239,7 +239,7 @@ def _deterministic_summary(state: LaroGraphState) -> FrontendExecutionSummary:
             f"Soft Avoid Edge {value}" for value in (_value(map_constraints, "soft_penalty_edge_ids", []) or [])
         )
 
-    g2p = state.get("goods_to_person_compilation") or state.get("goods_to_person_plan")
+    g2p = state.get("goods_to_person_compilation")
     if g2p is not None:
         batches = list(_value(g2p, "batches", []) or [])
         station_actions = list(_value(g2p, "station_actions", []) or [])

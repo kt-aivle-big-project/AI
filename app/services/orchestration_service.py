@@ -14,7 +14,6 @@ from app.domain.schemas import (
     CuOptEvidenceEnrichmentResult,
     FrontendExecutionSummary,
     GoodsToPersonCompilationResult,
-    GoodsToPersonPlanResult,
     GoodsToPersonRouteEnrichmentResult,
     FormulationDecision,
     RequestGateDecision,
@@ -418,9 +417,6 @@ class OrchestrationService:
             logical_operation_coverage_validation=_optional(
                 final.get("logical_operation_coverage_validation"),
                 LogicalOperationCoverageValidationResult,
-            ),
-            goods_to_person_plan=_optional(
-                final.get("goods_to_person_plan"), GoodsToPersonPlanResult
             ),
             query_response=_optional(final.get("query_response"), QueryResponse),
             clarification=_optional(final.get("clarification"), ClarificationResult),

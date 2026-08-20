@@ -34,7 +34,7 @@
 ## v13.24.0 — Native Plan API Bridge
 
 - Preserved `POST /optimize` and `POST /reoptimize` exactly for the unmodified Spring BE.
-- Added native-plan preflight and compact trace endpoints.
+- Added native-plan preflight and compact trace endpoints (removed from the current public API).
 - Added shared-stack native fixture bootstrap for PostgreSQL, Redis, and Neo4j.
 - Added automated HTTP plan contract verification and example requests.
 

@@ -632,9 +632,9 @@ class RuntimePlanningOverrides(StrictModel):
     # Trusted rolling-horizon fleet floor. It counts task-performing robots only;
     # charge/park relocation routes remain outside this lower bound.
     minimum_task_vehicle_count: int = Field(default=0, ge=0)
-    # Optional transition-only allow-list for business-task assignment.  A
-    # low-battery replan uses this to keep the robots that were already working
-    # while the retiring robot remains on the shared map en route to charging.
+    # Optional transition-only allow-list for business-task assignment. A
+    # low-battery replan replaces an unavailable worker with an eligible idle
+    # reserve while preserving the previous business-task fleet size.
     # ``None`` means the normal eligible fleet; an empty list intentionally
     # means that no robot may receive business work in this solve.
     allowed_task_robot_ids: list[str] | None = None
@@ -709,42 +709,11 @@ class PublicRuntimeSnapshot(StrictModel):
         )
 
 
-class ScenarioRuntimeBootstrapRequest(StrictModel):
-    """Debug-only request that clones one Redis simulation namespace.
-
-    Complex API scenarios intentionally use isolated ``simulation_id`` values.
-    The source runtime is copied into that namespace before the mission request
-    so every scenario starts from the same robot, edge, and station baseline.
-    """
-
-    warehouse_id: WarehouseId
-    target_simulation_id: str = Field(min_length=1, max_length=128)
-    source_simulation_id: str | None = Field(default=None, min_length=1, max_length=128)
-    reset: bool = True
-    copy_robot_runtime: bool = True
-    copy_edge_runtime: bool = True
-    copy_station_runtime: bool = True
-    copy_reservations: bool = False
-
-
-class ScenarioRuntimeBootstrapResult(StrictModel):
-    status: Literal["BOOTSTRAPPED", "NOOP"]
-    warehouse_id: WarehouseId
-    source_simulation_id: str
-    target_simulation_id: str
-    robots: int = Field(default=0, ge=0)
-    edges: int = Field(default=0, ge=0)
-    stations: int = Field(default=0, ge=0)
-    reservations: int = Field(default=0, ge=0)
-    source_runtime_version: str = "0"
-    target_runtime_version: str = "0"
-
-
 class AutoMissionRequest(StrictModel):
     """Internal request used by the LangGraph workflow.
 
-    Public FastAPI callers use :class:`PublicMissionRequest`; the API infers
-    ``request_mode`` and converts to this explicit internal contract.
+    BE-centered adapters infer ``request_mode`` and build this explicit
+    internal workflow contract.
     """
 
     warehouse_id: WarehouseId = "WH-001"
@@ -790,55 +759,6 @@ class AutoMissionRequest(StrictModel):
         if self.request_mode == "mixed" and (not self.events or not (self.user_command or "").strip()):
             raise ValueError("mixed mode requires both events and user_command")
         return self
-
-
-class PublicMissionRequest(StrictModel):
-    """Stable front-end mission input.
-
-    The browser chooses neither ``request_mode`` nor Rule/Agent. The server
-    infers the input shape from ``events`` and ``user_command``, then the router
-    and deterministic guard lock one execution branch.
-    """
-
-    warehouse_id: WarehouseId
-    simulation_id: str = Field(min_length=1, max_length=128)
-    optimization_backend: OptimizationBackend | None = None
-    events: list[EventInput] = Field(default_factory=list)
-    structured_input: StructuredMissionInput | None = None
-    user_command: str | None = None
-    runtime_snapshot: PublicRuntimeSnapshot | None = None
-
-    @model_validator(mode="after")
-    def validate_payload_shape(self) -> "PublicMissionRequest":
-        effective_events = [
-            *self.events,
-            *(self.structured_input.to_events() if self.structured_input is not None else []),
-        ]
-        infer_request_mode(events=effective_events, user_command=self.user_command)
-        return self
-
-    def to_internal(self) -> AutoMissionRequest:
-        settings_snapshot = (
-            self.runtime_snapshot.to_internal()
-            if self.runtime_snapshot is not None
-            else RuntimePlanningOverrides()
-        )
-        effective_events = [
-            *self.events,
-            *(self.structured_input.to_events() if self.structured_input is not None else []),
-        ]
-        return AutoMissionRequest(
-            warehouse_id=self.warehouse_id,
-            simulation_id=self.simulation_id,
-            request_mode=infer_request_mode(
-                events=effective_events, user_command=self.user_command
-            ),
-            optimization_backend=self.optimization_backend,
-            events=effective_events,
-            structured_input=self.structured_input,
-            user_command=self.user_command,
-            runtime_overrides=settings_snapshot,
-        )
 
 
 class EntryRouteDecision(StrictModel):
@@ -1743,6 +1663,7 @@ class InboundTaskNeed(StrictModel):
     """Authoritative inbound handling-unit movement requirement."""
 
     inbound_id: str
+    task_id: int | None = Field(default=None, ge=1)
     handling_unit_id: str
     item_id: str
     quantity: PositiveInt
@@ -1761,6 +1682,7 @@ class CandidatePutawaySlot(StrictModel):
     rack_level: int = Field(ge=1, le=3)
     access_node_ids: list[str] = Field(min_length=1)
     capacity: int = Field(default=0, ge=0)
+    reservation_task_id: int | None = Field(default=None, ge=1)
 
 
 class InventoryTaskNeed(StrictModel):
@@ -2428,36 +2350,6 @@ GoodsToPersonPostStationAction = Literal[
     "COMPLETE_AT_STATION",
     "MOVE_TO_EMPTY_TOTE_BUFFER",
 ]
-GoodsToPersonPlanStatus = Literal[
-    "ready_for_optimizer",
-    "planned",
-    "input_rejected",
-    "infeasible",
-    "failed",
-]
-
-
-class GoodsToPersonPlanRequest(StrictModel):
-    """Plan one code-first outbound wave using handling-unit retrieval.
-
-    The same contract is used by the compatibility endpoint and by the integrated
-    main LangGraph branch.  Route-level constraints are supplied by the already
-    normalized and locked orchestration request; the compiler never changes the
-    Rule/Agent decision.
-    """
-
-    warehouse_id: WarehouseId = "WH-001"
-    simulation_id: str = "SIM001"
-    order_ids: list[str] = Field(min_length=1)
-    optimization_backend: OptimizationBackend | None = None
-    preferred_station_id: str | None = None
-    require_single_handling_unit: bool = False
-    same_mobile_robot_round_trip: bool = True
-    allowed_robot_ids: list[str] = Field(default_factory=list)
-    excluded_robot_ids: list[str] = Field(default_factory=list)
-    objective_profile: ObjectiveProfile = "MIN_TOTAL_COST"
-
-
 class OutboundChuteAllocation(StrictModel):
     """Quantity removed by the station robot for one outbound order."""
 
@@ -2627,97 +2519,6 @@ class GoodsToPersonRouteEnrichmentResult(StrictModel):
     batch_robot_assignments: dict[str, str] = Field(default_factory=dict)
     errors: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
-
-
-class GoodsToPersonPlanResult(StrictModel):
-    """End-to-end goods-to-person planning result for one or more item groups."""
-
-    version: str = "13.21.1"
-    warehouse_id: WarehouseId = "WH-001"
-    simulation_id: str
-    status: GoodsToPersonPlanStatus
-    batches: list[HandlingUnitBatchPlan] = Field(default_factory=list)
-    station_actions: list[StationRobotAction] = Field(default_factory=list)
-    inventory_mutation_previews: list[InventoryMutationPreview] = Field(default_factory=list)
-    optimizer_payloads: list[CuOptPayload] = Field(default_factory=list)
-    optimizer_results: list[OptimizerResult] = Field(default_factory=list)
-    traffic_schedules: list[TrafficScheduleResult] = Field(default_factory=list)
-    errors: list[str] = Field(default_factory=list)
-    warnings: list[str] = Field(default_factory=list)
-    summary: str = ""
-
-
-class GoodsToPersonBatchReservationRequest(StrictModel):
-    """Persist one planned batch reservation in the business database."""
-
-    warehouse_id: WarehouseId = "WH-001"
-    simulation_id: str
-    batch: HandlingUnitBatchPlan
-
-
-class GoodsToPersonStationCommitRequest(StrictModel):
-    """Commit quantities after the station robot confirms sorting."""
-
-    warehouse_id: WarehouseId = "WH-001"
-    batch_id: str
-
-
-class GoodsToPersonPostMoveCommitRequest(StrictModel):
-    """Confirm that the same AMR completed the return or empty-tote move."""
-
-    warehouse_id: WarehouseId = "WH-001"
-    batch_id: str
-    robot_id: str
-
-
-class RobotTelemetryUpdateRequest(StrictModel):
-    """Code-first robot telemetry written to warehouse-scoped runtime state."""
-
-    warehouse_id: WarehouseId | None = None
-    simulation_id: str | None = None
-    sequence: int = Field(ge=0)
-    sim_tick: int | None = Field(default=None, ge=0)
-    sim_time_ms: int = Field(ge=0)
-    x: float | None = None
-    y: float | None = None
-    theta: float | None = None
-    current_node: str | None = None
-    current_edge: str | None = None
-    from_node: str | None = None
-    to_node: str | None = None
-    edge_progress: float | None = Field(default=None, ge=0, le=1)
-    status: Literal["idle", "moving", "working", "waiting", "charging", "fault", "offline"]
-    battery_pct: float = Field(ge=0, le=100)
-    active_task_id: str | None = None
-    active_mission_id: str | None = None
-    current_load_units: int = Field(default=0, ge=0)
-    capacity_units: int = Field(ge=1)
-
-    @model_validator(mode="after")
-    def validate_location(self) -> "RobotTelemetryUpdateRequest":
-        on_node = self.current_node is not None
-        on_edge = self.current_edge is not None
-        if on_node == on_edge:
-            raise ValueError("exactly one of current_node or current_edge must be set")
-        if on_edge and (not self.from_node or not self.to_node or self.edge_progress is None):
-            raise ValueError("edge telemetry requires from_node, to_node, and edge_progress")
-        if on_node and any(value is not None for value in (self.from_node, self.to_node)):
-            raise ValueError("node telemetry must not include from_node/to_node")
-        if self.current_load_units > self.capacity_units:
-            raise ValueError("current_load_units cannot exceed capacity_units")
-        return self
-
-
-class RuntimeCommandPublishRequest(StrictModel):
-    """Command envelope appended to a warehouse-scoped WCS command stream."""
-
-    warehouse_id: WarehouseId | None = None
-    simulation_id: str | None = None
-    command_id: str
-    robot_id: str
-    command_type: Literal["MOVE", "WAIT", "SERVICE", "HOLD", "RELEASE"]
-    payload: dict[str, Any] = Field(default_factory=dict)
-
 
 
 class RobotExecutionContext(StrictModel):
@@ -3069,34 +2870,6 @@ class ReplanMissionRequest(StrictModel):
         return self.replan_at_sim_time_ms
 
 
-class PublicReplanMissionRequest(StrictModel):
-    active_plan_id: str
-    active_plan_version: int | None = Field(default=None, ge=1)
-    replan_at_sim_time_ms: int = Field(
-        ge=0,
-        validation_alias=AliasChoices("replan_at_sim_time_ms", "sim_time_ms"),
-    )
-    mission: PublicMissionRequest
-    reason: ReplanReason = "NEW_ORDER"
-    activation_policy: Literal["PER_ROBOT_HANDOVER", "ALL_ROBOTS_READY"] = (
-        "PER_ROBOT_HANDOVER"
-    )
-
-    @property
-    def sim_time_ms(self) -> int:
-        return self.replan_at_sim_time_ms
-
-    def to_internal(self) -> ReplanMissionRequest:
-        return ReplanMissionRequest(
-            active_plan_id=self.active_plan_id,
-            active_plan_version=self.active_plan_version,
-            replan_at_sim_time_ms=self.replan_at_sim_time_ms,
-            mission=self.mission.to_internal(),
-            reason=self.reason,
-            activation_policy=self.activation_policy,
-        )
-
-
 class OrchestrationResult(StrictModel):
     """Typed final result for every terminal route."""
 
@@ -3170,7 +2943,6 @@ class OrchestrationResult(StrictModel):
     traffic_schedule: TrafficScheduleResult | None = None
     mapf_validation: MAPFValidationResult | None = None
     logical_operation_coverage_validation: LogicalOperationCoverageValidationResult | None = None
-    goods_to_person_plan: GoodsToPersonPlanResult | None = None
     query_response: QueryResponse | None = None
     clarification: ClarificationResult | None = None
     input_rejection: InputRejectionResult | None = None

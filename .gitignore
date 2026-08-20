@@ -12,8 +12,13 @@
 **/.pytest_cache/
 **/.mypy_cache/
 **/.ruff_cache/
+**/.coverage
+**/coverage.xml
+**/htmlcov/
+**/.ipynb_checkpoints/
 **/runtime_outputs/*
 !**/runtime_outputs/.gitkeep
+**/evaluation-output/
 **/.laro_local/
 
 # Java / Gradle
@@ -41,6 +46,25 @@
 /validation/
 /*.zip
 /*.sha256
+/imagedefinitions.json
 
-
+# The repository intentionally keeps only the release regression tests below.
+# Other local/experimental tests stay available on the developer machine but
+# are not candidates for a production commit.
 /tests
+!/tests/
+/tests/*
+!/tests/test_be_main_compat_api.py
+!/tests/test_v13_27_be_centered_contract.py
+!/tests/test_cuopt_formulator_prompt.py
+!/tests/test_human_review_gate_relaxation.py
+!/tests/test_low_battery_replan.py
+!/tests/test_mapf_failure_diagnostics.py
+!/tests/test_robot_runtime_safe_handover.py
+!/tests/test_terminal_relocation_service.py
+!/tests/test_planning_evaluation_async_jobs.py
+!/tests/test_planning_operational_comparison.py
+!/tests/test_planning_scenario_suite_service.py
+!/tests/test_planning_dynamic_comparison_service.py
+!/tests/test_planning_agent_request_gate.py
+!/tests/test_collect_planning_operational_suite.py

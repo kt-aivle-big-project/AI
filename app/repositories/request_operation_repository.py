@@ -265,3 +265,43 @@ class RequestOperationRepository:
             dict(value)
             for value in sorted(self._inbound.values(), key=lambda row: str(row["inbound_id"]))
         ]
+
+    def empty_putaway_slots(self) -> list[dict[str, Any]]:
+        """Expose free slots plus slots already reserved by these exact BE tasks.
+
+        A running inbound task owns its destination even though that rack level is
+        no longer returned by the BE's generic empty-slot query.  Replanning must
+        keep that physical contract instead of deferring the task or selecting a
+        second destination.  The reservation marker prevents unrelated/new
+        inbound operations from taking the committed slot.
+        """
+
+        values = [dict(value) for value in self.base.empty_putaway_slots()]
+        by_key = {
+            (str(value.get("rack_id")), int(value.get("rack_level") or 0)): value
+            for value in values
+        }
+        for inbound in self._inbound.values():
+            task_id = inbound.get("task_id")
+            rack_id = inbound.get("target_rack_id")
+            rack_level = inbound.get("target_rack_level")
+            if task_id is None or not rack_id or rack_level is None:
+                continue
+            key = (str(rack_id), int(rack_level))
+            existing = by_key.get(key)
+            if existing is not None:
+                existing["reservation_task_id"] = int(task_id)
+                continue
+            access_node_ids = list(self.base.rack_access_nodes(str(rack_id)))
+            if not access_node_ids:
+                continue
+            committed = {
+                "rack_id": str(rack_id),
+                "rack_level": int(rack_level),
+                "access_node_ids": access_node_ids,
+                "capacity": 0,
+                "reservation_task_id": int(task_id),
+            }
+            values.append(committed)
+            by_key[key] = committed
+        return values

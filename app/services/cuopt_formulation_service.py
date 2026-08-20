@@ -728,6 +728,10 @@ class RuleCuOptFormulator:
                 value
                 for value in inventory.candidate_putaway_slots
                 if (value.rack_id, value.rack_level) not in claimed_putaway_slots
+                and (
+                    value.reservation_task_id is None
+                    or value.reservation_task_id == need.task_id
+                )
             ]
             if need.target_rack_id:
                 slots = [value for value in slots if value.rack_id == need.target_rack_id]
@@ -1675,6 +1679,12 @@ class CuOptDynamicInputValidator:
             slot = slot_by_key.get((str(task.rack_id), int(task.rack_level or 0)))
             if slot is None:
                 errors.append(f"UNKNOWN_PUTAWAY_SLOT:{task.order_id}")
+                continue
+            if (
+                slot.reservation_task_id is not None
+                and slot.reservation_task_id != need.task_id
+            ):
+                errors.append(f"PUTAWAY_SLOT_RESERVED_FOR_OTHER_TASK:{task.order_id}")
                 continue
             repository = get_repository()
             handoff = repository.inbound_handoff_for_port(need.source_port_id)

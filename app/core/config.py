@@ -89,9 +89,6 @@ class Settings(BaseSettings):
     be_compat_contract_schema_enabled: bool = Field(
         default=True, alias="BE_COMPAT_CONTRACT_SCHEMA_ENABLED"
     )
-    be_compat_debug_runtime_api_enabled: bool = Field(
-        default=False, alias="BE_COMPAT_DEBUG_RUNTIME_API_ENABLED"
-    )
     be_compat_default_edge_status: str = Field(
         default="OPEN", alias="BE_COMPAT_DEFAULT_EDGE_STATUS"
     )
@@ -190,6 +187,14 @@ class Settings(BaseSettings):
         alias="PLANNING_EVALUATION_MODE",
         description="off or capture_only. Comparison is explicitly triggered later.",
     )
+    planning_evaluation_api_enabled: bool = Field(
+        default=False,
+        alias="PLANNING_EVALUATION_API_ENABLED",
+        description=(
+            "Expose the resource-intensive offline evaluation suite endpoints. "
+            "Keep disabled in deployed operational environments."
+        ),
+    )
     planning_evaluation_persist: bool = Field(
         default=True, alias="PLANNING_EVALUATION_PERSIST"
     )
@@ -197,28 +202,6 @@ class Settings(BaseSettings):
         default=Path("runtime_outputs/evaluations"),
         alias="PLANNING_EVALUATION_OUTPUT_DIR",
     )
-    planning_evaluation_compare_backend: str = Field(
-        default="cuopt", alias="PLANNING_EVALUATION_COMPARE_BACKEND"
-    )
-    planning_evaluation_compare_depth: str = Field(
-        default="mapf", alias="PLANNING_EVALUATION_COMPARE_DEPTH"
-    )
-    planning_evaluation_compare_timeout_seconds: int = Field(
-        default=240, alias="PLANNING_EVALUATION_COMPARE_TIMEOUT_SECONDS", ge=10, le=1800
-    )
-    planning_evaluation_redact_secrets: bool = Field(
-        default=True, alias="PLANNING_EVALUATION_REDACT_SECRETS"
-    )
-
-    debug_scenario_api_enabled: bool = Field(
-        default=False,
-        alias="DEBUG_SCENARIO_API_ENABLED",
-        description=(
-            "Enable local/test-only endpoints that clone one Redis simulation "
-            "runtime namespace for deterministic API scenario execution."
-        ),
-    )
-
     # Terminal relocation applied after rolling-horizon reassignment.  Used
     # robots expose the terminal leg to the solver; old-plan robots that receive
     # no new business work receive an execution-only PARK/CHARGE goal before MAPF.
@@ -635,25 +618,6 @@ class Settings(BaseSettings):
         text = str(value or "off").strip().casefold()
         if text not in {"off", "capture_only"}:
             raise ValueError("PLANNING_EVALUATION_MODE must be off or capture_only.")
-        return text
-
-    @field_validator("planning_evaluation_compare_backend", mode="before")
-    @classmethod
-    def normalize_evaluation_backend(cls, value: object) -> str:
-        text = str(value or "cuopt").strip().casefold()
-        if text != "cuopt":
-            raise ValueError(
-                "PLANNING_EVALUATION_COMPARE_BACKEND must be cuopt for "
-                "operational Rule/Agent evaluation."
-            )
-        return text
-
-    @field_validator("planning_evaluation_compare_depth", mode="before")
-    @classmethod
-    def normalize_evaluation_depth(cls, value: object) -> str:
-        text = str(value or "mapf").strip().casefold()
-        if text not in {"formulation", "payload", "solve", "mapf"}:
-            raise ValueError("PLANNING_EVALUATION_COMPARE_DEPTH is invalid.")
         return text
 
     @field_validator("robot_default_terminal_policy", mode="before")

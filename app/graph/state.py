@@ -12,7 +12,6 @@ from app.domain.schemas import (
     FormulationDecision,
     GoodsToPersonCompilationResult,
     GoodsToPersonOptions,
-    GoodsToPersonPlanResult,
     GoodsToPersonRouteEnrichmentResult,
     RequestGateDecision,
     IncidentResponsePlan,
@@ -197,7 +196,6 @@ class LaroGraphState(LaroInputState, total=False):
     traffic_schedule: TrafficScheduleResult
     mapf_validation: MAPFValidationResult
     logical_operation_coverage_validation: LogicalOperationCoverageValidationResult
-    goods_to_person_plan: GoodsToPersonPlanResult
     query_response: QueryResponse
     clarification: ClarificationResult
     input_rejection: InputRejectionResult
@@ -306,7 +304,6 @@ class LaroOutputState(TypedDict, total=False):
     traffic_schedule: TrafficScheduleResult
     mapf_validation: MAPFValidationResult
     logical_operation_coverage_validation: LogicalOperationCoverageValidationResult
-    goods_to_person_plan: GoodsToPersonPlanResult
     query_response: QueryResponse
     clarification: ClarificationResult
     input_rejection: InputRejectionResult

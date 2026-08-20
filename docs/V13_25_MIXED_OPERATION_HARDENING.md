@@ -443,45 +443,35 @@ IN-001.assigned_robot_id non-empty
 ### 12.1 단위·회귀 테스트
 
 ```powershell
-python -m pytest -q tests/test_v13_25_mixed_operation_hardening.py
 python -m pytest -q
 ```
 
-Focused 테스트:
+현재 회귀 묶음은 다음을 함께 확인한다.
 
 ```text
-Prompt mixed contract
-Canonical outbound+inbound retrieval
-G2P postprocessor direct-task preservation
-Silent inbound omission rejection
-Complete mixed Agent draft acceptance
-Final Plan fail-closed guard
-Router exact-ID behavior
-Live DB source without JSON read
+BE-centered structured input contract
+입출고 혼합 작업 보존
+통합 G2P compiler와 최종 Plan 검증
+저배터리 rolling-horizon 재계획
+Human Review gate와 재개 계약
+30개 운영 시나리오와 Rule/Agent 비교
 ```
 
-### 12.2 구조화 OR-Tools HTTP E2E
+### 12.2 BE 중심 HTTP E2E
 
 ```powershell
-.\scripts\run_native_plan_api_check.ps1 `
-  -Backend ortools `
-  -InputMode structured `
-  -Repeat 3
+python -m scripts.run_be_centered_plan_probe `
+  --base-url http://localhost:8000
 ```
 
-### 12.3 자연어 LLM + cuOpt HTTP E2E
+### 12.3 운영 시나리오 + cuOpt 평가
 
 ```powershell
-.\scripts\run_native_plan_api_check.ps1 `
-  -Backend cuopt `
-  -InputMode natural `
-  -Repeat 1
-```
-
-또는:
-
-```powershell
-.\examples\powershell\call_native_llm_cuopt_plan.ps1
+python -m scripts.run_planning_operational_scenario_suite `
+  --base-url http://localhost:8000 `
+  --backend cuopt `
+  --strict `
+  --archive
 ```
 
 ---

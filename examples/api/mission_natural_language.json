@@ -1,6 +1,0 @@
-{
-  "warehouse_id": "WH-001",
-  "simulation_id": "SIM-V19-MIXED",
-  "optimization_backend": "ortools",
-  "user_command": "ORD-001을 출고하고 IN-001도 입고해. 전체 완료시간을 최소화해."
-}

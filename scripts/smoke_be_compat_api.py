@@ -41,36 +41,7 @@ def main() -> int:
     with httpx.Client(base_url=args.base_url, timeout=60.0) as client:
         health = client.get("/health")
         health.raise_for_status()
-        contract = client.get("/compat/v2/contract")
-        contract.raise_for_status()
-        contract_body = contract.json()
-        if not contract_body.get("ready"):
-            raise RuntimeError(f"Compatibility contract is not ready: {contract_body}")
-
-        runtime_bootstrap = client.put(
-            f"/compat/v2/simulation-runs/{args.simulation_run_id}/runtime",
-            json={
-                "warehouseId": args.warehouse_id,
-                "simTimeMs": 0,
-                "replace": True,
-                "robots": [
-                    {
-                        "robotId": 101,
-                        "currentNodeId": 1,
-                        "batteryLevel": 82.0,
-                        "status": "IDLE",
-                    },
-                    {
-                        "robotId": 102,
-                        "currentNodeId": 4,
-                        "batteryLevel": 25.0,
-                        "status": "IDLE",
-                    },
-                ],
-            },
-        )
-        runtime_bootstrap.raise_for_status()
-        runtime_body = runtime_bootstrap.json()
+        health_body = health.json()
 
         for _ in range(args.repeat):
             optimize = client.post("/optimize", json=optimize_request)
@@ -79,12 +50,6 @@ def main() -> int:
             if optimize_body.get("status") != "success" or not optimize_body.get("routes"):
                 raise RuntimeError(f"Unexpected /optimize response: {optimize_body}")
             optimize_results.append(optimize_body)
-
-            graph = client.get(f"/compat/v1/warehouses/{args.warehouse_id}/graph")
-            graph.raise_for_status()
-            graph_body = graph.json()
-            if not graph_body.get("available"):
-                raise RuntimeError(f"Graph was not available: {graph_body}")
 
             reoptimize = client.post("/reoptimize", json=reoptimize_request)
             reoptimize.raise_for_status()
@@ -112,10 +77,8 @@ def main() -> int:
                 "repeat": args.repeat,
                 "warehouse_id": args.warehouse_id,
                 "simulation_run_id": args.simulation_run_id,
-                "contract": contract_body,
-                "runtime": runtime_body,
+                "health": health_body,
                 "optimize": optimize_results[-1],
-                "graph": graph_body,
                 "reoptimize": reoptimize_results[-1],
                 "deterministic": True,
             },

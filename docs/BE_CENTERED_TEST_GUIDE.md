@@ -9,7 +9,7 @@ pytest -q tests/test_v13_27_be_centered_contract.py
 ```
 
 검사 내용:
-- 활성 Compose가 `001_schema.sql`을 Mount하지 않음
+- 폐기된 standalone `001_schema.sql`이 저장소와 활성 Compose에 없음
 - `orders`, `handling_units` 테이블을 생성하지 않음
 - Structured Input Pydantic 계약
 - Request Overlay 변환

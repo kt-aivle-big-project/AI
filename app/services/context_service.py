@@ -289,6 +289,11 @@ class WarehouseContextService:
                 inbound_needs.append(
                     InboundTaskNeed(
                         inbound_id=inbound_id,
+                        task_id=(
+                            int(receipt["task_id"])
+                            if receipt.get("task_id") is not None
+                            else None
+                        ),
                         handling_unit_id=str(receipt.get("handling_unit_id") or f"HU-{inbound_id}"),
                         item_id=str(receipt["item_id"]),
                         quantity=int(receipt["quantity"]),

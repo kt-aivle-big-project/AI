@@ -16,14 +16,21 @@ __pycache__
 *.key
 
 runtime_outputs
+evaluation-output
+.laro_local
+validation
 *.log
 *.dump
 *.sqlite
 *.sqlite3
+*.zip
+*.sha256
+imagedefinitions.json
 
 tests
 docs
 examples
+scripts
 
 docker-compose.yml
 docker-compose.infrastructure.yml
