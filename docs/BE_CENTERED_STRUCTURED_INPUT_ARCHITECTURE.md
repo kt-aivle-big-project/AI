@@ -118,7 +118,7 @@ com.aivle.be.laro.dto.*
 com.aivle.be.laro.service.LaroPlanService
 ```
 
-따라서 기존 `/optimize`를 사용하는 화면은 그대로 유지되고, 새 LARO 화면만 `/api/laro/**`를 사용하면 된다.
+모든 LARO 화면은 Spring의 `/api/laro/**`를 통해 Native Mission Plan API를 사용한다.
 
 ## 7. 지도 통합
 

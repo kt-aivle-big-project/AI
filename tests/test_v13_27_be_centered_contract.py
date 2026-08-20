@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from app.domain.be_compat import BeCompatRuntimeRobot
+from app.domain.be_runtime import BeRuntimeRobot
 from app.domain.be_centered import BeLowBatteryContext
 from app.domain.schemas import (
     EdgeReservation,
@@ -229,7 +229,7 @@ def test_quiesced_low_battery_robot_uses_actual_safe_stop_instead_of_plan_projec
 
 
 def test_spring_runtime_contract_reads_real_clock_and_carrying_load():
-    runtime = BeCompatRuntimeRobot.model_validate(
+    runtime = BeRuntimeRobot.model_validate(
         {
             "robotId": 336,
             "warehouseId": 68,
@@ -575,7 +575,7 @@ def test_replan_overlay_retains_prior_operation_facts_and_current_values_win():
 def test_active_compose_does_not_mount_native_orders_or_handling_units_schema():
     compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     assert "004_be_centered_extensions.sql" in compose
-    assert "003_be_shared_contract.sql" in compose
+    assert "003_be_shared_contract.sql" not in compose
     assert "001_schema.sql:/docker-entrypoint-initdb.d" not in compose
     assert "WAREHOUSE_REPOSITORY_BACKEND: be_shared" in compose
 
@@ -606,16 +606,10 @@ def test_retired_spring_nodes_are_excluded_from_ai_route_views():
     sql = (ROOT / "db/postgres/004_be_centered_extensions.sql").read_text(
         encoding="utf-8"
     ).casefold()
-    compat = (ROOT / "app/repositories/be_compat_repository.py").read_text(
-        encoding="utf-8"
-    ).casefold()
 
     assert "na.row_data->>'is_active'" in sql
     assert "to_jsonb(fn)->>'is_active'" in sql
     assert "to_jsonb(tn)->>'is_active'" in sql
-    assert "to_jsonb(warehouse_node)->>'is_active'" in compat
-    assert "to_jsonb(fn)->>'is_active'" in compat
-    assert "to_jsonb(tn)->>'is_active'" in compat
 
 
 def test_be_shared_inventory_uses_three_live_rack_levels():

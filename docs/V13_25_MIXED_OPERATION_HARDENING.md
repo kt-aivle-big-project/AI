@@ -468,11 +468,13 @@ python -m scripts.run_be_centered_plan_probe `
 
 ```powershell
 python -m scripts.run_planning_operational_scenario_suite `
-  --base-url http://localhost:8000 `
   --backend cuopt `
   --strict `
   --archive
 ```
+
+평가 서버나 비동기 Job은 띄우지 않는다. 위 CLI가 30개 시나리오를 로컬에서
+직렬 실행하고 중간 상태, 비교 보고서, 통계용 원본을 `runtime_outputs`에 저장한다.
 
 ---
 
@@ -495,8 +497,6 @@ Repository source observability
 
 ```text
 기존 BE-main Java 소스
-POST /optimize
-POST /reoptimize
 Spring Client를 Native Plan API로 교체하는 작업
 Replan 통합 고도화
 ```

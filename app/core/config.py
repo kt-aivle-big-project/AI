@@ -44,53 +44,8 @@ class Settings(BaseSettings):
     app_env: str = "local"
     node_console_trace: bool = Field(default=True, alias="NODE_CONSOLE_TRACE")
 
-    # Compatibility layer for the unmodified Spring BE OptimizationClient.
-    # The Java client calls POST /optimize and POST /reoptimize with numeric
-    # node/edge/robot/task IDs and camelCase JSON fields.
-    be_compat_enabled: bool = Field(default=True, alias="BE_COMPAT_ENABLED")
-    be_compat_robot_speed_distance_per_second: float = Field(
-        default=1.0,
-        alias="BE_COMPAT_ROBOT_SPEED_DISTANCE_PER_SECOND",
-        gt=0,
-        description=(
-            "Distance units travelled per second for the legacy estimatedTime field."
-        ),
-    )
-    be_compat_min_battery_pct: float = Field(
-        default=30.0, alias="BE_COMPAT_MIN_BATTERY_PCT", ge=0, le=100
-    )
-    be_compat_graph_cache_ttl_seconds: int = Field(
-        default=86400, alias="BE_COMPAT_GRAPH_CACHE_TTL_SECONDS", ge=60
-    )
-    be_compat_neo4j_projection: bool = Field(
-        default=True, alias="BE_COMPAT_NEO4J_PROJECTION"
-    )
-    be_compat_graph_source: str = Field(
-        default="auto",
-        alias="BE_COMPAT_GRAPH_SOURCE",
-        description=(
-            "auto prefers the unmodified Spring public warehouse_node/warehouse_edge "
-            "tables and falls back to the normalized laro_contract graph written by /optimize."
-        ),
-    )
-    be_compat_graph_cache_mode: str = Field(
-        default="metadata",
-        alias="BE_COMPAT_GRAPH_CACHE_MODE",
-        description="off, metadata, or full. metadata avoids duplicating the full static graph in Redis.",
-    )
-    be_compat_runtime_source: str = Field(
-        default="request_then_redis",
-        alias="BE_COMPAT_RUNTIME_SOURCE",
-        description=(
-            "request_only uses Spring's /reoptimize body; request_then_redis fills an empty "
-            "robot list from Spring Redis; redis_only always reads the Spring Redis namespace."
-        ),
-    )
-    be_compat_contract_schema_enabled: bool = Field(
-        default=True, alias="BE_COMPAT_CONTRACT_SCHEMA_ENABLED"
-    )
-    be_compat_default_edge_status: str = Field(
-        default="OPEN", alias="BE_COMPAT_DEFAULT_EDGE_STATUS"
+    runtime_default_edge_status: str = Field(
+        default="OPEN", alias="RUNTIME_DEFAULT_EDGE_STATUS"
     )
 
     default_planning_mode: PlanningMode = Field(
@@ -179,21 +134,12 @@ class Settings(BaseSettings):
 
 
 
-    # Deferred Rule/Agent evaluation capture.  The live workflow executes only
-    # the router-selected primary branch; a frozen request/context bundle is
-    # persisted and can be compared later through the debug API.
+    # Optional Rule/Agent evaluation capture. The live workflow executes only
+    # the selected primary branch; local CLI tools can replay frozen captures.
     planning_evaluation_mode: str = Field(
         default="off",
         alias="PLANNING_EVALUATION_MODE",
-        description="off or capture_only. Comparison is explicitly triggered later.",
-    )
-    planning_evaluation_api_enabled: bool = Field(
-        default=False,
-        alias="PLANNING_EVALUATION_API_ENABLED",
-        description=(
-            "Expose the resource-intensive offline evaluation suite endpoints. "
-            "Keep disabled in deployed operational environments."
-        ),
+        description="off or capture_only. Comparisons are run by local CLI tools.",
     )
     planning_evaluation_persist: bool = Field(
         default=True, alias="PLANNING_EVALUATION_PERSIST"
@@ -552,40 +498,12 @@ class Settings(BaseSettings):
         return _project_relative_path(value)
 
 
-    @field_validator("be_compat_graph_source", mode="before")
+    @field_validator("runtime_default_edge_status", mode="before")
     @classmethod
-    def normalize_be_compat_graph_source(cls, value: object) -> str:
-        text = str(value or "auto").strip().casefold()
-        if text not in {"auto", "spring_db", "contract", "request_snapshot"}:
-            raise ValueError(
-                "BE_COMPAT_GRAPH_SOURCE must be auto, spring_db, contract, or request_snapshot."
-            )
-        return text
-
-    @field_validator("be_compat_graph_cache_mode", mode="before")
-    @classmethod
-    def normalize_be_compat_graph_cache_mode(cls, value: object) -> str:
-        text = str(value or "metadata").strip().casefold()
-        if text not in {"off", "metadata", "full"}:
-            raise ValueError("BE_COMPAT_GRAPH_CACHE_MODE must be off, metadata, or full.")
-        return text
-
-    @field_validator("be_compat_runtime_source", mode="before")
-    @classmethod
-    def normalize_be_compat_runtime_source(cls, value: object) -> str:
-        text = str(value or "request_then_redis").strip().casefold()
-        if text not in {"request_only", "request_then_redis", "redis_only"}:
-            raise ValueError(
-                "BE_COMPAT_RUNTIME_SOURCE must be request_only, request_then_redis, or redis_only."
-            )
-        return text
-
-    @field_validator("be_compat_default_edge_status", mode="before")
-    @classmethod
-    def normalize_be_compat_default_edge_status(cls, value: object) -> str:
+    def normalize_runtime_default_edge_status(cls, value: object) -> str:
         text = str(value or "OPEN").strip().upper()
         if text not in {"OPEN", "CONGESTED", "BLOCKED", "CLOSED", "MAINTENANCE"}:
-            raise ValueError("BE_COMPAT_DEFAULT_EDGE_STATUS is invalid.")
+            raise ValueError("RUNTIME_DEFAULT_EDGE_STATUS is invalid.")
         return text
 
     @field_validator("warehouse_repository_backend", mode="before")

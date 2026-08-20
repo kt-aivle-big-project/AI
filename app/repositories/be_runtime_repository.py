@@ -12,20 +12,19 @@ needs to deserialize these extension documents.
 from __future__ import annotations
 
 import json
-from typing import Any, Iterable
+from typing import Any
 
 from app.core.config import Settings, get_settings
-from app.domain.be_compat import (
-    BeCompatEdgeRuntime,
-    BeCompatRunMeta,
-    BeCompatRuntimeRobot,
-    BeCompatRuntimeSnapshot,
-    BeRobotStateInput,
+from app.domain.be_runtime import (
+    BeRuntimeEdge,
+    BeRuntimeRobot,
+    BeRuntimeRunMeta,
+    BeRuntimeSnapshot,
 )
 from app.infrastructure.manager import get_infrastructure_manager
 
 
-class BeCompatRuntimeDataError(ValueError):
+class BeRuntimeDataError(ValueError):
     """Raised when a Spring Redis document is present but malformed."""
 
 
@@ -82,9 +81,9 @@ class BeSpringRuntimeRepository:
         try:
             value = json.loads(str(raw))
         except Exception as exc:
-            raise BeCompatRuntimeDataError(f"Invalid JSON at Redis key {key}: {exc}") from exc
+            raise BeRuntimeDataError(f"Invalid JSON at Redis key {key}: {exc}") from exc
         if not isinstance(value, dict):
-            raise BeCompatRuntimeDataError(f"Redis key {key} must contain a JSON object.")
+            raise BeRuntimeDataError(f"Redis key {key} must contain a JSON object.")
         return value
 
     def _robot_ids(self, run_id: int) -> list[int]:
@@ -94,22 +93,22 @@ class BeSpringRuntimeRepository:
             try:
                 result.append(int(value))
             except (TypeError, ValueError) as exc:
-                raise BeCompatRuntimeDataError(
+                raise BeRuntimeDataError(
                     f"Robot ID {value!r} in {self.robot_ids_key(run_id)} is not numeric."
                 ) from exc
         return sorted(set(result))
 
-    def load_run_meta(self, run_id: int) -> BeCompatRunMeta | None:
+    def load_run_meta(self, run_id: int) -> BeRuntimeRunMeta | None:
         key = self.meta_key(run_id)
         data = self._parse_json(self.client.get(key), key=key)
         if not data:
             return None
         data.setdefault("simulationRunId", run_id)
         data["compatibilityMode"] = False
-        return BeCompatRunMeta.model_validate(data)
+        return BeRuntimeRunMeta.model_validate(data)
 
-    def load_robot_runtime(self, run_id: int) -> list[BeCompatRuntimeRobot]:
-        result: list[BeCompatRuntimeRobot] = []
+    def load_robot_runtime(self, run_id: int) -> list[BeRuntimeRobot]:
+        result: list[BeRuntimeRobot] = []
         for robot_id in self._robot_ids(run_id):
             state_key = self.robot_state_key(run_id, robot_id)
             state = self._parse_json(self.client.get(state_key), key=state_key)
@@ -122,7 +121,7 @@ class BeSpringRuntimeRepository:
             extension = self._parse_json(self.client.get(extension_key), key=extension_key)
             state.update(extension)
             state["compatibilityMode"] = not bool(extension)
-            result.append(BeCompatRuntimeRobot.model_validate(state))
+            result.append(BeRuntimeRobot.model_validate(state))
         return sorted(result, key=lambda value: value.robot_id)
 
     def _edge_ids(self, run_id: int) -> list[int]:
@@ -142,16 +141,16 @@ class BeSpringRuntimeRepository:
                     continue
         return sorted(result)
 
-    def load_edge_runtime(self, run_id: int) -> list[BeCompatEdgeRuntime]:
-        result: list[BeCompatEdgeRuntime] = []
+    def load_edge_runtime(self, run_id: int) -> list[BeRuntimeEdge]:
+        result: list[BeRuntimeEdge] = []
         for edge_id in self._edge_ids(run_id):
             key = self.edge_state_key(run_id, edge_id)
             data = self._parse_json(self.client.get(key), key=key)
             if not data:
                 continue
             data.setdefault("edgeId", edge_id)
-            data.setdefault("status", self.settings.be_compat_default_edge_status)
-            result.append(BeCompatEdgeRuntime.model_validate(data))
+            data.setdefault("status", self.settings.runtime_default_edge_status)
+            result.append(BeRuntimeEdge.model_validate(data))
         return sorted(result, key=lambda value: value.edge_id)
 
     def blocked_edge_ids(self, run_id: int) -> list[int]:
@@ -162,7 +161,7 @@ class BeSpringRuntimeRepository:
             if edge.status.strip().upper() in blocked
         ]
 
-    def snapshot(self, run_id: int) -> BeCompatRuntimeSnapshot:
+    def snapshot(self, run_id: int) -> BeRuntimeSnapshot:
         meta = self.load_run_meta(run_id)
         robots = self.load_robot_runtime(run_id)
         blocked = self.blocked_edge_ids(run_id)
@@ -180,12 +179,12 @@ class BeSpringRuntimeRepository:
         else:
             mode = "FULL"
         if meta is None:
-            meta = BeCompatRunMeta(
+            meta = BeRuntimeRunMeta(
                 simulationRunId=run_id,
                 compatibilityMode=True,
             )
         self.last_source = "spring_redis" if robots else "none"
-        return BeCompatRuntimeSnapshot(
+        return BeRuntimeSnapshot(
             simulationRunId=run_id,
             mode=mode,
             meta=meta,
@@ -193,21 +192,3 @@ class BeSpringRuntimeRepository:
             blockedEdgeIds=blocked,
             warnings=warnings,
         )
-
-    @staticmethod
-    def as_reoptimization_inputs(
-        robots: Iterable[BeCompatRuntimeRobot],
-    ) -> list[BeRobotStateInput]:
-        result: list[BeRobotStateInput] = []
-        for robot in robots:
-            if robot.current_node_id is None:
-                continue
-            result.append(
-                BeRobotStateInput(
-                    robotId=robot.robot_id,
-                    currentNodeId=robot.current_node_id,
-                    batteryLevel=robot.battery_level,
-                    status=robot.status,
-                )
-            )
-        return sorted(result, key=lambda value: value.robot_id)

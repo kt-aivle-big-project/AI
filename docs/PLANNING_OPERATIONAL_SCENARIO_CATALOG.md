@@ -9,9 +9,9 @@ RP01~RP09는 초기 계획과 재계획 각 1회, RP10은 초기 계획 1회 후
 Solver 호출 전에 거절한다. HUMAN_REVIEW 시나리오는 사람의 판단이 먼저 필요한
 입력 게이트 검증이므로 cuOpt를 호출하지 않는 것이 정상이다.
 
-평가 HTTP API는 운영 트래픽과 분리하기 위해 기본적으로 비활성화되어 있다.
-로컬 평가 컨테이너에서만 `PLANNING_EVALUATION_API_ENABLED=true`로 실행하고,
-완료 후 다시 `false`로 돌린다. 시나리오 정의 30개는
+평가는 운영 HTTP API에 노출하지 않는다. 로컬 CLI가 시나리오를 순서대로
+materialize하고 같은 프로세스에서 Rule 1회·Agent 반복 비교를 직접 실행한다.
+시나리오 정의 30개는
 `planning_scenario_catalog.py`, 물리 창고 fixture는
 `scenarios/fixtures/V13_mixed_inbound_outbound_multirobot` 한 곳만 사용한다.
 

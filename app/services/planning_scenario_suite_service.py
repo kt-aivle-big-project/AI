@@ -9,7 +9,7 @@ import threading
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from app.domain.planning_evaluation import PlanningScenarioSuiteRequest
@@ -23,11 +23,13 @@ from app.domain.schemas import (
     StructuredOperationInput,
 )
 from app.repositories.json_repository import JsonWarehouseRepository
-from app.services.planning_evaluation_job_service import (
-    PlanningEvaluationJobService,
-    get_planning_evaluation_job_service,
+from app.services.planning_dynamic_comparison_service import (
+    PlanningDynamicComparisonService,
 )
-from app.services.planning_evaluation_service import PlanningEvaluationStore
+from app.services.planning_evaluation_service import (
+    PlanningComparisonService,
+    PlanningEvaluationStore,
+)
 from app.services.planning_scenario_catalog import generated_scenario_definitions
 from app.services.planning_dynamic_scenario_validator import (
     validate_dynamic_definition,
@@ -40,8 +42,9 @@ DEFAULT_FIXTURE_DIR = (
     ROOT / "scenarios" / "fixtures" / "V13_mixed_inbound_outbound_multirobot"
 )
 _SUITE_ID_PREFIX = "ESUITE-"
-_TERMINAL_JOB_STATUSES = {"SUCCEEDED", "FAILED"}
 _SUITE_LOCK = threading.RLock()
+SuiteProgressCallback = Callable[[str, int, int, str], None]
+ComparisonFactory = Callable[[PlanningEvaluationStore], Any]
 
 
 def _utc_now() -> str:
@@ -812,8 +815,7 @@ class PlanningScenarioMaterializer:
                 ),
                 "evaluation_id": evaluation_id,
                 "materialization_status": "PASSED",
-                "detail_url": f"/api/v1/debug/evaluations/{evaluation_id}",
-                "job_id": None,
+                "comparison_status": "NOT_STARTED",
             }
         except Exception:
             # An invalid partial directory must never appear as a valid capture.
@@ -824,18 +826,20 @@ class PlanningScenarioMaterializer:
 
 
 class PlanningScenarioSuiteService:
-    """Create one auditable suite and submit every comparison to the serial queue."""
+    """Materialize and compare the reviewed catalog in one local process."""
 
     def __init__(
         self,
         *,
         store: PlanningEvaluationStore | None = None,
-        job_service: PlanningEvaluationJobService | None = None,
         materializer: PlanningScenarioMaterializer | None = None,
+        comparison_factory: ComparisonFactory = PlanningComparisonService,
+        dynamic_comparison_factory: ComparisonFactory = PlanningDynamicComparisonService,
     ) -> None:
         self.store = store or PlanningEvaluationStore()
-        self.job_service = job_service or get_planning_evaluation_job_service()
         self.materializer = materializer or PlanningScenarioMaterializer(store=self.store)
+        self.comparison_factory = comparison_factory
+        self.dynamic_comparison_factory = dynamic_comparison_factory
         self.suites = self.store.root / "suites"
         self.suites.mkdir(parents=True, exist_ok=True)
 
@@ -846,7 +850,36 @@ class PlanningScenarioSuiteService:
             raise FileNotFoundError(f"Unknown evaluation suite {suite_id}.")
         return self.suites / f"{suite_id}.json"
 
-    def start(self, request: PlanningScenarioSuiteRequest) -> dict[str, Any]:
+    @staticmethod
+    def _report_payload(report: object) -> dict[str, Any]:
+        if hasattr(report, "model_dump"):
+            value = report.model_dump(mode="json")
+        else:
+            value = report
+        if not isinstance(value, dict):
+            raise TypeError("Planning comparison must return a JSON object.")
+        return value
+
+    @staticmethod
+    def _verdict(payload: dict[str, Any], group: str) -> tuple[str | None, bool]:
+        if group == "INITIAL":
+            operational = payload.get("operational_comparison")
+            operational = operational if isinstance(operational, dict) else {}
+            return (
+                str(operational.get("verdict")) if operational.get("verdict") else None,
+                operational.get("strict_pass") is True,
+            )
+        return (
+            str(payload.get("verdict")) if payload.get("verdict") else None,
+            payload.get("strict_pass") is True,
+        )
+
+    def run(
+        self,
+        request: PlanningScenarioSuiteRequest,
+        *,
+        progress_callback: SuiteProgressCallback | None = None,
+    ) -> dict[str, Any]:
         suite_id = f"{_SUITE_ID_PREFIX}{uuid4().hex[:16].upper()}"
         definitions = self.materializer.definitions(
             request.scenario_ids,
@@ -863,34 +896,95 @@ class PlanningScenarioSuiteService:
             "completed_count": 0,
             "failed_count": 0,
             "scenarios": [],
-            "status_url": f"/api/v1/debug/evaluation-suites/{suite_id}",
         }
         _write_json(self._path(suite_id), record)
         try:
-            for definition in definitions:
+            for scenario_index, definition in enumerate(definitions, start=1):
                 item = self.materializer.materialize(definition, suite_id=suite_id)
-                if not request.materialize_only:
-                    job = self.job_service.submit(
-                        str(item["evaluation_id"]),
-                        request.job_request(
-                            scenario_id=str(item["scenario_id"]), suite_id=suite_id
-                        ),
-                    )
+                record["scenarios"].append(item)
+                scenario_id = str(item["scenario_id"])
+                if request.materialize_only:
+                    record["completed_count"] = scenario_index
+                    item["current_stage"] = "MATERIALIZED"
+                    if progress_callback is not None:
+                        progress_callback(scenario_id, 1, 1, "MATERIALIZED")
+                    record["updated_at"] = _utc_now()
+                    _write_json(self._path(suite_id), record)
+                    continue
+
+                group = str(item.get("scenario_group") or "INITIAL")
+                total_runs = request.agent_repeats + 1
+                item.update(
+                    {
+                        "comparison_status": "RUNNING",
+                        "current_stage": "STARTING",
+                        "completed_runs": 0,
+                        "total_runs": total_runs,
+                    }
+                )
+                record["status"] = "RUNNING"
+                _write_json(self._path(suite_id), record)
+
+                def progress(completed: int, total: int, stage: str) -> None:
                     item.update(
                         {
-                            "job_id": job.job_id,
-                            "job_status": job.status,
-                            "job_status_url": job.status_url,
-                            "result_url": job.result_url,
+                            "completed_runs": completed,
+                            "total_runs": total,
+                            "current_stage": stage,
                         }
                     )
-                record["scenarios"].append(item)
-            record["status"] = "SUCCEEDED" if request.materialize_only else "QUEUED"
-            if request.materialize_only:
-                record["completed_count"] = len(record["scenarios"])
+                    record["updated_at"] = _utc_now()
+                    _write_json(self._path(suite_id), record)
+                    if progress_callback is not None:
+                        progress_callback(scenario_id, completed, total, stage)
+
+                try:
+                    factory = (
+                        self.dynamic_comparison_factory
+                        if group in {"REPLAN", "HUMAN_REVIEW"}
+                        else self.comparison_factory
+                    )
+                    report = factory(self.store).compare(
+                        str(item["evaluation_id"]),
+                        request.comparison_request(),
+                        progress_callback=progress,
+                    )
+                    payload = self._report_payload(report)
+                    verdict, strict_pass = self._verdict(payload, group)
+                    item.update(
+                        {
+                            "comparison_status": "SUCCEEDED",
+                            "current_stage": "COMPLETED",
+                            "completed_runs": total_runs,
+                            "verdict": verdict,
+                            "strict_pass": strict_pass,
+                        }
+                    )
+                    record["completed_count"] += 1
+                except Exception as exc:
+                    item.update(
+                        {
+                            "comparison_status": "FAILED",
+                            "current_stage": "FAILED",
+                            "error_type": type(exc).__name__,
+                            "error_message": str(exc),
+                            "strict_pass": False,
+                        }
+                    )
+                    record["failed_count"] += 1
+                record["updated_at"] = _utc_now()
+                _write_json(self._path(suite_id), record)
+
+            failed = int(record["failed_count"])
+            if request.materialize_only or failed == 0:
+                record["status"] = "SUCCEEDED"
+            elif failed == len(record["scenarios"]):
+                record["status"] = "FAILED"
+            else:
+                record["status"] = "PARTIAL_FAILURE"
             record["updated_at"] = _utc_now()
             _write_json(self._path(suite_id), record)
-            return self.get(suite_id)
+            return record
         except Exception as exc:
             record["status"] = "FAILED"
             record["error_type"] = type(exc).__name__
@@ -904,45 +998,7 @@ class PlanningScenarioSuiteService:
         if not path.exists():
             raise FileNotFoundError(f"Unknown evaluation suite {suite_id}.")
         with _SUITE_LOCK:
-            record = _read_json(path)
-            if record.get("materialize_only"):
-                return record
-            jobs = []
-            for item in record.get("scenarios", []):
-                job_id = item.get("job_id") if isinstance(item, dict) else None
-                if not job_id:
-                    continue
-                job = self.job_service.get(str(job_id))
-                item["job_status"] = job.status
-                item["current_stage"] = job.current_stage
-                item["completed_runs"] = job.completed_runs
-                item["total_runs"] = job.total_runs
-                item["error_type"] = job.error_type
-                item["error_message"] = job.error_message
-                jobs.append(job)
-            completed = sum(value.status == "SUCCEEDED" for value in jobs)
-            failed = sum(value.status == "FAILED" for value in jobs)
-            active = sum(value.status not in _TERMINAL_JOB_STATUSES for value in jobs)
-            if jobs and active:
-                status = "RUNNING"
-            elif jobs and failed == len(jobs):
-                status = "FAILED"
-            elif failed:
-                status = "PARTIAL_FAILURE"
-            elif jobs:
-                status = "SUCCEEDED"
-            else:
-                status = str(record.get("status") or "FAILED")
-            record.update(
-                {
-                    "status": status,
-                    "completed_count": completed,
-                    "failed_count": failed,
-                    "updated_at": _utc_now(),
-                }
-            )
-            _write_json(path, record)
-            return record
+            return _read_json(path)
 
     def list(self, *, limit: int = 100) -> list[dict[str, Any]]:
         values: list[dict[str, Any]] = []
@@ -956,20 +1012,3 @@ class PlanningScenarioSuiteService:
             except Exception:
                 continue
         return values
-
-
-_SUITE_SERVICE: PlanningScenarioSuiteService | None = None
-
-
-def get_planning_scenario_suite_service() -> PlanningScenarioSuiteService:
-    global _SUITE_SERVICE
-    if _SUITE_SERVICE is None:
-        _SUITE_SERVICE = PlanningScenarioSuiteService()
-    return _SUITE_SERVICE
-
-
-def shutdown_planning_scenario_suite_service() -> None:
-    """Drop the singleton before its shared async job queue is shut down."""
-
-    global _SUITE_SERVICE
-    _SUITE_SERVICE = None

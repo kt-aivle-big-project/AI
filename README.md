@@ -13,14 +13,14 @@ user_command              운영 정책·목적·제약의 자연어 보충
 
 ## 핵심 계약
 
-- 활성 DB 초기화 경로는 `db/postgres/003_be_shared_contract.sql`과 `004_be_centered_extensions.sql`만 사용합니다.
+- 활성 DB 초기화 경로는 `db/postgres/004_be_centered_extensions.sql`만 사용합니다.
 - 활성 경로는 LARO 전용 `orders` 테이블을 만들거나 읽지 않습니다.
 - 활성 경로는 LARO 전용 `handling_units` 테이블을 만들거나 읽지 않습니다.
 - 출고 후보 재고는 기존 `public.warehouse_items`에서 읽습니다.
 - 업무는 `structured_input.operations`가 전부 전달합니다.
 - `user_command`는 목적함수·로봇 제외·통로 정책 등을 추가할 수 있지만 구조화 업무를 추가·삭제·변경할 수 없습니다.
 - 숫자 `simulationRunId`로 기존 `public.simulation_runs`와 Spring Redis Namespace를 선택합니다.
-- 기존 `/optimize`, `/reoptimize`는 유지합니다.
+- 공개 실행 API는 `/api/v1/simulation-runs/{simulationRunId}/missions/plan`과 `/missions/replan`입니다.
 
 `db/postgres/001_schema.sql`은 과거 Native Fixture 회귀 테스트용 **Legacy 파일**이며 현재 Compose에서는 Mount하지 않습니다.
 
@@ -76,7 +76,7 @@ FastAPI Body 예:
 
 ```powershell
 Copy-Item .env.docker.example .env.docker
-.\scripts\start_be_compat_docker.ps1 -ResetData -StopLegacy
+.\scripts\start_local_stack.ps1 -ResetData -StopLegacy
 ```
 
 ### 2. 기존 Spring BE 실행
@@ -117,7 +117,6 @@ python -m scripts.run_be_centered_plan_probe --simulation-run-id 1
 - [아키텍처](docs/BE_CENTERED_STRUCTURED_INPUT_ARCHITECTURE.md)
 - [테이블·DTO 상세](docs/BE_CENTERED_TABLE_DTO_REFERENCE.md)
 - [테스트 가이드](docs/BE_CENTERED_TEST_GUIDE.md)
-- [기존 `/optimize` 계약](docs/BE_MAIN_COMPAT_API.md)
 
 ## 데이터 권위 원칙
 

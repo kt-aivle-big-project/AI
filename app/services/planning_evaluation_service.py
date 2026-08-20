@@ -387,7 +387,7 @@ class PlanningEvaluationCaptureService:
         return PlanningEvaluationReference(
             evaluation_id=evaluation_id,
             status="CAPTURED",
-            detail_url=f"/api/v1/debug/evaluations/{evaluation_id}",
+            artifact_path=str(root),
         )
 
 

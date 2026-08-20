@@ -1,4 +1,4 @@
-"""Download a completed operational suite and build threshold-free statistics."""
+"""Collect a completed local operational suite into descriptive statistics."""
 from __future__ import annotations
 
 import argparse
@@ -17,8 +17,11 @@ if str(ROOT) not in sys.path:
 
 from scripts.planning_evaluation_cli_support import (  # noqa: E402
     _archive,
-    _request_json,
     _write_json,
+)
+from app.services.planning_evaluation_service import PlanningEvaluationStore  # noqa: E402
+from app.services.planning_scenario_suite_service import (  # noqa: E402
+    PlanningScenarioSuiteService,
 )
 
 
@@ -645,24 +648,20 @@ def _write_markdown(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--suite-id", required=True)
-    parser.add_argument("--base-url", default="http://localhost:8000")
     parser.add_argument("--output-dir")
-    parser.add_argument("--timeout-seconds", type=int, default=120)
     parser.add_argument("--archive", action="store_true")
     args = parser.parse_args()
 
-    base_url = args.base_url.rstrip("/")
-    status, suite = _request_json(
-        "GET",
-        f"{base_url}/api/v1/debug/evaluation-suites/{args.suite_id}",
-        timeout_seconds=args.timeout_seconds,
-    )
-    if status != 200:
-        print(json.dumps(suite, ensure_ascii=False, indent=2), file=sys.stderr)
+    store = PlanningEvaluationStore()
+    service = PlanningScenarioSuiteService(store=store)
+    try:
+        suite = service.get(args.suite_id)
+    except FileNotFoundError as exc:
+        print(str(exc), file=sys.stderr)
         return 2
     if suite.get("status") not in TERMINAL:
         print(
-            f"Suite {args.suite_id} is still {suite.get('status')}; collect it after completion.",
+            f"Suite {args.suite_id} is {suite.get('status')}; collect it after completion.",
             file=sys.stderr,
         )
         return 2
@@ -681,40 +680,34 @@ def main() -> int:
     dynamic: list[dict[str, Any]] = []
     initial_runs: list[dict[str, Any]] = []
     dynamic_runs: list[dict[str, Any]] = []
-    download_failures: list[dict[str, Any]] = []
+    collection_failures: list[dict[str, Any]] = []
 
     scenarios = suite.get("scenarios") if isinstance(suite.get("scenarios"), list) else []
     for index, item in enumerate(scenarios, start=1):
         scenario_id = str(item.get("scenario_id"))
         group = str(item.get("scenario_group") or "INITIAL")
-        job_id = item.get("job_id")
         scenario_dir = output_dir / scenario_id
         _write_json(scenario_dir / "status.json", item)
         print(f"[{index}/{len(scenarios)}] collecting {scenario_id}", flush=True)
-        if item.get("job_status") != "SUCCEEDED" or not job_id:
-            download_failures.append(
-                {"scenario_id": scenario_id, "reason": "job did not succeed"}
+        if item.get("comparison_status") != "SUCCEEDED":
+            collection_failures.append(
+                {"scenario_id": scenario_id, "reason": "comparison did not succeed"}
             )
             continue
-        result_status, report = _request_json(
-            "GET",
-            f"{base_url}/api/v1/debug/evaluation-jobs/{job_id}/result",
-            timeout_seconds=args.timeout_seconds,
-        )
-        if result_status != 200:
-            download_failures.append(
-                {
-                    "scenario_id": scenario_id,
-                    "reason": f"result HTTP {result_status}",
-                }
-            )
-            _write_json(scenario_dir / "result_error.json", report)
-            continue
+        evaluation_id = str(item.get("evaluation_id"))
         filename = (
             "comparison_report.json"
             if group == "INITIAL"
             else "dynamic_comparison_report.json"
         )
+        result_path = store.comparisons / evaluation_id / filename
+        try:
+            report = json.loads(result_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            collection_failures.append(
+                {"scenario_id": scenario_id, "reason": str(exc)}
+            )
+            continue
         _write_json(scenario_dir / filename, report)
         if group == "INITIAL":
             summary, rows = _initial_statistics(scenario_id, report)
@@ -726,7 +719,7 @@ def main() -> int:
             dynamic_runs.extend(rows)
 
     aggregate = _aggregate(suite, initial, dynamic)
-    aggregate["download_failures"] = download_failures
+    aggregate["collection_failures"] = collection_failures
     _write_json(output_dir / "operational_statistics.json", aggregate)
     _write_json(output_dir / "initial_scenario_statistics.json", initial)
     _write_json(output_dir / "dynamic_scenario_statistics.json", dynamic)
@@ -786,7 +779,7 @@ def main() -> int:
         "archive_path": str(archive_path) if archive_path else None,
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 1 if download_failures else 0
+    return 1 if collection_failures else 0
 
 
 if __name__ == "__main__":

@@ -35,12 +35,12 @@ Maximum time to wait for the PostgreSQL container to become ready.
 .NOTES
 After a successful restore:
 
-1. Run .\scripts\start_be_compat_docker.ps1 -StopLegacy
+1. Run .\scripts\start_local_stack.ps1 -StopLegacy
 2. Start Spring BE with SQL_INIT_MODE=never
 3. In Spring Swagger, run POST /api/graph-sync/warehouses/1
 4. In AI Swagger, verify that plan preflight reports READY
 
-Do not use start_be_compat_docker.ps1 -ResetData after restoring. -ResetData
+Do not use start_local_stack.ps1 -ResetData after restoring. -ResetData
 deletes the named PostgreSQL volume and therefore deletes the restored data.
 #>
 
@@ -252,7 +252,7 @@ SELECT 'warehouse_items=' || count(*) FROM public.warehouse_items;
     Write-Host "PostgreSQL restore completed successfully." -ForegroundColor Green
     Write-Host ""
     Write-Host "Next steps:" -ForegroundColor Cyan
-    Write-Host "1. Run .\scripts\start_be_compat_docker.ps1 -StopLegacy"
+    Write-Host "1. Run .\scripts\start_local_stack.ps1 -StopLegacy"
     Write-Host "2. Start Spring BE with SQL_INIT_MODE=never"
     Write-Host "3. In Spring Swagger, run POST /api/graph-sync/warehouses/1"
     Write-Host "4. In AI Swagger, verify plan preflight reports READY"

@@ -1,9 +1,8 @@
-"""FastAPI routes required by the Spring BE and the reviewed evaluation suite."""
+"""FastAPI routes required by the Spring BE."""
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
 
-from app.core.config import get_settings
 from app.core.llm_gateway import LLMConfigurationError, LLMInvocationError
 from app.domain.be_centered import (
     BeCenteredPreflightResponse,
@@ -16,7 +15,6 @@ from app.domain.fulfillment_command import (
     FulfillmentCommandGenerateRequest,
     FulfillmentCommandGenerateResponse,
 )
-from app.domain.planning_evaluation import PlanningScenarioSuiteRequest
 from app.domain.schemas import HumanInteractionResumeRequest
 from app.infrastructure.be_centered_postgres import BeCenteredDataError
 from app.services.be_centered_plan_service import BeCenteredPlanService
@@ -24,25 +22,8 @@ from app.services.fulfillment_command_agent_service import (
     FulfillmentCommandAgentError,
     FulfillmentCommandAgentService,
 )
-from app.services.planning_evaluation_job_service import (
-    get_planning_evaluation_job_service,
-)
-from app.services.planning_evaluation_service import PlanningEvaluationStore
-from app.services.planning_scenario_suite_service import (
-    get_planning_scenario_suite_service,
-)
 
 router = APIRouter()
-
-
-def _require_planning_evaluation_api() -> None:
-    """Hide resource-intensive evaluation endpoints unless explicitly enabled."""
-
-    if not get_settings().planning_evaluation_api_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Planning evaluation API is disabled.",
-        )
 
 
 @router.get("/health")
@@ -167,77 +148,6 @@ def respond_to_be_centered_human_interaction(
             detail=str(exc),
         ) from exc
     except (BeCenteredDataError, ValueError) as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        ) from exc
-
-
-@router.post(
-    "/api/v1/debug/evaluation-suites/run-async",
-    status_code=status.HTTP_202_ACCEPTED,
-)
-def run_planning_scenario_suite_async(
-    request: PlanningScenarioSuiteRequest,
-) -> dict[str, object]:
-    """Run the reviewed scenario catalog without mutating live operational state."""
-
-    _require_planning_evaluation_api()
-    try:
-        return get_planning_scenario_suite_service().start(request)
-    except FileNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
-        ) from exc
-
-
-@router.get("/api/v1/debug/evaluation-suites/{suite_id}")
-def get_planning_scenario_suite(suite_id: str) -> dict[str, object]:
-    """Return scenario materialization and comparison progress."""
-
-    _require_planning_evaluation_api()
-    try:
-        return get_planning_scenario_suite_service().get(suite_id)
-    except FileNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-
-
-@router.get("/api/v1/debug/evaluations/{evaluation_id}")
-def get_planning_evaluation(evaluation_id: str) -> dict[str, object]:
-    """Return one frozen evaluation capture and its evidence."""
-
-    _require_planning_evaluation_api()
-    try:
-        return PlanningEvaluationStore().detail(evaluation_id)
-    except FileNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-
-
-@router.get("/api/v1/debug/evaluation-jobs/{job_id}/result")
-def get_planning_evaluation_job_result(job_id: str) -> dict[str, object]:
-    """Return the immutable result produced by one internal comparison job."""
-
-    _require_planning_evaluation_api()
-    try:
-        return get_planning_evaluation_job_service().get_result(job_id)
-    except FileNotFoundError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(exc),
-        ) from exc
-    except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(exc),

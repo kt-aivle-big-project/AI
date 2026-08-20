@@ -10,7 +10,7 @@ $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $Root
 
 if (-not (Test-Path ".env.docker")) {
-    throw ".env.docker is missing. Run start_be_compat_docker.ps1 first."
+    throw ".env.docker is missing. Run start_local_stack.ps1 first."
 }
 
 Write-Host "Applying BE-centered planning profiles and projecting the map..." -ForegroundColor Cyan

@@ -1,6 +1,0 @@
-{
-  "reason": "NEW_TASK_ADDED",
-  "triggerRobotId": null,
-  "blockedEdgeIds": [],
-  "description": "새 작업이 추가되어 재최적화"
-}

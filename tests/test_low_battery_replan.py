@@ -1,6 +1,6 @@
 from pydantic import TypeAdapter
 
-from app.domain.be_compat import BeCompatRuntimeRobot
+from app.domain.be_runtime import BeRuntimeRobot
 from app.domain.schemas import (
     EventInput,
     PlanHandoverPoint,
@@ -121,7 +121,7 @@ def test_low_battery_replan_still_maps_access_node_to_rack() -> None:
 
 
 def test_spring_runtime_contract_preserves_real_clock_and_load() -> None:
-    runtime = BeCompatRuntimeRobot.model_validate(
+    runtime = BeRuntimeRobot.model_validate(
         {
             "robotId": 336,
             "warehouseId": 68,

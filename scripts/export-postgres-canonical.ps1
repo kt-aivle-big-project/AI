@@ -93,7 +93,6 @@ if ([string]::IsNullOrWhiteSpace($DatabaseUser)) { $DatabaseUser = "postgres" }
 if ([string]::IsNullOrWhiteSpace($DatabaseName)) { $DatabaseName = "warehouse" }
 
 $RuntimeTables = @(
-    "laro_contract.request_log",
     "laro_ext.inventory_reservation",
     "laro_ext.request_log",
     "laro_ext.simulation_plan",

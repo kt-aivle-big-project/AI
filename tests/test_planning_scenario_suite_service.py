@@ -3,11 +3,12 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
+from app.main import app
 from app.domain.planning_evaluation import PlanningScenarioSuiteRequest
 from app.domain.schemas import (
     AutoMissionRequest,
@@ -41,6 +42,20 @@ def _read(path: Path) -> dict[str, object]:
     value = json.loads(path.read_text(encoding="utf-8"))
     assert isinstance(value, dict)
     return value
+
+
+def test_only_operational_http_api_is_exposed() -> None:
+    with TestClient(app) as client:
+        exposed_paths = set(client.get("/openapi.json").json()["paths"])
+
+    assert exposed_paths == {
+        "/health",
+        "/api/v1/simulation-runs/{simulation_run_id}/missions/plan/preflight",
+        "/api/v1/simulation-runs/{simulation_run_id}/fulfillment-commands/generate",
+        "/api/v1/simulation-runs/{simulation_run_id}/missions/plan",
+        "/api/v1/simulation-runs/{simulation_run_id}/missions/replan",
+        "/api/v1/simulation-runs/{simulation_run_id}/hitl/{interaction_id}/respond",
+    }
 
 
 def test_materializer_exposes_reviewed_thirty_scenario_catalog(tmp_path: Path) -> None:
@@ -115,64 +130,60 @@ def test_materialize_only_suite_finishes_without_starting_jobs(tmp_path: Path) -
         materialize_only=True,
     )
 
-    suite = service.start(request)
+    suite = service.run(request)
 
     assert suite["status"] == "SUCCEEDED"
     assert suite["scenario_count"] == 1
     assert suite["completed_count"] == 1
     assert suite["failed_count"] == 0
     assert suite["scenarios"][0]["materialization_status"] == "PASSED"
-    assert suite["scenarios"][0]["job_id"] is None
+    assert suite["scenarios"][0]["comparison_status"] == "NOT_STARTED"
 
 
-def test_dynamic_scenarios_enter_rule_agent_comparison_queue(
+def test_dynamic_scenarios_run_rule_agent_comparison_directly(
     tmp_path: Path,
 ) -> None:
-    class RecordingJobService:
-        def __init__(self) -> None:
-            self.jobs: dict[str, SimpleNamespace] = {}
+    calls: list[tuple[str, str]] = []
 
-        def submit(self, evaluation_id, request):
-            job_id = f"EJOB-{len(self.jobs) + 1:016X}"
-            job = SimpleNamespace(
-                job_id=job_id,
-                evaluation_id=evaluation_id,
-                status="SUCCEEDED",
-                status_url=f"/status/{job_id}",
-                result_url=f"/result/{job_id}",
-                current_stage="COMPLETED",
-                completed_runs=request.agent_repeats + 1,
-                total_runs=request.agent_repeats + 1,
-                error_type=None,
-                error_message=None,
-            )
-            self.jobs[job_id] = job
-            return job
+    class RecordingComparison:
+        def __init__(self, comparison_store: PlanningEvaluationStore) -> None:
+            self.store = comparison_store
 
-        def get(self, job_id):
-            return self.jobs[job_id]
+        def compare(self, evaluation_id, request, *, progress_callback=None):
+            group = str(self.store.load_manifest(evaluation_id)["scenario_group"])
+            calls.append((evaluation_id, group))
+            total = request.agent_repeats + 1
+            if progress_callback is not None:
+                progress_callback(1, total, "RULE_COMPLETED")
+                progress_callback(total, total, "AGENT_5_COMPLETED")
+            return {
+                "verdict": "DYNAMIC_AGENT_PASS",
+                "strict_pass": True,
+            }
 
     store = PlanningEvaluationStore(root=tmp_path / "evaluations")
     materializer = PlanningScenarioMaterializer(store=store)
-    jobs = RecordingJobService()
     service = PlanningScenarioSuiteService(
         store=store,
         materializer=materializer,
-        job_service=jobs,  # type: ignore[arg-type]
+        dynamic_comparison_factory=RecordingComparison,
     )
     request = PlanningScenarioSuiteRequest(
         scenario_ids=["RP01_NEW_ORDER_DURING_MOVE", "HR01_SAFETY_OVERRIDE"],
         materialize_only=False,
     )
 
-    suite = service.start(request)
+    suite = service.run(request)
 
     assert suite["status"] == "SUCCEEDED"
     assert suite["completed_count"] == 2
-    assert len(jobs.jobs) == 2
-    assert all(value["job_id"] is not None for value in suite["scenarios"])
+    assert [value[1] for value in calls] == ["REPLAN", "HUMAN_REVIEW"]
     assert all(
         value["current_stage"] == "COMPLETED"
+        for value in suite["scenarios"]
+    )
+    assert all(
+        value["comparison_status"] == "SUCCEEDED"
         for value in suite["scenarios"]
     )
     assert all(value["total_runs"] == 6 for value in suite["scenarios"])
@@ -318,7 +329,7 @@ def test_destination_approval_updates_exact_order_before_resume(
     )
 
 
-def test_suite_request_builds_comparison_contract_without_suite_fields() -> None:
+def test_suite_request_builds_direct_comparison_contract_without_suite_fields() -> None:
     request = PlanningScenarioSuiteRequest(
         scenario_ids=["PC01_LOW_4_DISTRIBUTED_OUTBOUND"],
         materialize_only=True,
@@ -327,11 +338,10 @@ def test_suite_request_builds_comparison_contract_without_suite_fields() -> None
     )
 
     comparison = request.comparison_request()
-    job = request.job_request(scenario_id="PC01", suite_id="ESUITE-TEST")
 
     assert comparison.agent_repeats == 5
-    assert job.agent_repeats == 5
-    assert job.idempotency_key == "ESUITE-TEST:PC01"
+    assert "scenario_ids" not in comparison.model_dump()
+    assert "materialize_only" not in comparison.model_dump()
 
 
 def test_structured_edge_events_reach_typed_map_constraints() -> None:

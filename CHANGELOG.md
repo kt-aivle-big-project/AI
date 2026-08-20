@@ -8,7 +8,7 @@
 - Reads inventory from `public.warehouse_items`; no active LARO `orders` or `handling_units` table.
 - Adds only missing planning profiles, facility metadata, inventory reservations, Plan storage, and request logs under `laro_ext`.
 - Adds an isolated `com.aivle.be.laro` Spring package without changing existing BE files.
-- Keeps legacy `/optimize` and `/reoptimize` compatibility.
+- Removes the retired route-only compatibility API in favor of the native mission plan/replan contract.
 - Persists idempotent request results, per-run Plan versions, and selected BE inventory reservations.
 
 ## v13.25.1 — Native Trace and Canonical Router Hotfix
@@ -33,11 +33,10 @@
 
 ## v13.24.0 — Native Plan API Bridge
 
-- Preserved `POST /optimize` and `POST /reoptimize` exactly for the unmodified Spring BE.
 - Added native-plan preflight and compact trace endpoints (removed from the current public API).
 - Added shared-stack native fixture bootstrap for PostgreSQL, Redis, and Neo4j.
 - Added automated HTTP plan contract verification and example requests.
 
 ## v13.23.0 — Unmodified Spring BE Shared-DB Compatibility v2
 
-- Added the additive `laro_contract` schema and Spring-first compatibility graph/runtime adapters.
+- Added the first Spring shared-DB graph/runtime adapter (retired in v13.27).

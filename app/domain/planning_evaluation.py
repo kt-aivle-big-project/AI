@@ -1,4 +1,4 @@
-"""Contracts for deferred Rule/Agent planning comparisons."""
+"""Contracts for local Rule/Agent planning comparisons."""
 from __future__ import annotations
 
 from typing import Literal
@@ -9,22 +9,6 @@ from app.domain.schemas import ObjectiveProfile, StrictModel
 
 EvaluationStatus = Literal["CAPTURED", "COMPARING", "COMPARISON_READY", "FAILED"]
 BranchApplicability = Literal["APPLICABLE", "NOT_APPLICABLE", "UNKNOWN"]
-PlanningComparisonJobStatus = Literal[
-    "QUEUED",
-    "RUNNING",
-    "SUCCEEDED",
-    "FAILED",
-]
-PlanningScenarioSuiteStatus = Literal[
-    "MATERIALIZING",
-    "QUEUED",
-    "RUNNING",
-    "SUCCEEDED",
-    "PARTIAL_FAILURE",
-    "FAILED",
-]
-
-
 class PlanningComparisonRequest(StrictModel):
     # Operational Rule/Agent evaluations are deliberately solver-fixed.  A
     # payload-only or OR-Tools run is a useful unit test, but it is not evidence
@@ -59,24 +43,8 @@ class PlanningComparisonRequest(StrictModel):
         return self
 
 
-class PlanningComparisonJobRequest(PlanningComparisonRequest):
-    """Local asynchronous submission options plus the normal comparison input."""
-
-    idempotency_key: str | None = Field(default=None, min_length=1, max_length=200)
-    force_new: bool = False
-
-    def comparison_request(self) -> PlanningComparisonRequest:
-        return PlanningComparisonRequest.model_validate(
-            self.model_dump(exclude={"idempotency_key", "force_new"})
-        )
-
-
-class PlanningScenarioSuiteRequest(PlanningComparisonJobRequest):
-    """Build isolated operational captures and optionally enqueue comparisons.
-
-    Scenario and fixture paths are deliberately server-owned.  Callers select
-    scenario IDs, but cannot make the debug API read an arbitrary local path.
-    """
+class PlanningScenarioSuiteRequest(PlanningComparisonRequest):
+    """Build isolated operational captures and optionally compare them locally."""
 
     scenario_ids: list[str] = Field(default_factory=list, max_length=30)
     scenario_groups: list[
@@ -91,56 +59,15 @@ class PlanningScenarioSuiteRequest(PlanningComparisonJobRequest):
                     "scenario_ids",
                     "scenario_groups",
                     "materialize_only",
-                    "idempotency_key",
-                    "force_new",
                 }
             )
         )
-
-    def job_request(
-        self, *, scenario_id: str, suite_id: str
-    ) -> PlanningComparisonJobRequest:
-        payload = self.model_dump(
-            exclude={
-                "scenario_ids",
-                "scenario_groups",
-                "materialize_only",
-                "idempotency_key",
-            }
-        )
-        payload["idempotency_key"] = (
-            f"{self.idempotency_key}:{scenario_id}"
-            if self.idempotency_key
-            else f"{suite_id}:{scenario_id}"
-        )
-        return PlanningComparisonJobRequest.model_validate(payload)
-
-
-class PlanningComparisonJob(StrictModel):
-    """Durable local status record for one deferred comparison."""
-
-    job_id: str
-    evaluation_id: str
-    status: PlanningComparisonJobStatus
-    request_fingerprint: str
-    idempotency_key: str | None = None
-    comparison_request: dict[str, object] = Field(default_factory=dict)
-    current_stage: str = "QUEUED"
-    completed_runs: int = 0
-    total_runs: int = Field(ge=1)
-    created_at: str
-    started_at: str | None = None
-    completed_at: str | None = None
-    status_url: str
-    result_url: str
-    error_type: str | None = None
-    error_message: str | None = None
 
 
 class PlanningEvaluationReference(StrictModel):
     evaluation_id: str
     status: EvaluationStatus
-    detail_url: str
+    artifact_path: str
 
 
 class EvaluationGateFailure(StrictModel):

@@ -4,41 +4,8 @@ from __future__ import annotations
 import csv
 import json
 import shutil
-import urllib.error
-import urllib.request
 from pathlib import Path
 from typing import Any
-
-
-def _request_json(
-    method: str,
-    url: str,
-    payload: dict[str, Any] | None = None,
-    *,
-    timeout_seconds: float = 120,
-) -> tuple[int, dict[str, Any]]:
-    body = None
-    headers = {"Accept": "application/json"}
-    if payload is not None:
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        headers["Content-Type"] = "application/json"
-    request = urllib.request.Request(
-        url,
-        data=body,
-        headers=headers,
-        method=method.upper(),
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
-            raw = response.read().decode("utf-8")
-            return int(response.status), json.loads(raw) if raw else {}
-    except urllib.error.HTTPError as exc:
-        raw = exc.read().decode("utf-8", errors="replace")
-        try:
-            value = json.loads(raw) if raw else {}
-        except json.JSONDecodeError:
-            value = {"detail": raw or str(exc)}
-        return int(exc.code), value
 
 
 def _write_json(path: Path, value: Any) -> None:

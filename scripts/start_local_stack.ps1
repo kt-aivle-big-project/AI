@@ -81,4 +81,4 @@ Write-Host "1. Start the existing Spring BE with the local profile so Hibernate 
 Write-Host "2. Run .\scripts\prepare_be_centered_stack.ps1 -WarehouseId <numeric BE warehouse id> -SimulationRunId <numeric run id>."
 Write-Host "3. Call Spring POST /api/laro/simulation-runs/{simulationRunId}/plan or FastAPI POST /api/v1/simulation-runs/{id}/missions/plan."
 Write-Host ""
-Write-Host "Existing Spring /optimize compatibility remains available at POST $baseUrl/optimize."
+Write-Host "Native mission planning is available under $baseUrl/api/v1/simulation-runs/{id}/missions/."

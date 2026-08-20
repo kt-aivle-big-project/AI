@@ -20,7 +20,7 @@ pytest -q tests/test_v13_27_be_centered_contract.py
 
 ```powershell
 Copy-Item .env.docker.example .env.docker
-.\scripts\start_be_compat_docker.ps1 -ResetData -StopLegacy
+.\scripts\start_local_stack.ps1 -ResetData -StopLegacy
 ```
 
 ## 3. Spring BE 시작
