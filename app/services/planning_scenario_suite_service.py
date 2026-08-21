@@ -39,7 +39,7 @@ from app.services.request_gate_service import code_input_rejection
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_FIXTURE_DIR = (
-    ROOT / "scenarios" / "fixtures" / "V13_mixed_inbound_outbound_multirobot"
+    ROOT / "scenarios" / "fixtures" / "mixed_inbound_outbound_multirobot"
 )
 _SUITE_ID_PREFIX = "ESUITE-"
 _SUITE_LOCK = threading.RLock()
