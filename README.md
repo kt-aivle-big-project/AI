@@ -112,12 +112,6 @@ python -m scripts.run_be_centered_plan_probe --simulation-run-id 1
   -AccessToken "발급받은_토큰"
 ```
 
-## 문서
-
-- [아키텍처](docs/BE_CENTERED_STRUCTURED_INPUT_ARCHITECTURE.md)
-- [테이블·DTO 상세](docs/BE_CENTERED_TABLE_DTO_REFERENCE.md)
-- [테스트 가이드](docs/BE_CENTERED_TEST_GUIDE.md)
-
 ## 데이터 권위 원칙
 
 | 데이터 | 권위 원본 | LARO 역할 |

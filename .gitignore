@@ -54,6 +54,7 @@
 /tests
 !/tests/
 /tests/*
+!/tests/conftest.py
 !/tests/test_v13_27_be_centered_contract.py
 !/tests/test_cuopt_formulator_prompt.py
 !/tests/test_human_review_gate_relaxation.py

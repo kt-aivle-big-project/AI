@@ -10,6 +10,10 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts._runtime_env import bootstrap_live_probe_environment
+
+SELECTED_ENV_FILE = bootstrap_live_probe_environment(PROJECT_ROOT)
+
 from app.core.config import get_settings
 from app.core.console import safe_json_print
 from app.services.optimization_service import ExternalCuOptGateway
@@ -21,8 +25,8 @@ def main() -> int:
         "version": "13.17.0",
         "project_root": str(PROJECT_ROOT),
         "process_cwd": str(Path.cwd()),
-        "env_file": str(PROJECT_ROOT / ".env"),
-        "env_file_exists": (PROJECT_ROOT / ".env").exists(),
+        "env_file": str(SELECTED_ENV_FILE) if SELECTED_ENV_FILE is not None else None,
+        "env_file_exists": bool(SELECTED_ENV_FILE and SELECTED_ENV_FILE.exists()),
         "expected_public_key_variable": "NVIDIA_API_KEY",
         "process_environment_has_nvidia_key": bool(os.environ.get("NVIDIA_API_KEY", "").strip()),
         "transport": settings.cuopt_transport,
